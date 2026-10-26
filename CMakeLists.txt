@@ -2154,7 +2154,6 @@ set(SOURCE_FILES_STAGE_TOP
 add_overlay(top ${SOURCE_FILES_STAGE_TOP})
 
 set(SOURCE_FILES_STAGE_RCAT
-    src/pc/stages/palettes/rcat.c
     src/pc/stages/stage_rcat.c
     src/st/rcat/background_block_init.c
     src/st/rcat/collision.c
@@ -2188,6 +2187,7 @@ set(SOURCE_FILES_STAGE_RCAT
     src/st/rcat/graphics_banks.c
     src/st/rcat/header.c
     src/st/rcat/layers.c
+    src/st/rcat/palette_def.c
     src/st/rcat/popup.c
     src/st/rcat/prim_helpers.c
     src/st/rcat/sprite_banks.c
@@ -2473,10 +2473,7 @@ add_overlay(bo2 ${SOURCE_FILES_BOSS_BO2})
 
 add_overlay(bo4 ${SOURCE_FILES_BOSS_BO4})
 
-set(SOURCE_FILES_BOSS_BO5
-    src/pc/stages/cutscene_bo5.c
-    src/pc/stages/data_bo5.c
-    src/pc/stages/assets_bo5.c
+SET(SOURCE_FILES_BOSS_BO5
     src/pc/bosses/boss_bo5.c
     src/boss/bo5/background_block_init.c
     src/boss/bo5/collision.c
@@ -2485,6 +2482,7 @@ set(SOURCE_FILES_BOSS_BO5
     src/boss/bo5/d_prize_drops.c
     src/boss/bo5/e_bell.c
     src/boss/bo5/e_breakable.c
+    src/boss/bo5/e_camera_bounds.c
     src/boss/bo5/e_clouds.c
     src/boss/bo5/e_collect.c
     src/boss/bo5/e_cutscene_actors.c
@@ -2496,18 +2494,16 @@ set(SOURCE_FILES_BOSS_BO5
     src/boss/bo5/e_lock_camera.c
     src/boss/bo5/e_misc.c
     src/boss/bo5/e_particles.c
+    src/boss/bo5/e_play_boss_music.c
     src/boss/bo5/e_rbo3door.c
     src/boss/bo5/e_red_door.c
     src/boss/bo5/e_red_door_tiles.c
-    src/boss/bo5/e_richter_prologue.c
     src/boss/bo5/e_room_bg.c
     src/boss/bo5/e_room_bg_2.c
     src/boss/bo5/e_room_fg.c
     src/boss/bo5/e_room_fg_2.c
     src/boss/bo5/e_stage_name.c
     src/boss/bo5/e_stained_glass.c
-    src/boss/bo5/e_unk_16.c
-    src/boss/bo5/e_unk_29.c
     src/boss/bo5/gen/e_laydef.c
     src/boss/bo5/gen/e_layout.c
     src/boss/bo5/gen/rooms.c

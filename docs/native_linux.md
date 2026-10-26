@@ -28,10 +28,9 @@ This does not add widescreen gameplay or replace the original sprite artwork.
 Follow the repository's US asset setup and the dependency setup in
 `.github/workflows/picci.yaml`, including the pinned PSY-Z/SDL submodules.
 The local PSY-Z checkout also includes fixes for Unix file opening and audio emulation.
-On a fresh checkout of the pinned submodule, apply both supplied patches once:
+On a fresh checkout of the pinned submodule, apply the supplied audio patch once:
 
 ```sh
-git -C tools/psyz apply "$PWD/tools/patches/psyz-unix-open-flags.patch"
 git -C tools/psyz apply "$PWD/tools/patches/psyz-audio-stream-voices.patch"
 ```
 
@@ -73,12 +72,14 @@ SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy \
 ```
 
 The current build loads **178/178 modules** and passes **7/7 native tests**.
-Of 24 distinct tactic demos, 23 complete; demo 17 (Lesser Demon) still ends with
+In the initial snapshot, 23 of 24 distinct tactic demos completed; demo 17
+(Lesser Demon) ended with
 early player death on the Library route before the boss activates. The cause of
 that replay divergence is still unknown. Demo 12 (Death) passed separately after
 exceeding the 180-second batch limit while builds were running. All 115 US binary checksums
 and the Go asset-tool tests pass. Selected bosses were also checked with
-AddressSanitizer; this was not a fully instrumented game run.
+AddressSanitizer; this was not a fully instrumented game run. That full demo
+batch has not been repeated after integrating the newer upstream history.
 
 A crash, timeout, or early player death remains a failure. Remaining work includes
 Lesser Demon, full cutscene validation, all weapon and familiar behaviors, stage
@@ -140,3 +141,14 @@ the fixes. A controlled lethal hit in demo 0 reproduced Maria's revival; after
 the fix, finished effect voices report zero envelopes and can be reused.
 The user's manual run confirmed physical sound output and movie playback;
 listening to these corrected dialogue and revival sequences remains pending.
+
+### PR integration checks (2026-10-26)
+
+The integrated native build loads all 178 overlays. With AddressSanitizer
+enabled, the geometry, primitive, random, SPU, XA, and overlay tests passed.
+The save/load assertions also passed, but LeakSanitizer reported two 128-byte
+allocations after graphics shutdown. Dynamic-loader address mapping traced
+the allocation stacks to this machine's system `libvulkan_radeon.so` and
+`libvulkan_nouveau.so`; no sanitizer suppression was added. The documented
+`ENABLE_ASAN=OFF` build is checked separately. This is not a clean sanitizer
+result for the full application.

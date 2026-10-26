@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEMOS: "0 3 5 6 11 15 16 19"
+  DEMOS: "0 3 5 6 7 11 15 16 19"
 
 jobs:
   build-linux:
@@ -55,7 +55,6 @@ jobs:
           git submodule update --init tools/psyz
           cd tools/psyz
           git submodule update --init --recursive external/SDL
-          git apply ../patches/psyz-unix-open-flags.patch
           git apply ../patches/psyz-audio-stream-voices.patch
       - name: Get dependencies
         uses: ./.github/actions/get-dependencies
@@ -76,7 +75,7 @@ jobs:
           cmake -B ${{github.workspace}}/pc $PC_FLAGS -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_ASAN=OFF
           cmake --build ${{github.workspace}}/pc --config ${{ matrix.build_type }}
       - name: Test demo playback
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           SDL_VIDEODRIVER: "offscreen"
           SDL_AUDIODRIVER: dummy
@@ -104,7 +103,6 @@ jobs:
           git submodule update --init tools/psyz
           cd tools/psyz
           git submodule update --init --recursive external/SDL
-          git apply ../patches/psyz-unix-open-flags.patch
           git apply ../patches/psyz-audio-stream-voices.patch
       - uses: actions/setup-go@v7
         with:
@@ -126,7 +124,7 @@ jobs:
           cmake -B ${{github.workspace}}/pc -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_ASAN=OFF
           cmake --build ${{github.workspace}}/pc --config ${{ matrix.build_type }}
       - name: Test demo playback
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           SDL_VIDEODRIVER: ""
           SDL_AUDIODRIVER: dummy
@@ -154,7 +152,6 @@ jobs:
         git submodule update --init tools/psyz
         cd tools/psyz
         git submodule update --init --recursive external/SDL
-        git apply ../patches/psyz-unix-open-flags.patch
         git apply ../patches/psyz-audio-stream-voices.patch
     - name: Get dependencies
       uses: ./.github/actions/get-dependencies
@@ -176,7 +173,7 @@ jobs:
         cmake -B ${{github.workspace}}/pc -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         cmake --build ${{github.workspace}}/pc --config ${{ matrix.build_type }}
     - name: Test demo playback
-      timeout-minutes: 10
+      timeout-minutes: 15
       shell: bash
       env:
         SDL_VIDEODRIVER: offscreen

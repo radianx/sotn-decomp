@@ -704,8 +704,6 @@ void func_us_8019D260_from_rcen(void) {
     }
 }
 
-
-
 extern DeathFlamesInit D_us_80180B44[];
 
 void func_us_8019F260(Entity* self) {

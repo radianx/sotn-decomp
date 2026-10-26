@@ -72,9 +72,6 @@ extern EInit g_EInitUnkId13;
 extern EInit g_EInitLockCamera;
 extern EInit g_EInitCommon;
 extern EInit g_EInitDamageNum;
-#ifndef VERSION_PC
-extern EInit __unused__;
-#endif
 extern EInit g_EInitRTOPCommon;
 extern EInit g_EInitTombstone;
 extern EInit g_EInitSkullLord;

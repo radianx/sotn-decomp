@@ -206,17 +206,18 @@ ObjInit2 BackgroundBlockInit[] = {
     {6, 506, 0, 0, 0, 0, 16, 0, s_PcData_80180744},
 };
 
-EInit D_us_801806D8 = {32774, 58, 72, 521, 51};
+// clang-format off
+EInit D_us_801806D8 = {ANIMSET_OVL(6), 0x3A, 0x48, 0x209, ENEMY_OLROX_UNK_33};
 
-EInit D_us_801806E4 = {32774, 80, 72, 521, 52};
+EInit D_us_801806E4 = {ANIMSET_OVL(6), 0x50, 0x48, 0x209, ENEMY_OLROX_UNK_34};
 
-EInit D_us_801806F0 = {32774, 63, 72, 521, 53};
+EInit D_us_801806F0 = {ANIMSET_OVL(6), 0x3F, 0x48, 0x209, ENEMY_OLROX_UNK_35};
 
-EInit D_us_801806FC = {32768, 0, 0, 0, 54};
+EInit D_us_801806FC = {ANIMSET_OVL(0), 0x00, 0x00, PAL_NONE, ENEMY_OLROX_UNK_36};
 
-EInit D_us_80180708 = {32775, 1, 80, 523, 55};
+EInit D_us_80180708 = {ANIMSET_OVL(7), 0x01, 0x50, 0x20B, ENEMY_OLROX_2};
 
-EInit D_us_80180714 = {32775, 1, 80, 523, 56};
+EInit D_us_80180714 = {ANIMSET_OVL(7), 0x01, 0x50, 0x20B, ENEMY_OLROX_UNK_38};
 
 s32 D_us_80180BA8 = 0;
 
@@ -870,51 +871,52 @@ AnimationFrame PrizeDrops[] = {
     {1000, 0},      {2000, 0},      {5000, 0},
 };
 
-EInit g_EInitBloodyZombie = {32777, 1, 72, 547, 13};
+EInit g_EInitBloodyZombie = {ANIMSET_OVL(9), 0x01, 0x48, 0x223, ENEMY_BLOODY_ZOMBIE};
 
-EInit g_EInitBossDoors = {32770, 14, 0, 0, 5};
+EInit g_EInitBossDoors = {ANIMSET_OVL(2), 0x0E, 0x00, PAL_NONE, ENEMY_INTERACTABLE};
 
-EInit g_EInitBreakable = {3, 0, 0, 0, 0};
+EInit g_EInitBreakable = {ANIMSET_DRA(3), 0x00, 0x00, PAL_NONE, ENEMY_BREAKABLE};
 
-EInit g_EInitCommon = {0, 0, 0, 0, 3};
+EInit g_EInitCommon = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_COMMON};
 
-EInit g_EInitDamageNum = {0, 0, 0, 0, 3};
+EInit g_EInitDamageNum = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_COMMON};
 
-EInit g_EInitEnvironment = {32770, 11, 0, 0, 3};
+EInit g_EInitEnvironment = {ANIMSET_OVL(2), 0x0B, 0x00, PAL_NONE, ENEMY_COMMON};
 
-EInit g_EInitFireballAttack = {32777, 1, 0, 0, 59};
+EInit g_EInitFireballAttack = {ANIMSET_OVL(9), 0x01, 0x00, PAL_NONE, ENEMY_OLROX_UNK_3B};
 
-EInit g_EInitInteractable = {0, 0, 0, 0, 5};
+EInit g_EInitInteractable = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_INTERACTABLE};
 
-EInit g_EInitLaserAttack = {32768, 0, 0, 0, 60};
+EInit g_EInitLaserAttack = {ANIMSET_OVL(0), 0x00, 0x00, PAL_NONE, ENEMY_OLROX_UNK_3C};
 
-EInit g_EInitLockCamera = {0, 0, 0, 0, 1};
+EInit g_EInitLockCamera = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_OBTAINABLE};
 
-EInit g_EInitMarionette = {32772, 0, 72, 517, 49};
+EInit g_EInitMarionette = {ANIMSET_OVL(4), 0x00, 0x48, 0x205, ENEMY_MARIONETTE};
 
-EInit g_EInitObtainable = {3, 0, 0, 0, 1};
+EInit g_EInitObtainable = {ANIMSET_DRA(3), 0x00, 0x00, PAL_NONE, ENEMY_OBTAINABLE};
 
-EInit g_EInitOlroxAfterImage = {32774, 1, 72, 521, 50};
+EInit g_EInitOlroxAfterImage = {ANIMSET_OVL(6), 0x01, 0x48, 0x209, ENEMY_OLROX};
 
-EInit g_EInitOwl = {32776, 1, 73, 540, 22};
+EInit g_EInitOwl = {ANIMSET_OVL(8), 0x01, 0x49, PAL_UNK_21C, ENEMY_OWL};
 
-EInit g_EInitOwlKnight = {32776, 16, 73, 540, 20};
+EInit g_EInitOwlKnight = {ANIMSET_OVL(8), 0x10, 0x49, PAL_UNK_21C, ENEMY_OWL_KNIGHT};
 
-EInit g_EInitOwlKnightSword = {32776, 0, 73, 715, 21};
+EInit g_EInitOwlKnightSword = {ANIMSET_OVL(8), 0x00, 0x49, 0x2CB, ENEMY_OWL_KNIGHT_SWORD};
 
-EInit g_EInitParticle = {3, 0, 0, 0, 2};
+EInit g_EInitParticle = {ANIMSET_DRA(3), 0x00, 0x00, PAL_NONE, ENEMY_PARTICLE};
 
-EInit g_EInitPrisoner = {32771, 1, 73, 515, 3};
+EInit g_EInitPrisoner = {ANIMSET_OVL(3), 0x01, 0x49, 0x203, ENEMY_COMMON};
 
-EInit g_EInitSkelerang = {32769, 1, 72, 512, 11};
+EInit g_EInitSkelerang = {ANIMSET_OVL(1), 0x01, 0x48, 0x200, ENEMY_SKELERANG};
 
-EInit g_EInitSkelerangBoomerang = {32769, 43, 72, 512, 12};
+EInit g_EInitSkelerangBoomerang = {ANIMSET_OVL(1), 0x2B, 0x48, 0x200, ENEMY_SKELERANG_BOOMERANG};
 
-EInit g_EInitSlinger = {0, 32776, 0, 73, 715};
+EInit g_EInitSlinger = {ANIMSET_DRA(0), 0x8008, 0x00, 0x049, 0x2CB};
 
-EInit g_EInitSpawner = {0, 0, 0, 0, 4};
+EInit g_EInitSpawner = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_SPAWNER};
 
-EInit g_EInitUnkId13 = {0, 0, 0, 0, 2};
+EInit g_EInitUnkId13 = {ANIMSET_DRA(0), 0x00, 0x00, PAL_NONE, ENEMY_PARTICLE};
+// clang-format on
 
 u16 g_RedDoorTiles[2][8] = {
     1716, 1716, 1716, 1716, 0, 0, 0,    0,

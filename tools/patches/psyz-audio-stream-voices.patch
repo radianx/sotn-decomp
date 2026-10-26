@@ -2,31 +2,31 @@ SPDX-License-Identifier: MPL-2.0
 PSY-Z native fixes; modified 2026-10-26. See README.md and LICENSE.MPL-2.0.
 
 diff --git a/psyz/src/psyz/libcd.c b/psyz/src/psyz/libcd.c
-index 736246b..b9064b2 100644
+index c783fb2..aeeae43 100644
 --- a/psyz/src/psyz/libcd.c
 +++ b/psyz/src/psyz/libcd.c
-@@ -471,6 +471,8 @@ static struct {
+@@ -484,6 +484,8 @@ static struct {
      // Hermite ring: index [0]=oldest .. [3]=newest per channel
      short rh_l[4], rh_r[4];
      unsigned int phase; // 16.16 fractional position into the input stream
 +    uint64_t output_frames;
 +    uint64_t sectors_read;
      int cur_abs_sector; // absolute last sector used, for CdlGetlocL
+     int stream_ended;   // filtered file/channel ran out, emit silence
  } xa;
- 
-@@ -482,6 +484,8 @@ static void xa_reset_stream(void) {
+@@ -496,6 +498,8 @@ static void xa_reset_stream(void) {
      memset(xa.rh_l, 0, sizeof(xa.rh_l));
      memset(xa.rh_r, 0, sizeof(xa.rh_r));
      xa.phase = 0;
 +    xa.output_frames = 0;
 +    xa.sectors_read = 0;
+     xa.stream_ended = 0;
  }
  
- static int xa_sector_matches(unsigned char file, unsigned char channel) {
-@@ -558,11 +562,17 @@ static int xa_decode_user_mono_4bit(const unsigned char* user) {
- static int xa_read_and_decode_sector(void) {
+@@ -574,11 +578,17 @@ static int xa_read_and_decode_sector(void) {
      unsigned char sector[SECTOR_SIZE];
-     while (1) {
+     int gap = 0;
+     while (!xa.stream_ended) {
 +        // Filtering must not collapse gaps into the next clip using this filter.
 +        unsigned sectors_per_second = (CD_mode & CdlModeSpeed) ? 150 : 75;
 +        if (xa.sectors_read * 44100 / sectors_per_second > xa.output_frames) {
@@ -41,7 +41,7 @@ index 736246b..b9064b2 100644
          const unsigned char file = sector[0x10];
          const unsigned char channel = sector[0x11];
          const unsigned char submode = sector[0x12];
-@@ -595,8 +605,9 @@ static int xa_read_and_decode_sector(void) {
+@@ -616,8 +626,9 @@ static int xa_read_and_decode_sector(void) {
  // Returns 1 on success, 0 if stream ended.
  static int xa_advance_input(void) {
      if (xa.decoded_pos >= xa.decoded_count) {
@@ -53,7 +53,7 @@ index 736246b..b9064b2 100644
          }
      }
      short l = xa.decoded[xa.decoded_pos * 2 + 0];
-@@ -638,22 +649,18 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
+@@ -659,22 +670,18 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
      if (!is_playing || !track_file || !xa.active) {
          goto end;
      }
@@ -86,7 +86,7 @@ index 736246b..b9064b2 100644
              }
              xa.phase -= 0x10000;
          }
-@@ -667,6 +674,16 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
+@@ -688,6 +695,16 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
                  xa.rh_r[0], xa.rh_r[1], xa.rh_r[2], xa.rh_r[3], xa.phase);
          }
          xa.phase += XA_STEP_Q16;
@@ -103,16 +103,3 @@ index 736246b..b9064b2 100644
          written++;
      }
  end:
-diff --git a/psyz/src/psyz/spu_voice.h b/psyz/src/psyz/spu_voice.h
-index f4e18bc..d5e8867 100644
---- a/psyz/src/psyz/spu_voice.h
-+++ b/psyz/src/psyz/spu_voice.h
-@@ -135,6 +135,8 @@ static inline int spu_voice_decode_one_sample(VoiceState* vs, const u8* ram) {
-         // end of block, and handle loop/end flags
-         if (!vs->needs_decode && (vs->block_flags & 0x01)) {
-             if (!(vs->block_flags & 0x02)) {
-+                vs->env_vol = 0;
-+                vs->env_state = ADSR_OFF;
-                 vs->active = 0;
-                 vs->gwin[vs->gpos] = 0;
-                 vs->gpos = (vs->gpos + 1) & 3;

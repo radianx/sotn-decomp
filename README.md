@@ -32,8 +32,8 @@ this fork's maintenance, support, and validation scope. The additional
 [native Linux port](docs/native_linux.md) uses US game data and remains
 experimental; a complete playthrough has not been verified.
 
-The `psx-us-complete` branch preserves the completed snapshot on the upstream
-base above. Upstream's newer work is maintained separately on `master`.
+The `psx-us-complete` branch started from the base above and integrates the
+newer upstream work present on this fork's `master` for PR #1.
 
 ## Build and licensing
 

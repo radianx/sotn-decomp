@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rbo1.h"
 
-
-
 extern BeelzebubFlameInit D_us_8018094C[];
 extern EInit g_EInitParticle;
 

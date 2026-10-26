@@ -60,31 +60,13 @@ func_us_801B72E8 = 0x801BA880; // source=match
 EntityBossDoors = 0x801BAB18;
 EntitySealedDoor = 0x801BB08C;
 EntityChair = 0x801BBD84;
-Random = 0x801BC0DC; // source=match
 Update = 0x801BC10C; // source=match
 UpdateStageEntities = 0x801BC408; // source=match
 HitDetection = 0x801BC510; // source=match
 EntityDamageDisplay = 0x801BD628; // source=match
 InitRoomEntities = 0x801BE528; // source=match
 UpdateRoomPosition = 0x801BE6A0; // source=match
-CreateEntityFromCurrentEntity = 0x801BE754; // source=match
-CreateEntityFromEntity = 0x801BE7C8; // source=match
 EntityRedDoor = 0x801BE8BC; // source=match
-DestroyEntity = 0x801BF4F4; // source=match
-AnimateEntity = 0x801BF624; // source=match
-GetDistanceToPlayerX = 0x801BF7F4; // source=match
-GetSideToPlayer = 0x801BF864; // source=match
-MoveEntity = 0x801BF8A8; // source=match
-UnkCollisionFunc3 = 0x801BF904; // source=match
-UnkCollisionFunc2 = 0x801BFB7C; // source=match
-AllocEntity = 0x801BFD64; // source=match
-SetEntityVelocityFromAngle = 0x801BFE0C; // source=match
-Ratan2Shifted = 0x801BFE78; // source=match
-GetAngleBetweenEntitiesShifted = 0x801BFEB0; // source=match
-AdjustValueWithinThreshold = 0x801BFF40; // source=match
-SetStep = 0x801C0134; // source=match
-SetSubStep = 0x801C0154; // source=match
-InitializeEntity = 0x801C0204; // source=match
 EntityDummy = 0x801C0300; // source=match
 EntityPrizeDrop = 0x801C0F14; // source=match
 EntityExplosion = 0x801C1788; // source=match
@@ -96,10 +78,7 @@ EntityUnkId13 = 0x801C33F8; // source=match
 EntityExplosionVariants = 0x801C3720; // source=match
 EntityGreyPuff = 0x801C3810; // source=match
 EntityIntenseExplosion = 0x801C41B0; // source=match
-MakeExplosions = 0x801C4444; // source=match
 EntityBigRedFireball = 0x801C44FC; // source=match
-UnkRecursivePrimFunc2 = 0x801C4CB4; // source=match
-PlaySfxPositional = 0x801C55AC; // source=match
 EntityStageNamePopup = 0x801C5874; // source=match
 EntitySkelerang = 0x801C64F8; // source=match
 EntitySkelerangBoomerang = 0x801C6C80; // source=match
@@ -116,4 +95,3 @@ EntityLifeUpSpawn = 0x801CB9A0; // source=match
 EntitySoulStealOrb = 0x801CC254; // source=match
 EntityEnemyBlood = 0x801CC5E8; // source=match
 EntityRoomForeground = 0x801CCA98; // source=match
-FindFirstUnkPrim2 = 0x801CD41C; // source=match

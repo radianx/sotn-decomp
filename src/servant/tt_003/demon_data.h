@@ -161,12 +161,14 @@ static AnimationFrame* g_DemonAnimationFrames[] = {
 static ServantSfxEventDesc s_SfxIntroCommand[] = {
     {0, 9, DEMON_INTRO_COMMAND}, {-1, 0, 0}};
 
-static intptr_t g_SfxDemonIntroPrevSummoned[] = {0xFF, (intptr_t)s_SfxIntroCommand};
+static intptr_t g_SfxDemonIntroPrevSummoned[] = {
+    0xFF, (intptr_t)s_SfxIntroCommand};
 
 static ServantSfxEventDesc s_SfxIntroIntroReady[] = {
     {0, 9, DEMON_INTRO_READY}, {-1, 0, 0}};
 
-static intptr_t g_SfxDemonIntroNewSummoned[] = {0xFF, (intptr_t)s_SfxIntroIntroReady};
+static intptr_t g_SfxDemonIntroNewSummoned[] = {
+    0xFF, (intptr_t)s_SfxIntroIntroReady};
 
 static ServantSfxEventDesc s_SfxEventSwitch1[] = {
     {0, 0, DEMON_SWITCH_1}, {-1, 7, 0}};

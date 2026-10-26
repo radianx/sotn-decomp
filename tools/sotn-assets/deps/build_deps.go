@@ -50,6 +50,9 @@ func EnsureBuildDeps(versions []string) error {
 
 func ensurePSXDeps(eg *errgroup.Group) {
 	eg.Go(func() error {
+		return CargoBuild("tools/sotn_str/Cargo.toml", "")
+	})
+	eg.Go(func() error {
 		return GitSubmoduleInitAndUpdate("tools/maspsx", true)
 	})
 	eg.Go(func() error {

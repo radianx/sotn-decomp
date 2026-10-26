@@ -281,7 +281,9 @@ u16 D_us_80180B8C[] = {
     417,
 };
 
-EInit D_us_80180B90 = {8, 19, 17, 49, 79};
+// clang-format off
+EInit D_us_80180B90 = {ANIMSET_DRA(8), 0x13, 0x11, 0x031, ENEMY_FIRE_DEMON};
+// clang-format on
 
 u8 D_us_80180C28[] = {
     7, 1, 7, 2, 0, 0, 0, 0,

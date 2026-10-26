@@ -80,8 +80,7 @@ bool PcPlayMovie(int index) {
         }
         // shortcut: PSY-Z ignores RGB24; use RGB555 until it supports RGB24.
         for (int i = 0; i < 320 * 240; i++) {
-            pixels[i] = (frame[i * 3] >> 3) |
-                        ((frame[i * 3 + 1] >> 3) << 5) |
+            pixels[i] = (frame[i * 3] >> 3) | ((frame[i * 3 + 1] >> 3) << 5) |
                         ((frame[i * 3 + 2] >> 3) << 10);
         }
         LoadImage(&rect, (u_long*)pixels);

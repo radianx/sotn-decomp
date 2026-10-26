@@ -6,9 +6,9 @@ void func_us_8019DB9C(Entity* self) {
     extern EInit g_EInitDraculaLvl98;
     // !FAKE: Alias of g_Entities[81] preserves the PS1 address reuse.
 #ifdef VERSION_PC
-#define D_80076F54 (&g_Entities[81])
+#define g_DraculaParts (&g_Entities[81])
 #else
-    extern Entity D_80076F54[];
+    extern Entity g_DraculaParts[];
 #endif
     extern s32 g_CutsceneFlags;
     extern s32 D_us_801806E4;
@@ -44,23 +44,23 @@ void func_us_8019DB9C(Entity* self) {
         InitializeEntity(g_EInitDraculaLvl98);
         self->zPriority = 0x80;
         self->hitboxOffY = -4;
-        entity = D_80076F54;
+        entity = g_DraculaParts;
         for (i = 0; i < 5; i++, entity++) {
             CreateEntityFromCurrentEntity(E_UNK_19, entity);
             entity->zPriority = self->zPriority + 1;
             entity->params = i;
         }
-        CreateEntityFromCurrentEntity(E_UNK_1A, &D_80076F54[5]);
+        CreateEntityFromCurrentEntity(E_UNK_1A, &g_DraculaParts[5]);
         g_Entities[86].params = 0;
         g_Entities[86].zPriority = self->zPriority + 3;
-        CreateEntityFromCurrentEntity(E_UNK_1A, &D_80076F54[7]);
+        CreateEntityFromCurrentEntity(E_UNK_1A, &g_DraculaParts[7]);
         g_Entities[88].params = 1;
         g_Entities[88].zPriority = self->zPriority + 3;
-        self->nextPart = &D_80076F54[6];
+        self->nextPart = &g_DraculaParts[6];
         self->parent = NULL;
-        CreateEntityFromCurrentEntity(E_UNK_18, &D_80076F54[9]);
+        CreateEntityFromCurrentEntity(E_UNK_18, &g_DraculaParts[9]);
         g_Entities[90].zPriority = self->zPriority + 1;
-        entity = &D_80076F54[10];
+        entity = &g_DraculaParts[10];
         for (i = 0; i < 3; i++, entity += 6) {
             CreateEntityFromCurrentEntity(E_UNK_1C, entity);
             entity->params = i;

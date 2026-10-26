@@ -223,7 +223,7 @@ void EntityBossDoors(Entity* self) {
     }
 }
 
-static s32 UNUSED BossDoorHelper(Entity* self) {
+static UNUSED s32 BossDoorHelper(Entity* self) {
     s32 offsetY;
 
     MoveEntity();

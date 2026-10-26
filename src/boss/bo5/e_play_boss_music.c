@@ -2,14 +2,12 @@
 #include "bo5.h"
 
 extern EInit g_EInitInteractable;
-extern s32 D_us_801806DC;
-extern s32 D_us_80180B74;
+s32 D_us_80180B74 = 1;
 
-void func_us_801A4494(Entity* self) {
+void EntityPlayBossMusic(Entity* self) {
     switch (self->step) {
     case 0:
         InitializeEntity(g_EInitInteractable);
-        /* fallthrough */
     case 1:
         if (D_us_801806DC) {
             stopMusicFlag = true;

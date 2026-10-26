@@ -102,7 +102,8 @@ cleanup:
         rmdir(directory);
     }
     SDL_free(previous);
-    printf("Save/load round trip, invalid-size and truncated-file rejection: %s\n",
-           ok ? "PASS" : "FAIL");
+    printf(
+        "Save/load round trip, invalid-size and truncated-file rejection: %s\n",
+        ok ? "PASS" : "FAIL");
     return ok;
 }

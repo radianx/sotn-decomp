@@ -3,8 +3,11 @@
 Snapshot prepared on 2026-10-26 for `radianx/sotn-decomp:psx-us-complete`.
 The base is upstream commit
 [`7bc54d8157b6bed77e6bd15e5db9461a734fe1e5`](https://github.com/Xeeynamo/sotn-decomp/commit/7bc54d8157b6bed77e6bd15e5db9461a734fe1e5).
-The fork's `master` contains newer upstream work; this branch preserves the
-independently validated local snapshot without replacing that history.
+PR #1 integrates the fork's newer upstream history through
+`e056cb4c907b4433d0cf43d3417025b126e890c0`. The complete BO0 and RNO4 source
+layouts are retained; BO5 and the overlapping RDAI routines use upstream's
+canonical source layout. The integrated tree is validated again before publication. US-only builds now
+build the required string-conversion tool automatically.
 
 ## What completion means
 
@@ -75,10 +78,13 @@ historical; those scratch artifacts are not included in this branch.
 
 The US C objects were rebuilt for this snapshot and all 115 checksums passed.
 The 14 Python symbol tests, Go asset-tool suite, and 182 Rust linter tests
-passed. The native build passed all seven CTest cases, including overlay
+passed, as did all five string-tool tests and a failing-preprocessor diagnostic
+check. The native build with `ENABLE_ASAN=OFF` passed all seven CTest cases, including overlay
 loading, save/load serialization, and audio regressions. Extraction reproduced
 all 217 RBO5 sprite references and 9,536 colors across 47 weapon palette arrays
 exactly. The known replay/playthrough limitations are described in
 [native_linux.md](native_linux.md). A successful binary match or overlay
-load does not establish a complete native playthrough. Other game editions
+load does not establish a complete native playthrough. The separate sanitizer
+run exposed system Vulkan driver allocations at shutdown, documented in the
+native notes; it is not claimed as a clean sanitizer run. Other game editions
 were not built or tested.

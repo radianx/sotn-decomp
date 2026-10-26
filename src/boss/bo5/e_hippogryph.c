@@ -1,55 +1,219 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo5.h"
 
-extern EInit g_EInitInteractable;
-extern EInit D_us_801804F0;
-extern s32 D_us_801806E0;
-extern u8 D_us_80180A00[];
-extern u8 D_us_80180A0C[];
-extern u8 D_us_80180B0C[];
+s32 g_BossMgrState = BOSS_MGR_IDLE;
 
-void func_us_801A19CC(u8 arg0) {
+static s32 death_ray_speeds[] = {
+    FIX(4),      FIX(1.5),    FIX(2.8125), FIX(4.125),  FIX(3.25),
+    FIX(2.25),   FIX(1.125),  FIX(4),      FIX(4.5),    FIX(3.0625),
+    FIX(3.125),  FIX(2.9375), FIX(1.5),    FIX(4.875),  FIX(3.25),
+    FIX(3.0625), FIX(4),      FIX(4.5),    FIX(2.8125), FIX(3),
+    FIX(3.25),   FIX(4.25),   FIX(1.5),    FIX(3),      FIX(4.5),
+    FIX(1.9375), FIX(3.125),  FIX(4.9375), FIX(4),      FIX(2.25),
+    FIX(4.25),   FIX(3.0625), FIX(4),      FIX(1.5),    FIX(2.8125),
+    FIX(4.125),  FIX(3.25),   FIX(2.25),   FIX(1.125),  FIX(4),
+    FIX(4.5),    FIX(3.0625), FIX(3.125),  FIX(2.9375), FIX(1.5),
+    FIX(4.875),  FIX(3.25),   FIX(3.0625), FIX(4),      FIX(4.5),
+    FIX(2.8125), FIX(3),      FIX(3.25),   FIX(4.25),   FIX(1.5),
+    FIX(3),      FIX(4.5),    FIX(1.9375), FIX(3.125),  FIX(4.9375),
+    FIX(4),      FIX(2.25),   FIX(4.25),   FIX(3.0625)};
+static s32 death_particle_speeds[] = {
+    FIX(3),    FIX(1.5),  FIX(2.8125), FIX(3.125),
+    FIX(2.25), FIX(2.25), FIX(1.125),  FIX(3.5)};
+static AnimateEntityFrame anim_prepare_spit_fire[] = {
+    POSE(5, 54, 0), POSE(5, 55, 0), POSE(5, 56, 0), POSE(5, 57, 0),
+    POSE(5, 58, 0), POSE(3, 59, 0), POSE(3, 60, 0), POSE(3, 61, 0),
+    POSE(3, 60, 0), POSE(3, 59, 0), POSE(5, 58, 0), POSE(5, 57, 0),
+    POSE(5, 56, 0), POSE(5, 55, 0), POSE(5, 54, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_run[] = {
+    POSE(8, 1, 0), POSE(8, 2, 0), POSE(8, 3, 0),
+    POSE(8, 4, 0), POSE(8, 5, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_flap[] = {
+    POSE(2, 6, 0),  POSE(6, 7, 0),  POSE(8, 8, 0),
+    POSE(8, 9, 0),  POSE(6, 10, 0), POSE(5, 11, 0),
+    POSE(7, 12, 0), POSE(6, 13, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_hover[] = {
+    POSE(2, 6, 0),  POSE(4, 7, 0),  POSE(4, 8, 0),
+    POSE(4, 9, 0),  POSE(3, 10, 0), POSE(3, 11, 0),
+    POSE(4, 12, 0), POSE(3, 13, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_fire_breath[] = {
+    POSE(4, 26, 0), POSE(3, 25, 0), POSE(2, 24, 0), POSE(2, 23, 0),
+    POSE(2, 14, 0), POSE(2, 15, 0), POSE(2, 16, 0), POSE(4, 17, 0),
+    POSE(4, 18, 0), POSE(4, 19, 0), POSE(4, 20, 0), POSE(7, 21, 0),
+    POSE(8, 22, 0), POSE(9, 23, 0), POSE(7, 24, 0), POSE(4, 25, 0),
+    POSE(2, 26, 0), POSE(2, 27, 0), POSE(7, 28, 0), POSE(7, 29, 0),
+    POSE(7, 30, 0), POSE_END};
+static AnimateEntityFrame anim_glide[] = {
+    POSE(1, 33, 0), POSE(2, 34, 0), POSE(3, 35, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_grab_approach[] = {
+    POSE(6, 36, 0), POSE(6, 37, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_grab[] = {
+    POSE(6, 38, 0), POSE(6, 39, 0), POSE(16, 40, 0), POSE_END};
+static AnimateEntityFrame anim_grab_lift[] = {
+    POSE(3, 41, 0), POSE(3, 42, 0), POSE(3, 43, 0), POSE(3, 44, 0),
+    POSE(3, 45, 0), POSE(3, 46, 0), POSE(3, 47, 0), POSE_END};
+static AnimateEntityFrame anim_grab_carry[] = {
+    POSE(6, 41, 0), POSE(6, 42, 0), POSE(6, 43, 0), POSE(6, 44, 0),
+    POSE(6, 45, 0), POSE(6, 46, 0), POSE(6, 47, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_takeoff[] = {
+    POSE(2, 55, 0), POSE(2, 56, 0), POSE(2, 57, 0), POSE(2, 58, 0),
+    POSE(2, 27, 0), POSE(2, 26, 0), POSE(1, 41, 0), POSE(5, 42, 0),
+    POSE(5, 43, 0), POSE(1, 49, 0), POSE_END};
+static AnimateEntityFrame anim_takeoff_end[] = {
+    POSE(6, 50, 0), POSE(6, 51, 0), POSE(6, 52, 0), POSE(6, 53, 0),
+    POSE(1, 6, 0),  POSE(1, 8, 0),  POSE(1, 9, 0),  POSE(1, 10, 0),
+    POSE(1, 11, 0), POSE(1, 12, 0), POSE(2, 13, 0), POSE(4, 6, 0),
+    POSE(4, 8, 0),  POSE(4, 9, 0),  POSE(3, 10, 0), POSE(3, 11, 0),
+    POSE(3, 12, 0), POSE(4, 13, 0), POSE_END};
+static AnimateEntityFrame anim_charge[] = {
+    POSE(6, 54, 0), POSE(6, 55, 0), POSE(6, 56, 0), POSE(6, 57, 0),
+    POSE(6, 58, 0), POSE(4, 59, 0), POSE(4, 60, 0), POSE(4, 61, 0),
+    POSE(4, 62, 0), POSE(6, 63, 0), POSE(6, 64, 0), POSE(6, 65, 0),
+    POSE(7, 66, 0), POSE(7, 67, 0), POSE(7, 68, 0), POSE_END};
+static AnimateEntityFrame anim_idle[] = {
+    POSE(10, 69, 0), POSE(10, 70, 0), POSE(10, 71, 0),
+    POSE(10, 72, 0), POSE(10, 73, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_knockback[] = {
+    POSE(5, 74, 0), POSE(4, 75, 0), POSE(4, 76, 0), POSE(4, 77, 0),
+    POSE(4, 78, 0), POSE(4, 79, 0), POSE_END};
+static AnimateEntityFrame anim_dive[] = {
+    POSE(6, 81, 0), POSE(6, 82, 0), POSE(6, 83, 0), POSE(6, 84, 0), POSE_END};
+static AnimateEntityFrame anim_dive_land[] = {
+    POSE(6, 84, 0), POSE(6, 85, 0), POSE(7, 86, 0), POSE(9, 87, 0),
+    POSE_LOOP(0)};
+static AnimateEntityFrame anim_land[] = {
+    POSE(2, 100, 0), POSE(3, 99, 0), POSE(4, 98, 0), POSE(4, 97, 0),
+    POSE(5, 96, 0),  POSE(6, 95, 0), POSE(5, 94, 0), POSE(4, 93, 0),
+    POSE(4, 92, 0),  POSE(2, 91, 0), POSE(4, 97, 0), POSE(10, 88, 0),
+    POSE(15, 89, 0), POSE_END};
+static AnimateEntityFrame anim_swoop_land[] = {
+    POSE(3, 90, 0),  POSE(3, 91, 0),  POSE(3, 92, 0),  POSE(3, 93, 0),
+    POSE(3, 94, 0),  POSE(4, 95, 0),  POSE(3, 96, 0),  POSE(2, 97, 0),
+    POSE(2, 98, 0),  POSE(2, 99, 0),  POSE(2, 100, 0), POSE(3, 101, 0),
+    POSE(5, 102, 0), POSE(8, 103, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_lay_eggs[] = {
+    POSE(6, 69, 0), POSE(6, 70, 0),  POSE(6, 71, 0), POSE(6, 72, 0),
+    POSE(6, 73, 0), POSE(8, 67, 0),  POSE(8, 68, 0), POSE(8, 49, 0),
+    POSE(8, 77, 0), POSE(10, 78, 0), POSE(6, 91, 0), POSE(6, 92, 0),
+    POSE(6, 93, 0), POSE(6, 94, 0),  POSE(6, 95, 0), POSE(6, 96, 0),
+    POSE(6, 97, 0), POSE(6, 98, 0),  POSE(3, 69, 0), POSE(3, 70, 0),
+    POSE_END};
+AnimateEntityFrame anim_dead[] = {
+    POSE(12, 110, 0), POSE(11, 111, 0), POSE(10, 112, 0), POSE(9, 113, 0),
+    POSE(8, 114, 0),  POSE(7, 115, 0),  POSE(6, 116, 0),  POSE(5, 120, 0),
+    POSE(5, 121, 0),  POSE(7, 122, 0),  POSE(8, 123, 0),  POSE(10, 124, 0),
+    POSE(10, 125, 0), POSE(52, 126, 0), POSE_END};
+static AnimateEntityFrame anim_dead_fade[] = {
+    POSE(5, 54, 0), POSE(5, 55, 0), POSE(5, 56, 0), POSE(5, 57, 0),
+    POSE(5, 58, 0), POSE(5, 59, 0), POSE(5, 60, 0), POSE(5, 61, 0),
+    POSE(5, 60, 0), POSE(5, 59, 0), POSE_END};
+static AnimateEntityFrame anim_egg_idle[] = {
+    POSE(24, 104, 0), POSE(24, 105, 0), POSE(24, 106, 0), POSE_END};
+static AnimateEntityFrame anim_egg_fly[] = {
+    POSE(8, 107, 0), POSE(8, 108, 0), POSE(8, 109, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_fire_grow[] = {
+    POSE(2, 1, 0), POSE(2, 2, 0), POSE(2, 3, 0), POSE(2, 2, 0), POSE_LOOP(0)};
+static AnimateEntityFrame anim_fire_fade[] = {
+    POSE(2, 4, 0), POSE(2, 5, 0), POSE(2, 6, 0), POSE(2, 7, 0), POSE_END};
+static AnimateEntityFrame anim_fire_spark[] = {
+    POSE(2, 1, 0), POSE(2, 2, 0), POSE(2, 3, 0), POSE(2, 2, 0), POSE(2, 3, 0),
+    POSE(2, 4, 0), POSE(2, 5, 0), POSE(2, 6, 0), POSE(2, 7, 0), POSE_END};
+static AnimateEntityFrame anim_feather_fall[] = {
+    POSE(4, 127, 0), POSE(5, 128, 0), POSE(6, 129, 0), POSE(7, 130, 0),
+    POSE(8, 131, 0), POSE(7, 132, 0), POSE(6, 133, 0), POSE(5, 134, 0),
+    POSE(4, 135, 0), POSE(3, 136, 0), POSE(2, 137, 0), POSE(2, 138, 0),
+    POSE_LOOP(0)};
+static AnimateEntityFrame anim_feather_sway[] = {
+    POSE(30, 139, 0), POSE(8, 140, 0), POSE(30, 141, 0), POSE(8, 140, 0),
+    POSE_LOOP(0)};
+static AnimateEntityFrame anim_unused[] = {
+    POSE(2, 64, 0),   POSE(32, 15, 0),  POSE(15, 2, 0),   POSE(80, 32, 0),
+    POSE(241, 15, 0), POSE(2, 80, 0),   POSE(32, 241, 0), POSE(15, 0, 0),
+    POSE(2, 96, 0),   POSE(32, 241, 0), POSE(15, 1, 0),   POSE(96, 32, 0),
+    POSE(15, 15, 0),  POSE(1, 112, 0),  POSE(32, 241, 0), POSE(15, 1, 0),
+    POSE(112, 32, 0), POSE(15, 15, 0),  POSE_LOOP(0),     POSE_LOOP(0),
+    POSE(2, 64, 0),   POSE(32, 15, 0),  POSE(15, 2, 0),   POSE(80, 32, 0),
+    POSE(241, 15, 0), POSE(2, 80, 0),   POSE(32, 15, 0),  POSE(15, 2, 0),
+    POSE(80, 32, 0),  POSE(241, 15, 0), POSE(2, 80, 0),   POSE(32, 15, 0),
+    POSE(15, 2, 0),   POSE(96, 32, 0),  POSE(241, 15, 0), POSE(2, 96, 0),
+    POSE(32, 15, 0),  POSE(15, 2, 0),   POSE(112, 32, 0), POSE(241, 15, 0),
+    POSE(2, 112, 0),  POSE(32, 15, 0),  POSE(15, 255, 0), POSE_LOOP(0)};
+static s16 sensors_floor[] = {0, 25, 0, 4, 12, -4, -24, 0};
+static s16 sensors_egg[] = {0, 7, 0, 4, 8, -4, -16, 0};
+static s16 sensors_feather[] = {0, 7, 0, 4, 8, -4, -16, 0};
+static s16 collider_ground[] = {0, 64, 255, 0};
+static s16 collider_front[] = {48, 28, 255, 0};
+
+enum {
+    STEP_INIT,
+    STEP_IDLE,
+    STEP_2,
+    STEP_PREPARE_SPIT_FIRE,
+    STEP_TAKEOFF,
+    STEP_FLY = 6,
+    STEP_RETURN_TO_GROUND = 8,
+    STEP_10 = 10,
+    STEP_12 = 12,
+    STEP_RUN = 13,
+    STEP_CHARGE = 16,
+    STEP_GRAB = 18,
+    STEP_LAY_EGGS = 20,
+    STEP_22 = 22,
+    STEP_HIT = 32,
+    STEP_DYING = 34,
+    STEP_DEAD = 36,
+    STEP_48 = 48,
+    STEP_50 = 50,
+    STEP_130 = 130,
+};
+
+static u8 attack_steps[] = {
+    STEP_12,      STEP_TAKEOFF, STEP_12,      STEP_TAKEOFF,
+    STEP_12,      STEP_12,      STEP_TAKEOFF, STEP_LAY_EGGS,
+    STEP_TAKEOFF, STEP_12,      STEP_CHARGE,  STEP_RUN,
+    STEP_RUN,     STEP_CHARGE,  STEP_RUN,     STEP_RUN};
+s16 D_us_80180AFC[] = {22, 18, 6, 8, -10, 18, -26, 20};
+
+static void SetHippogryphStep(u8 step) {
     g_CurrentEntity->poseTimer = 0;
     g_CurrentEntity->pose = 0;
-    g_CurrentEntity->ext.et_801A19CC.unk7D = 0;
-    g_CurrentEntity->step = arg0;
+    g_CurrentEntity->ext.hippogryph.unk7D = 0;
+    g_CurrentEntity->step = step;
     g_CurrentEntity->step_s = 0;
 }
 
-void func_us_801A19FC(u8 count, s16 yOffset) {
+void func_us_801A19FC(u8 count, s16 posY) {
     Entity* entity;
     s32 i;
-    s32 offsetY;
 
     for (i = 0; i < count; i++) {
         entity = AllocEntity(&g_Entities[224], &g_Entities[256]);
-        if (entity != NULL) {
+        if (entity) {
             DestroyEntity(entity);
-            MakeEntityFromId(E_UNK_22, g_CurrentEntity, entity);
+            MakeEntityFromId(E_ID(HIPPOGRYPH), g_CurrentEntity, entity);
             entity->flags =
                 FLAG_DESTROY_IF_OUT_OF_CAMERA |
                 FLAG_DESTROY_IF_BARELY_OUT_OF_CAMERA | FLAG_POS_CAMERA_LOCKED |
                 FLAG_UNK_00200000 | FLAG_UNK_2000;
             entity->posX.i.hi += (Random() & 0x3F) - 0x20;
-            offsetY = Random() & 0x3F;
-            entity->posY.i.hi += offsetY + (s16)(yOffset - 0x20);
+            entity->posY.i.hi += (Random() & 0x3F) - 0x20 + posY;
             entity->velocityY = -FIX(0.25);
             if (Random() & 1) {
                 entity->zPriority++;
             }
-            entity->step = 48;
+            entity->step = STEP_48;
             entity->params = Random() & 1;
             if (entity->params) {
-                entity->step = 50;
+                entity->step = STEP_50;
                 if (Random() & 1) {
-                    entity->ext.et_801A19CC.accelerationX = 0xD00;
-                    entity->velocityX = FIX(-0.8125);
+                    entity->ext.hippogryph.unk8C = 0xD00;
+                    entity->velocityX = -FIX(0.8125);
                 } else {
-                    entity->ext.et_801A19CC.accelerationX = -0xD00;
+                    entity->ext.hippogryph.unk8C = -0xD00;
                     entity->velocityX = FIX(0.8125);
                 }
             }
-            if (g_CurrentEntity->step == 22) {
+            if (g_CurrentEntity->step == STEP_22) {
                 if (g_CurrentEntity->facingLeft) {
                     g_CurrentEntity->velocityX += FIX(0.25);
                 } else {
@@ -77,68 +241,28 @@ bool CheckHippogryphFloorCollision(s16* sensors) {
     }
 }
 
-extern EInit g_EInitHippogryph;
-extern s32 D_us_801806DC;
-extern s32 D_us_801806E4[];
-extern s32 D_us_801807E4[];
-extern u8 D_us_80180804[];
-extern u8 D_us_80180824[];
-extern u8 D_us_80180830[];
-extern u8 D_us_80180844[];
-extern u8 D_us_80180858[];
-extern u8 D_us_80180884[];
-extern u8 D_us_8018088C[];
-extern u8 D_us_80180894[];
-extern u8 D_us_8018089C[];
-extern u8 D_us_801808AC[];
-extern u8 D_us_801808BC[];
-extern u8 D_us_801808D4[];
-extern u8 D_us_801808FC[];
-extern u8 D_us_8018091C[];
-extern u8 D_us_80180928[];
-extern u8 D_us_80180938[];
-extern u8 D_us_80180944[];
-extern u8 D_us_80180950[];
-extern u8 D_us_8018096C[];
-extern u8 D_us_8018098C[];
-extern u8 D_us_801809D8[];
-extern u8 D_us_80180A2C[];
-extern u8 D_us_80180A48[];
-extern s16 D_us_80180AAC[];
-extern s16 D_us_80180ACC[];
-extern s16 D_us_80180ADC[];
-extern s16 D_us_80180AE4[];
-extern u8 D_us_80180AEC[];
 extern s32 D_us_80180B74;
-void func_us_801A3B88(Entity* self);
+extern EInit g_EInitHippogryph;
 
-// !FAKE: Reserved words preserve the original fixed-point scratch offsets.
-typedef struct {
-    s32 radialVelocity;
-    s32 : 32;
-    s32 : 32;
-    s32 radius;
-    s32 posX;
-    s32 posY;
-    s32 velocityX;
-    s32 velocityY;
-} HippogryphDeathScratch;
+void EntityFireBreath(Entity* self);
 
-void func_us_801A1C14(Entity* self) {
-    HippogryphDeathScratch scratch;
+void EntityHippogryph(Entity* self) {
+    s32 primIndex;
+    Pos tmp;
+    Pos tmp2;
+    Pos pos;
+    Pos vel;
     Entity* entity;
-    Entity* pool;
+    Entity* player;
     Primitive* prim;
-    s32 i;
     s32 x;
     s32 y;
-    s16 primIndex;
     u8 count;
-    s32 value;
-    s32 angle;
+    s32 i;
+    s32 dist;
+    u8 angle;
 
     entity = &PLAYER;
-
     if (self->hitParams && (self->step & 1)) {
         if (self->facingLeft) {
             self->velocityX = -FIX(1.5);
@@ -146,64 +270,66 @@ void func_us_801A1C14(Entity* self) {
             self->velocityX = FIX(1.5);
         }
         self->velocityY = -FIX(4);
-        func_us_801A19CC(32);
+        SetHippogryphStep(STEP_HIT);
     }
-    if ((self->flags & FLAG_DEAD) && self->step < 34) {
+    if ((self->flags & FLAG_DEAD) && self->step < STEP_DYING) {
         self->hitboxState = 0;
-        HIH(self->velocityX) = 0;
-        HIH(self->velocityY) = 0;
-        self->ext.et_801A19CC.unk7C = 0;
+        HIH(self->velocityX) = 0; // equivalent of i.hi = 0
+        HIH(self->velocityY) = 0; // equivalent of i.hi = 0
+        self->ext.hippogryph.flyTimer = 0;
         self->animCurFrame = 0x6E;
-        if (self->ext.et_801A19CC.entity != NULL) {
-            DestroyEntity(self->ext.et_801A19CC.entity);
+        if (self->ext.hippogryph.unk94) {
+            DestroyEntity(self->ext.hippogryph.unk94);
         }
         if (self->flags & FLAG_HAS_PRIMS) {
-            g_api.FreePrimitives(self->primIndex);
+            primIndex = self->primIndex;
+            g_api.FreePrimitives(primIndex);
             self->flags &= ~FLAG_HAS_PRIMS;
         }
-        func_us_801A19CC(36);
+        SetHippogryphStep(STEP_DEAD);
     }
+
     switch (self->step) {
-    case 0:
+    case STEP_INIT:
         InitializeEntity(g_EInitHippogryph);
-        self->ext.et_801A19CC.originalPriority = self->zPriority;
+        self->ext.hippogryph.zPriority = self->zPriority;
         self->zPriority = entity->zPriority + 1;
         self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-        self->ext.et_801A19CC.unk7D = 1;
+        self->ext.hippogryph.unk7D = 1;
         break;
-    case 1:
+    case STEP_IDLE:
         self->hitboxState = 0;
-        AnimateEntity(D_us_8018091C, self);
-        if (self->ext.et_801A19CC.unk7D && GetDistanceToPlayerX() < 128) {
-            func_us_801A19CC(3);
+        AnimateEntity(anim_idle, self);
+        if (self->ext.hippogryph.unk7D && GetDistanceToPlayerX() < 128) {
+            SetHippogryphStep(STEP_PREPARE_SPIT_FIRE);
             if (!D_us_801806DC) {
                 g_api.TimeAttackController(
                     TIMEATTACK_EVENT_HYPPOGRYPH_DEFEAT, TIMEATTACK_SET_VISITED);
             }
+            D_us_801806DC |= 1;
             self->hitboxState = 3;
             self->nextPart = self + 1;
-            D_us_801806DC |= 1;
-            CreateEntityFromEntity(E_UNK_23, self, self + 1);
+            CreateEntityFromEntity(E_ID(UNK_23), self, self + 1);
         }
         break;
-    case 3:
-        if (!AnimateEntity(D_us_80180804, self)) {
-            func_us_801A19CC(4);
+    case STEP_PREPARE_SPIT_FIRE:
+        if (!AnimateEntity(anim_prepare_spit_fire, self)) {
+            SetHippogryphStep(STEP_TAKEOFF);
         }
         break;
-    case 4:
+    case STEP_TAKEOFF:
         switch (self->step_s) {
         case 0:
-            if (!AnimateEntity(D_us_801808BC, self)) {
+            if (!AnimateEntity(anim_takeoff, self)) {
                 self->animCurFrame = 0x31;
                 self->velocityY = -FIX(5);
-                self->ext.et_801A19CC.unk7C = 4;
-                self->ext.et_801A19CC.unk7D = 0;
+                self->ext.hippogryph.flyTimer = 4;
+                self->ext.hippogryph.unk7D = 0;
                 self->step_s++;
             }
-            if (self->animCurFrame == 0x29 && !self->ext.et_801A19CC.unk7D) {
+            if (self->animCurFrame == 0x29 && !self->ext.hippogryph.unk7D) {
                 func_us_801A19FC(4, 0);
-                self->ext.et_801A19CC.unk7D = 1;
+                self->ext.hippogryph.unk7D = 1;
                 if (self->facingLeft) {
                     self->velocityX = FIX(0.375);
                 } else {
@@ -211,48 +337,49 @@ void func_us_801A1C14(Entity* self) {
                 }
                 self->posY.i.hi -= 4;
             }
-            if (self->ext.et_801A19CC.unk7D) {
+            if (self->ext.hippogryph.unk7D) {
                 MoveEntity();
-                if (self->animCurFrame >= 0x2A && self->animCurFrame <= 0x2B) {
+                if (self->animCurFrame == 0x2A || self->animCurFrame == 0x2B) {
                     self->velocityY -= FIX(0.375);
                 }
             }
             y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
-            if (y < 114) {
+            if (y < 0x72) {
                 self->animCurFrame = 0x31;
                 self->velocityY = -FIX(4.5);
-                self->ext.et_801A19CC.unk7D = 0;
+                self->ext.hippogryph.unk7D = 0;
                 self->step_s = 2;
             }
             break;
         case 1:
             MoveEntity();
             self->velocityY += FIX(0.1171875);
-            if (!--self->ext.et_801A19CC.unk7C) {
+            if (!--self->ext.hippogryph.flyTimer) {
                 self->pose = 0;
-                self->ext.et_801A19CC.unk7C = 0;
+                self->ext.hippogryph.flyTimer = 0;
                 self->step_s++;
             }
             y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
-            if (y < 114) {
+            if (y < 0x72) {
                 self->animCurFrame = 0x31;
                 self->velocityY = -FIX(4.5);
-                self->ext.et_801A19CC.unk7D = 0;
+                self->ext.hippogryph.unk7D = 0;
                 self->step_s = 2;
             }
             break;
+
         case 2:
             MoveEntity();
             self->velocityY += FIX(0.125);
-            if (!AnimateEntity(D_us_801808D4, self)) {
-                func_us_801A19CC(6);
+            if (!AnimateEntity(anim_takeoff_end, self)) {
+                SetHippogryphStep(STEP_FLY);
             }
             break;
         }
         break;
-    case 6:
+    case STEP_FLY:
         if (!self->step_s) {
-            self->ext.et_801A19CC.unk7C = 80;
+            self->ext.hippogryph.flyTimer = 0x50;
             if (self->facingLeft) {
                 self->velocityX = FIX(1.75);
             } else {
@@ -262,33 +389,33 @@ void func_us_801A1C14(Entity* self) {
             self->step_s++;
         }
         MoveEntity();
-        AnimateEntity(D_us_80180830, self);
-        if (*(s32*)&self->pose == 1) {
+        AnimateEntity(anim_flap, self);
+        if (!self->poseTimer && self->pose == 1) {
             PlaySfxPositional(SFX_HIPPOGRYPH_WING_FLAP);
         }
-        if (self->animCurFrame >= 6 && self->animCurFrame <= 7) {
+        if (self->animCurFrame == 6 || self->animCurFrame == 7) {
             self->velocityY -= FIX(0.15625);
         } else {
             self->velocityY += FIX(0.0546875);
         }
-        if (!--self->ext.et_801A19CC.unk7C) {
+        if (!--self->ext.hippogryph.flyTimer) {
             x = self->posX.i.hi + g_Tilemap.scrollX.i.hi;
             if (self->velocityX < 0) {
-                x = 512 - x;
+                x = 0x200 - x;
             }
-            if (GetDistanceToPlayerX() > 80 && x < 144) {
+            if (GetDistanceToPlayerX() > 80 && x < 0x90) {
                 self->velocityX = 0;
                 self->velocityY = 0;
-                func_us_801A19CC(22);
-            } else if (x < 384) {
-                func_us_801A19CC(8);
+                SetHippogryphStep(STEP_22);
+            } else if (x < 0x180) {
+                SetHippogryphStep(STEP_RETURN_TO_GROUND);
             } else {
                 self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-                func_us_801A19CC(6);
+                SetHippogryphStep(STEP_FLY);
             }
         }
         break;
-    case 8:
+    case STEP_RETURN_TO_GROUND:
         switch (self->step_s) {
         case 0:
             if (self->facingLeft) {
@@ -300,118 +427,116 @@ void func_us_801A1C14(Entity* self) {
             self->step_s++;
             // fallthrough
         case 1:
-            if (!AnimateEntity(D_us_80180938, self)) {
+            if (!AnimateEntity(anim_dive, self)) {
                 self->pose = 0;
                 self->poseTimer = 0;
                 self->step_s++;
             }
             MoveEntity();
-            if ((y = self->posY.i.hi + g_Tilemap.scrollY.i.hi) > 136) {
+            y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
+            if (y > 0x88) {
                 self->pose = 0;
                 self->poseTimer = 0;
                 self->step_s = 2;
             }
             break;
         case 2:
-            AnimateEntity(D_us_80180944, self);
+            AnimateEntity(anim_dive_land, self);
             MoveEntity();
-            if (CheckColliderOffsets(D_us_80180ADC, 0)) {
+            if (CheckColliderOffsets(collider_ground, 0)) {
                 self->pose = 0;
                 self->poseTimer = 0;
-                self->ext.et_801A19CC.unk7D = 0;
+                self->ext.hippogryph.unk7D = 0;
                 self->step_s++;
             }
             break;
         case 3:
-            if ((CheckHippogryphFloorCollision(D_us_80180AAC) & 1) &&
-                !self->ext.et_801A19CC.unk7D) {
-                self->ext.et_801A19CC.unk7D = 1;
+            if ((CheckHippogryphFloorCollision(sensors_floor) & 1) &&
+                !self->ext.hippogryph.unk7D) {
+                self->ext.hippogryph.unk7D = 1;
             }
             self->velocityY -= FIX(0.484375);
             if (self->velocityY <= FIX(0.5)) {
                 self->velocityY = FIX(0.5);
             }
-            if (!AnimateEntity(D_us_80180950, self) &&
-                self->ext.et_801A19CC.unk7D) {
-                func_us_801A19CC(10);
-                self->ext.et_801A19CC.unk7D = 0;
+            if (!AnimateEntity(anim_land, self) && self->ext.hippogryph.unk7D) {
+                SetHippogryphStep(STEP_10);
+                self->ext.hippogryph.unk7D = 0;
             }
             break;
         }
         break;
-    case 10:
+    case STEP_10:
         self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-        x = Random() & 7;
-        count = x;
-        value = GetDistanceToPlayerX();
-        if (value > 80) {
+        count = Random() & 7;
+        dist = GetDistanceToPlayerX();
+        if (dist > 80) {
             count += 4;
         }
-        if (value > 128) {
+        if (dist > 128) {
             count += 4;
         }
-        func_us_801A19CC(D_us_80180AEC[count]);
+        SetHippogryphStep(attack_steps[count]);
         break;
-    case 12:
+    case STEP_12:
         switch (self->step_s) {
         case 0:
-            if (!AnimateEntity(D_us_80180858, self)) {
-                self->ext.et_801A19CC.unk7C = 64;
+            if (!AnimateEntity(anim_fire_breath, self)) {
                 self->step_s++;
+                self->ext.hippogryph.flyTimer = 0x40;
                 PlaySfxPositional(SFX_HIPPOGRYPH_FIRE_ATTACK);
             }
-            if (*(s32*)&self->pose == 4) {
+            if (!self->poseTimer && self->pose == 4) {
                 PlaySfxPositional(SFX_ELECTRICITY);
             }
             break;
         case 1:
-            if (self->ext.et_801A19CC.unk7C & 1) {
+            if (self->ext.hippogryph.flyTimer % 2) {
                 entity = AllocEntity(&g_Entities[224], &g_Entities[256]);
-                if (entity != NULL) {
-                    CreateEntityFromEntity(E_UNK_27, self, entity);
-                    entity->pfnUpdate = func_us_801A3B88;
+                if (entity) {
+                    CreateEntityFromEntity(E_ID(FIRE_BREATH), self, entity);
+                    entity->pfnUpdate = EntityFireBreath;
                     entity->facingLeft = self->facingLeft;
                     if (self->facingLeft) {
-                        entity->posX.i.hi += 29;
+                        entity->posX.i.hi += 0x1D;
                     } else {
-                        entity->posX.i.hi -= 29;
+                        entity->posX.i.hi -= 0x1D;
                     }
                     entity->posY.i.hi -= 2;
-                    entity->params = self->ext.et_801A19CC.unk7D;
+                    entity->params = self->ext.hippogryph.unk7D;
                 }
-                pool = &g_Entities[224];
-                if (self->ext.et_801A19CC.unk7D) {
-                    pool = g_Entities;
-                    pool += 160;
+                if (self->ext.hippogryph.unk7D) {
+                    entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
+                } else {
+                    entity = AllocEntity(&g_Entities[224], &g_Entities[256]);
                 }
-                entity = AllocEntity(pool, pool + 32);
-                if (entity != NULL) {
+                if (entity) {
                     DestroyEntity(entity);
-                    CreateEntityFromEntity(E_UNK_27, self, entity);
-                    entity->pfnUpdate = func_us_801A3B88;
+                    CreateEntityFromEntity(E_ID(FIRE_BREATH), self, entity);
+                    entity->pfnUpdate = EntityFireBreath;
                     entity->facingLeft = self->facingLeft;
                     if (self->facingLeft) {
-                        entity->posX.i.hi += 29;
+                        entity->posX.i.hi += 0x1D;
                     } else {
-                        entity->posX.i.hi -= 29;
+                        entity->posX.i.hi -= 0x1D;
                     }
-                    entity->params = 2;
                     entity->posY.i.hi -= 2;
-                    entity->params = self->ext.et_801A19CC.unk7D + 2;
+                    entity->params = 2;
+                    entity->params += self->ext.hippogryph.unk7D;
                 }
-                self->ext.et_801A19CC.unk7D ^= 1;
+                self->ext.hippogryph.unk7D ^= 1;
             }
-            if (!--self->ext.et_801A19CC.unk7C) {
-                self->ext.et_801A19CC.unk7D = 0;
-                func_us_801A19CC(10);
+            if (!--self->ext.hippogryph.flyTimer) {
+                self->ext.hippogryph.unk7D = 0;
+                SetHippogryphStep(STEP_10);
             }
             break;
         }
         break;
-    case 13:
-        if (!self->ext.et_801A19CC.unk7D) {
-            self->ext.et_801A19CC.unk7D = 1;
-            self->ext.et_801A19CC.unk7C = 128;
+    case STEP_RUN:
+        if (!self->ext.hippogryph.unk7D) {
+            self->ext.hippogryph.unk7D = 1;
+            self->ext.hippogryph.flyTimer = 0x80;
             if (self->facingLeft) {
                 self->velocityX = FIX(1.25);
             } else {
@@ -420,7 +545,7 @@ void func_us_801A1C14(Entity* self) {
             self->velocityY = 0;
         }
         MoveEntity();
-        AnimateEntity(D_us_80180824, self);
+        AnimateEntity(anim_run, self);
         if (self->animCurFrame == 5) {
             if (!self->poseTimer) {
                 PlaySfxPositional(SFX_STOMP_HARD_A);
@@ -440,32 +565,32 @@ void func_us_801A1C14(Entity* self) {
         }
         x = self->posX.i.hi + g_Tilemap.scrollX.i.hi;
         if (self->facingLeft) {
-            if (x > 384) {
+            if (x > 0x180) {
                 self->facingLeft = 0;
                 self->velocityX = -FIX(1.25);
                 self->pose = 0;
                 self->poseTimer = 0;
             }
-        } else if (x < 128) {
+        } else if (x < 0x80) {
             self->facingLeft = 1;
             self->velocityX = FIX(1.25);
             self->pose = 0;
             self->poseTimer = 0;
         }
-        if (!CheckColliderOffsets(D_us_80180AE4, self->facingLeft)) {
+        if (!CheckColliderOffsets(collider_front, self->facingLeft)) {
             self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-            func_us_801A19CC(4);
+            SetHippogryphStep(STEP_TAKEOFF);
         }
-        if (!--self->ext.et_801A19CC.unk7C) {
-            func_us_801A19CC(10);
+        if (!--self->ext.hippogryph.flyTimer) {
+            SetHippogryphStep(STEP_10);
         }
         break;
-    case 16:
+    case STEP_CHARGE:
         switch (self->step_s) {
         case 0:
-            if (!AnimateEntity(D_us_801808FC, self)) {
+            if (!AnimateEntity(anim_charge, self)) {
                 func_us_801A19FC(4, 0);
-                self->ext.et_801A19CC.unk7C = 64;
+                self->ext.hippogryph.flyTimer = 0x40;
                 if (self->facingLeft) {
                     self->velocityX = FIX(4.5);
                 } else {
@@ -478,51 +603,54 @@ void func_us_801A1C14(Entity* self) {
                 self->step_s++;
             }
             break;
+
         case 1:
-            if (self->ext.et_801A19CC.unk7C < 32) {
-                AnimateEntity(D_us_80180884, self);
+            if (self->ext.hippogryph.flyTimer < 0x20) {
+                AnimateEntity(anim_glide, self);
             }
             MoveEntity();
-            self->velocityY -= FIX(0.0625);
-            if ((y = self->posY.i.hi + g_Tilemap.scrollY.i.hi) < 72) {
+            self->velocityY -= FIX(1.0 / 16);
+            y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
+            if (y < 0x48) {
                 self->step_s++;
             }
             break;
+
         case 2:
             self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-            func_us_801A19CC(6);
+            SetHippogryphStep(STEP_FLY);
             break;
         }
         break;
-    case 20:
-        if (!AnimateEntity(D_us_8018098C, self)) {
-            self->ext.et_801A19CC.unk7D = 0;
+    case STEP_LAY_EGGS:
+        if (!AnimateEntity(anim_lay_eggs, self)) {
+            self->ext.hippogryph.unk7D = 0;
             self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-            func_us_801A19CC(4);
+            SetHippogryphStep(STEP_TAKEOFF);
         }
-        if (self->animCurFrame == 0x4D && !self->ext.et_801A19CC.unk7D) {
-            self->ext.et_801A19CC.unk7D = 1;
-            count = (Random() & 1) | 2;
+        if (self->animCurFrame == 0x4D && !self->ext.hippogryph.unk7D) {
+            self->ext.hippogryph.unk7D = 1;
+            count = (Random() & 1) + 2;
             for (i = 0; i < count; i++) {
                 entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
-                if (entity != NULL) {
-                    CreateEntityFromEntity(E_UNK_25, self, entity);
-                    entity->ext.et_801A3FD4.timer = (Random() & 0x1F) - 0x40;
+                if (entity) {
+                    CreateEntityFromEntity(E_ID(HIPPOGRYPH_EGG), self, entity);
+                    entity->ext.hippogryphEgg.timer = (Random() & 0x1F) + 0xC0;
                     if (self->facingLeft) {
-                        entity->velocityX = i * -FIX(0.5) + FIX(0.5);
-                        entity->posX.i.hi -= 16;
+                        entity->posX.i.hi -= 0x10;
+                        entity->velocityX = -i * FIX(0.5) + FIX(0.5);
                     } else {
-                        entity->velocityX = -FIX(0.5) + i * FIX(0.5);
-                        entity->posX.i.hi += 16;
+                        entity->posX.i.hi += 0x10;
+                        entity->velocityX = i * FIX(0.5) - FIX(0.5);
                     }
                 }
             }
         }
         break;
-    case 18:
+    case STEP_GRAB:
         switch (self->step_s) {
         case 0:
-            AnimateEntity(D_us_8018088C, self);
+            AnimateEntity(anim_grab_approach, self);
             MoveEntity();
             if (GetDistanceToPlayerY() < 80) {
                 self->step_s++;
@@ -530,22 +658,23 @@ void func_us_801A1C14(Entity* self) {
             break;
         case 1:
             MoveEntity();
-            if (!AnimateEntity(D_us_80180894, self)) {
+            if (!AnimateEntity(anim_grab, self)) {
                 self->step_s++;
             }
-            self->velocityY -= FIX(0.03125);
+            self->velocityY -= FIX(1.0 / 32);
             if (!g_Player.grabState) {
                 x = self->posX.i.hi + g_Tilemap.scrollX.i.hi;
                 if (self->facingLeft) {
-                    x = 512 - x;
+                    x = 0x200 - x;
                 }
-                if (x >= 128) {
-                    x = F(PLAYER.posX).i.hi - self->posX.i.hi;
-                    y = F(PLAYER.posY).i.hi - self->posY.i.hi;
+                if (x >= 0x80) {
+                    player = &PLAYER;
+                    x = player->posX.i.hi - self->posX.i.hi;
+                    y = player->posY.i.hi - self->posY.i.hi;
                     if (y < 0) {
-                        y = 128;
+                        y = 0x80;
                     }
-                    if (abs(x) < 12 && y < 56 &&
+                    if (abs(x) < 0xC && y < 0x38 &&
                         !(g_Player.status &
                           (PLAYER_STATUS_UNK40000000 | PLAYER_STATUS_UNK800000 |
                            PLAYER_STATUS_UNK400000 | PLAYER_STATUS_DEAD |
@@ -554,10 +683,10 @@ void func_us_801A1C14(Entity* self) {
                            PLAYER_STATUS_MIST_FORM))) {
                         PlaySfxPositional(SFX_HIPPOGRYPH_SQUAWK);
                         g_Player.grabState = 1;
-                        g_Player.grabDamage = 16;
+                        g_Player.grabDamage = 0x10;
                         g_Player.grabReactionEffect = 0;
-                        self->posX.i.hi = F(PLAYER.posX).i.hi;
-                        self->posY.i.hi = F(PLAYER.posY).i.hi - 32;
+                        self->posX.i.hi = player->posX.i.hi;
+                        self->posY.i.hi = player->posY.i.hi - 0x20;
                     }
                 }
             }
@@ -565,8 +694,8 @@ void func_us_801A1C14(Entity* self) {
         case 2:
             MoveEntity();
             self->velocityY -= FIX(0.375);
-            if (!AnimateEntity(D_us_8018089C, self)) {
-                self->ext.et_801A19CC.unk7C = 64;
+            if (!AnimateEntity(anim_grab_lift, self)) {
+                self->ext.hippogryph.flyTimer = 0x40;
                 self->step_s++;
                 if (!g_Player.grabState) {
                     self->velocityY -= FIX(0.375);
@@ -575,49 +704,50 @@ void func_us_801A1C14(Entity* self) {
             break;
         case 3:
             if (g_Player.grabState) {
-                AnimateEntity(D_us_801808AC, self);
-                if (!(u8)(--self->ext.et_801A19CC.unk7C % 47)) {
+                AnimateEntity(anim_grab_carry, self);
+                if (!(--self->ext.hippogryph.flyTimer % 47)) {
                     func_us_801A19FC(8, -8);
                     g_Player.grabState = 3;
-                    g_Player.grabDamage = 16;
+                    g_Player.grabDamage = 0x10;
                 }
             } else {
-                AnimateEntity(D_us_80180830, self);
-                if (*(s32*)&self->pose == 1) {
+                AnimateEntity(anim_flap, self);
+                if (!self->poseTimer && self->pose == 1) {
                     PlaySfxPositional(SFX_HIPPOGRYPH_WING_FLAP);
                 }
             }
             MoveEntity();
-            if ((y = self->posY.i.hi + g_Tilemap.scrollY.i.hi) < 72) {
+            y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
+            if (y < 0x48) {
                 g_Player.grabState = 0;
                 self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-                func_us_801A19CC(6);
+                SetHippogryphStep(STEP_FLY);
             }
             break;
         }
         if (g_Player.grabState) {
             entity->posX.i.hi = self->posX.i.hi;
-            entity->posY.i.hi = self->posY.i.hi + 32;
+            entity->posY.i.hi = self->posY.i.hi + 0x20;
         }
         break;
-    case 22:
+    case STEP_22:
         switch (self->step_s) {
         case 0:
             self->facingLeft = (GetSideToPlayer() & 1) ^ 1;
-            if (!AnimateEntity(D_us_80180844, self)) {
-                self->ext.et_801A19CC.unk7D++;
+            if (!AnimateEntity(anim_hover, self)) {
+                self->ext.hippogryph.unk7D++;
             }
-            if (*(s32*)&self->pose == 1) {
+            if (!self->poseTimer && self->pose == 1) {
                 PlaySfxPositional(SFX_HIPPOGRYPH_WING_FLAP);
             }
             MoveEntity();
-            if (self->animCurFrame >= 6 && self->animCurFrame <= 7) {
+            if (self->animCurFrame == 6 || self->animCurFrame == 7) {
                 self->velocityY -= FIX(0.15625);
             } else {
-                self->velocityY += FIX(0.0625);
+                self->velocityY += FIX(1.0 / 16);
             }
-            if (self->ext.et_801A19CC.unk7D >= 2) {
-                self->ext.et_801A19CC.unk7D = 0;
+            if (self->ext.hippogryph.unk7D > 1) {
+                self->ext.hippogryph.unk7D = 0;
                 self->pose = 0;
                 self->poseTimer = 0;
                 self->step_s++;
@@ -631,46 +761,46 @@ void func_us_801A1C14(Entity* self) {
             break;
         case 1:
             MoveEntity();
-            AnimateEntity(D_us_80180884, self);
+            AnimateEntity(anim_glide, self);
             self->velocityY -= FIX(0.09375);
             if (self->velocityY <= FIX(0.5)) {
                 self->velocityY = FIX(0.5);
             }
-            if (CheckColliderOffsets(D_us_80180ADC, 0)) {
+            if (CheckColliderOffsets(collider_ground, 0)) {
                 self->pose = 0;
                 self->poseTimer = 0;
-                self->ext.et_801A19CC.unk7D = 0;
+                self->ext.hippogryph.unk7D = 0;
                 self->step_s++;
             }
             break;
         case 2:
             self->velocityY -= FIX(0.21875);
-            if (CheckHippogryphFloorCollision(D_us_80180AAC) & 1) {
-                self->ext.et_801A19CC.unk7D = 1;
+            if (CheckHippogryphFloorCollision(sensors_floor) & 1) {
+                self->ext.hippogryph.unk7D = 1;
             }
             if (self->facingLeft) {
-                self->velocityX -= FIX(0.0625);
+                self->velocityX -= FIX(1.0 / 16);
             } else {
-                self->velocityX += FIX(0.0625);
+                self->velocityX += FIX(1.0 / 16);
             }
             if (self->animCurFrame == 0x5E) {
                 func_us_801A19FC(2, -2);
             }
-            if (!AnimateEntity(D_us_8018096C, self) &&
-                self->ext.et_801A19CC.unk7D) {
-                func_us_801A19CC(10);
+            if (!AnimateEntity(anim_swoop_land, self) &&
+                self->ext.hippogryph.unk7D) {
+                SetHippogryphStep(STEP_10);
             }
             break;
         }
         break;
-    case 32:
-        AnimateEntity(D_us_80180928, self);
-        if (CheckHippogryphFloorCollision(D_us_80180AAC) & 1) {
+    case STEP_HIT:
+        AnimateEntity(anim_knockback, self);
+        if (CheckHippogryphFloorCollision(sensors_floor) & 1) {
             self->animCurFrame = 0x50;
-            func_us_801A19CC(10);
+            SetHippogryphStep(STEP_10);
         }
         break;
-    case 36:
+    case STEP_DEAD:
         switch (self->step_s) {
         case 0:
             if (g_Player.grabState) {
@@ -678,14 +808,13 @@ void func_us_801A1C14(Entity* self) {
             }
             g_api.TimeAttackController(
                 TIMEATTACK_EVENT_HYPPOGRYPH_DEFEAT, TIMEATTACK_SET_RECORD);
+            g_BossMgrState |= BOSS_MGR_DEFEAT;
             self->velocityY = 0;
             x = self->posX.i.hi + g_Tilemap.scrollX.i.hi;
-            D_us_801806E0 |= 2;
-            if (x < 56) {
+            if (x < 0x38) {
                 self->velocityX = FIX(0.5);
             }
-            //! @bug This also overrides rightward motion when x < 56.
-            if (x < 472) {
+            if (x < 0x1D8) {
                 self->velocityX = -FIX(0.5);
             }
             self->step_s++;
@@ -693,30 +822,34 @@ void func_us_801A1C14(Entity* self) {
         case 1:
             MoveEntity();
             self->velocityY += FIX(0.25);
-            if ((y = self->posY.i.hi + g_Tilemap.scrollY.i.hi) > 128) {
+            y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
+            if (y > 0x80) {
                 self->step_s++;
             }
             break;
         case 2:
-            if (CheckHippogryphFloorCollision(D_us_80180AAC) & 1) {
-                func_us_801A19FC(22, -32);
+            if (CheckHippogryphFloorCollision(sensors_floor) & 1) {
+                func_us_801A19FC(0x16, -0x20);
                 self->step_s = 3;
-            } else if ((y = self->posY.i.hi + g_Tilemap.scrollY.i.hi) > 183) {
-                func_us_801A19FC(22, -32);
-                self->posY.i.hi = 183 - g_Tilemap.scrollY.i.hi;
-                self->step_s = 3;
-                self->velocityX = 0;
-                self->velocityY = 0;
+            } else {
+                y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
+                if (y > 0xB7) {
+                    func_us_801A19FC(0x16, -0x20);
+                    self->posY.i.hi = 0xB7 - g_Tilemap.scrollY.i.hi;
+                    self->velocityX = 0;
+                    self->velocityY = 0;
+                    self->step_s = 3;
+                }
             }
             break;
         case 3:
             primIndex = g_api.AllocPrimitives(PRIM_LINE_G2, 2);
             if (primIndex != -1) {
+                self->flags |= FLAG_HAS_PRIMS;
                 self->primIndex = primIndex;
                 prim = &g_PrimBuf[primIndex];
-                self->ext.et_801A19CC.prim = prim;
-                self->flags |= FLAG_HAS_PRIMS;
-                while (prim != NULL) {
+                self->ext.hippogryph.prim = prim;
+                while (prim) {
                     prim->r0 = 0x80;
                     prim->r1 = 0x40;
                     prim->g0 = 0x60;
@@ -732,37 +865,38 @@ void func_us_801A1C14(Entity* self) {
                 }
                 self->step_s++;
             } else {
-                self->ext.et_801A19CC.prim = NULL;
+                self->ext.hippogryph.prim = NULL;
                 self->step_s = 5;
             }
-            self->zPriority = self->ext.et_801A19CC.originalPriority - 8;
+            self->zPriority = self->ext.hippogryph.zPriority - 8;
             break;
         case 4:
-            self->ext.et_801A19CC.unk7C += 6;
-            i = 6;
-            if (self->ext.et_801A19CC.unk7C > 128) {
+            self->ext.hippogryph.flyTimer += 6;
+            if (self->ext.hippogryph.flyTimer > 0x80) {
                 i = -8;
+            } else {
+                i = 6;
             }
-            prim = self->ext.et_801A19CC.prim;
+            prim = self->ext.hippogryph.prim;
             prim->x1 += i;
             prim = prim->next;
             prim->x1 -= i;
-            if (self->ext.et_801A19CC.unk7C > 240) {
+            if (self->ext.hippogryph.flyTimer > 0xF0) {
                 g_api.FreePrimitives(self->primIndex);
-                self->ext.et_801A19CC.unk7C = 0;
                 self->flags &= ~FLAG_HAS_PRIMS;
+                self->ext.hippogryph.flyTimer = 0;
                 self->step_s++;
             }
             break;
         case 5:
             i = 0;
-            primIndex = g_api.AllocPrimitives(PRIM_LINE_G2, 111);
+            primIndex = g_api.AllocPrimitives(PRIM_LINE_G2, 0x6F);
             if (primIndex != -1) {
+                self->flags |= FLAG_HAS_PRIMS;
                 self->primIndex = primIndex;
                 prim = &g_PrimBuf[primIndex];
-                self->ext.et_801A19CC.prim = prim;
-                self->flags |= FLAG_HAS_PRIMS;
-                for (; i < 31; i++) {
+                self->ext.hippogryph.prim = prim;
+                for (i = 0; i < 0x1F; i++) {
                     prim->type = PRIM_LINE_G2;
                     prim->r0 = 0x60;
                     prim->g0 = 0x40;
@@ -772,9 +906,9 @@ void func_us_801A1C14(Entity* self) {
                     prim->b1 = 8;
                     prim->x0 = prim->x1 = self->posX.i.hi;
                     prim->y0 = prim->y1 = self->posY.i.hi;
-                    F(scratch.radialVelocity).val = D_us_801806E4[i];
-                    prim->x2 = F(scratch.radialVelocity).i.hi;
-                    prim->x3 = F(scratch.radialVelocity).i.lo;
+                    tmp.x.val = death_ray_speeds[i];
+                    prim->x2 = tmp.x.i.hi;
+                    prim->x3 = tmp.x.i.lo;
                     prim->y2 = 0;
                     prim->y3 = 0;
                     prim->priority = self->zPriority + 2;
@@ -782,8 +916,8 @@ void func_us_801A1C14(Entity* self) {
                         DRAW_TPAGE2 | DRAW_TPAGE | DRAW_UNK02 | DRAW_TRANSP;
                     prim = prim->next;
                 }
-                self->ext.et_801A19CC.particles = prim;
-                for (i = 0; i < 80; i++) {
+                self->ext.hippogryph.prim2 = prim;
+                for (i = 0; i < 0x50; i++) {
                     prim->type = PRIM_TILE;
                     prim->r0 = 0x70;
                     prim->g0 = 0x70;
@@ -797,17 +931,18 @@ void func_us_801A1C14(Entity* self) {
                     prim->y0 = self->posY.i.hi;
                     prim->x1 = 0;
                     prim->y1 = 0;
-                    y = Random() & 7;
-                    angle = Random() & 15;
-                    angle <<= 8;
-                    value = (rsin(angle) * D_us_801807E4[y]) >> 12;
-                    F(scratch.velocityX).val = value;
-                    prim->x2 = F(scratch.velocityX).i.hi;
-                    prim->x3 = F(scratch.velocityX).i.lo;
-                    value = (rcos(angle) * D_us_801807E4[y]) >> 12;
-                    F(scratch.velocityY).val = value;
-                    prim->y2 = F(scratch.velocityY).i.hi;
-                    prim->y3 = F(scratch.velocityY).i.lo;
+                    count = Random() & 7;
+                    angle = Random() & 0xF;
+                    dist =
+                        (death_particle_speeds[count] * rsin(angle << 8)) >> 12;
+                    vel.x.val = dist;
+                    prim->x2 = vel.x.i.hi;
+                    prim->x3 = vel.x.i.lo;
+                    dist =
+                        (death_particle_speeds[count] * rcos(angle << 8)) >> 12;
+                    vel.y.val = dist;
+                    prim->y2 = vel.y.i.hi;
+                    prim->y3 = vel.y.i.lo;
                     prim->r1 = Random() & 0x17;
                     prim->r2 = 0;
                     prim = prim->next;
@@ -818,63 +953,63 @@ void func_us_801A1C14(Entity* self) {
             }
             break;
         case 6:
-            AnimateEntity(D_us_801809D8, self);
-            prim = self->ext.et_801A19CC.particles;
-            for (i = 0; i < 80; i++) {
+            AnimateEntity(anim_dead_fade, self);
+            prim = self->ext.hippogryph.prim2;
+            for (i = 0; i < 0x50; i++) {
                 if (prim->r1) {
                     prim->r1--;
                 } else {
-                    F(scratch.posX).i.hi = prim->x0;
-                    F(scratch.posX).i.lo = prim->x1;
-                    F(scratch.posY).i.hi = prim->y0;
-                    F(scratch.posY).i.lo = prim->y1;
-                    F(scratch.velocityX).i.hi = prim->x2;
-                    F(scratch.velocityX).i.lo = prim->x3;
-                    F(scratch.velocityY).i.hi = prim->y2;
-                    F(scratch.velocityY).i.lo = prim->y3;
-                    scratch.posX += scratch.velocityX;
-                    scratch.posY += scratch.velocityY;
-                    prim->x0 = F(scratch.posX).i.hi;
-                    prim->x1 = F(scratch.posX).i.lo;
-                    prim->y0 = F(scratch.posY).i.hi;
-                    prim->y1 = F(scratch.posY).i.lo;
+                    pos.x.i.hi = prim->x0;
+                    pos.x.i.lo = prim->x1;
+                    pos.y.i.hi = prim->y0;
+                    pos.y.i.lo = prim->y1;
+                    vel.x.i.hi = prim->x2;
+                    vel.x.i.lo = prim->x3;
+                    vel.y.i.hi = prim->y2;
+                    vel.y.i.lo = prim->y3;
+                    pos.x.val += vel.x.val;
+                    pos.y.val += vel.y.val;
+                    prim->x0 = pos.x.i.hi;
+                    prim->x1 = pos.x.i.lo;
+                    prim->y0 = pos.y.i.hi;
+                    prim->y1 = pos.y.i.lo;
                     prim->r2++;
-                    if (prim->r2 > 32) {
+                    if (prim->r2 > 0x20) {
                         prim->u0 = prim->v0 = 1;
                     }
-                    if (prim->r2 > 48) {
+                    if (prim->r2 > 0x30) {
                         prim->u0 = prim->v0 = 0;
                     }
                 }
                 prim = prim->next;
             }
-            prim = self->ext.et_801A19CC.prim;
-            for (i = 0; i < 31; i++) {
-                F(scratch.radialVelocity).i.hi = prim->x2;
-                F(scratch.radialVelocity).i.lo = prim->x3;
-                F(scratch.radius).i.hi = prim->y2;
-                F(scratch.radius).i.lo = prim->y3;
-                if (self->ext.et_801A19CC.unk7C < 12) {
-                    scratch.radius += scratch.radialVelocity;
+            prim = self->ext.hippogryph.prim;
+            for (i = 0; i < 0x1F; i++) {
+                tmp.x.i.hi = prim->x2;
+                tmp.x.i.lo = prim->x3;
+                tmp2.y.i.hi = prim->y2;
+                tmp2.y.i.lo = prim->y3;
+                if (self->ext.hippogryph.flyTimer < 0xC) {
+                    tmp2.y.val += tmp.x.val;
                 }
                 prim->x1 =
                     prim->x0 +
-                    ((F(scratch.radius).i.hi *
-                      rcos((i << 7) + self->ext.et_801A19CC.unk7C * 16)) >>
+                    ((tmp2.y.i.hi *
+                      rcos((i << 7) + self->ext.hippogryph.flyTimer * 16)) >>
                      12);
                 prim->y1 =
                     prim->y0 +
-                    ((F(scratch.radius).i.hi *
-                      rsin((i << 7) + self->ext.et_801A19CC.unk7C * 16)) >>
+                    ((tmp2.y.i.hi *
+                      rsin((i << 7) + self->ext.hippogryph.flyTimer * 16)) >>
                      12);
-                prim->y2 = F(scratch.radius).i.hi;
-                prim->y3 = F(scratch.radius).i.lo;
+                prim->y2 = tmp2.y.i.hi;
+                prim->y3 = tmp2.y.i.lo;
                 prim = prim->next;
             }
-            if (self->ext.et_801A19CC.unk7C++ > 48) {
+            if (self->ext.hippogryph.flyTimer++ > 0x30) {
                 self->blendMode = BLEND_ADD | BLEND_TRANSP;
-                self->opacity = 0x80;
                 self->drawFlags |= ENTITY_OPACITY;
+                self->opacity = 0x80;
                 self->step_s++;
             }
             if (!(g_Timer & 7)) {
@@ -882,164 +1017,168 @@ void func_us_801A1C14(Entity* self) {
             }
             break;
         case 7:
-            prim = self->ext.et_801A19CC.particles;
-            for (i = 0; i < 80; i++) {
+            prim = self->ext.hippogryph.prim2;
+            for (i = 0; i < 0x50; i++) {
                 if (prim->r1) {
                     prim->r1--;
                 } else {
-                    F(scratch.posX).i.hi = prim->x0;
-                    F(scratch.posX).i.lo = prim->x1;
-                    F(scratch.posY).i.hi = prim->y0;
-                    F(scratch.posY).i.lo = prim->y1;
-                    F(scratch.velocityX).i.hi = prim->x2;
-                    F(scratch.velocityX).i.lo = prim->x3;
-                    F(scratch.velocityY).i.hi = prim->y2;
-                    F(scratch.velocityY).i.lo = prim->y3;
-                    scratch.posX += scratch.velocityX;
-                    scratch.posY += scratch.velocityY;
-                    prim->x0 = F(scratch.posX).i.hi;
-                    prim->x1 = F(scratch.posX).i.lo;
-                    prim->y0 = F(scratch.posY).i.hi;
-                    prim->y1 = F(scratch.posY).i.lo;
+                    pos.x.i.hi = prim->x0;
+                    pos.x.i.lo = prim->x1;
+                    pos.y.i.hi = prim->y0;
+                    pos.y.i.lo = prim->y1;
+                    vel.x.i.hi = prim->x2;
+                    vel.x.i.lo = prim->x3;
+                    vel.y.i.hi = prim->y2;
+                    vel.y.i.lo = prim->y3;
+                    pos.x.val += vel.x.val;
+                    pos.y.val += vel.y.val;
+                    prim->x0 = pos.x.i.hi;
+                    prim->x1 = pos.x.i.lo;
+                    prim->y0 = pos.y.i.hi;
+                    prim->y1 = pos.y.i.lo;
                     prim->r2++;
-                    if (prim->r2 > 32) {
+                    if (prim->r2 > 0x20) {
                         prim->u0 = prim->v0 = 1;
                     }
-                    if (prim->r2 > 48) {
+                    if (prim->r2 > 0x30) {
                         prim->u0 = prim->v0 = 0;
                     }
                 }
                 prim = prim->next;
             }
-            prim = self->ext.et_801A19CC.prim;
-            for (i = 0; i < 31; i++) {
+            prim = self->ext.hippogryph.prim;
+            i = 0;
+            for (i = 0; i < 0x1F; i++) {
                 prim->r0 -= 2;
                 prim->g0--;
                 prim->b0--;
-                F(scratch.radialVelocity).i.hi = -prim->x2;
-                F(scratch.radialVelocity).i.lo = -prim->x3;
-                F(scratch.radius).i.hi = prim->y2;
-                F(scratch.radius).i.lo = prim->y3;
-                if (self->ext.et_801A19CC.unk7C < 20) {
-                    scratch.radius += scratch.radialVelocity;
+                tmp.x.i.hi = -prim->x2;
+                tmp.x.i.lo = -prim->x3;
+                tmp2.y.i.hi = prim->y2;
+                tmp2.y.i.lo = prim->y3;
+                if (self->ext.hippogryph.flyTimer < 0x14) {
+                    tmp2.y.val += tmp.x.val;
                 }
                 prim->x1 =
                     prim->x0 +
-                    ((F(scratch.radius).i.hi *
-                      rcos((i << 7) + self->ext.et_801A19CC.unk7C * 16)) >>
+                    ((tmp2.y.i.hi *
+                      rcos((i << 7) + self->ext.hippogryph.flyTimer * 16)) >>
                      12);
                 prim->y1 =
                     prim->y0 +
-                    ((F(scratch.radius).i.hi *
-                      rsin((i << 7) + self->ext.et_801A19CC.unk7C * 16)) >>
+                    ((tmp2.y.i.hi *
+                      rsin((i << 7) + self->ext.hippogryph.flyTimer * 16)) >>
                      12);
-                prim->y2 = F(scratch.radius).i.hi;
-                prim->y3 = F(scratch.radius).i.lo;
+                prim->y2 = tmp2.y.i.hi;
+                prim->y3 = tmp2.y.i.lo;
                 prim = prim->next;
             }
             self->opacity -= 4;
-            if (self->opacity > 224) {
+            if (self->opacity > 0xE0) {
                 self->opacity = 0;
             }
             if (!(g_Timer & 7)) {
                 PlaySfxPositional(SFX_GUARD_TINK);
             }
-            if (self->ext.et_801A19CC.unk7C++ > 77) {
-                self->ext.et_801A19CC.unk7C = 0;
+            if (self->ext.hippogryph.flyTimer++ > 0x4D) {
+                self->ext.hippogryph.flyTimer = 0;
                 g_api.FreePrimitives(self->primIndex);
                 self->flags &= ~FLAG_HAS_PRIMS;
                 self->step_s++;
             }
             break;
         case 8:
-            x = 256 - g_Tilemap.scrollX.i.hi;
-            y = 128 - g_Tilemap.scrollY.i.hi;
-            entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
-            if (entity != NULL) {
-                CreateEntityFromCurrentEntity(E_LIFE_UP_SPAWN, entity);
-                entity->posX.i.hi = x;
-                entity->posY.i.hi = y;
-                entity->params = 6;
+            x = 0x100 - g_Tilemap.scrollX.i.hi;
+            y = 0x80 - g_Tilemap.scrollY.i.hi;
+            player = AllocEntity(&g_Entities[160], &g_Entities[192]);
+            if (player) {
+                CreateEntityFromCurrentEntity(E_ID(LIFE_UP_SPAWN), player);
+                player->posX.i.hi = x;
+                player->posY.i.hi = y;
+                player->params = 6;
                 D_us_80180B74 = 0;
-                CreateEntityFromCurrentEntity(E_CUTSCENE, &g_Entities[200]);
+                CreateEntityFromCurrentEntity(E_ID(CUTSCENE), &g_Entities[200]);
                 self->step_s++;
             }
             break;
+
         case 9:
             break;
         }
         break;
-    case 48:
-        AnimateEntity(D_us_80180A2C, self);
+    case STEP_48:
+        AnimateEntity(anim_feather_fall, self);
         self->velocityY -= FIX(0.21875);
-        if (UnkCollisionFunc3(D_us_80180ACC) & 1) {
+        if (UnkCollisionFunc3(sensors_feather) & 1) {
             DestroyEntity(self);
         }
         break;
-    case 50:
-        AnimateEntity(D_us_80180A48, self);
-        self->velocityX += self->ext.et_801A19CC.accelerationX;
-        if (self->velocityX > 0xD000 || self->velocityX < FIX(-0.8125)) {
-            self->ext.et_801A19CC.accelerationX =
-                -self->ext.et_801A19CC.accelerationX;
+    case STEP_50:
+        AnimateEntity(anim_feather_sway, self);
+        self->velocityX += (s32)self->ext.hippogryph.unk8C;
+        if (self->velocityX < -FIX(0.8125) || self->velocityX > FIX(0.8125)) {
+            self->ext.hippogryph.unk8C = -self->ext.hippogryph.unk8C;
         }
         self->velocityY -= FIX(0.21875);
-        if (UnkCollisionFunc3(D_us_80180ACC) & 1) {
+        if (UnkCollisionFunc3(sensors_feather) & 1) {
             DestroyEntity(self);
         }
         break;
-    case 130:
+    case STEP_130:
         FntPrint("charal %x\n", self->animCurFrame);
         if (g_pads[0].pressed & PAD_SQUARE) {
-            if (!self->params) {
-                self->animCurFrame++;
-                self->params |= 1;
+            if (self->params) {
+                break;
             }
+            self->animCurFrame++;
+            self->params |= 1;
         } else {
             self->params = 0;
         }
         break;
     }
+
     count = self->animCurFrame;
-    if (count >= 14 && count <= 24) {
+    if (count >= 14 && count < 25) {
         self->hitboxWidth = 6;
-        self->hitboxHeight = 20;
+        self->hitboxHeight = 0x14;
         self->hitboxOffX = 8;
         self->hitboxOffY = -8;
+    } else if (count >= 58 && count < 64) {
+        self->hitboxWidth = 6;
+        self->hitboxHeight = 0x14;
+        self->hitboxOffX = 0;
+        self->hitboxOffY = -8;
     } else {
-        if ((u8)(count - 58) < 6) {
-            self->hitboxWidth = 6;
-            self->hitboxHeight = 20;
-            self->hitboxOffX = 0;
-            self->hitboxOffY = -8;
-        } else {
-            self->hitboxWidth = 20;
-            self->hitboxHeight = 8;
-            self->hitboxOffX = 0;
-            self->hitboxOffY = -2;
-        }
+        self->hitboxWidth = 0x14;
+        self->hitboxHeight = 8;
+        self->hitboxOffX = 0;
+        self->hitboxOffY = -2;
     }
 }
 
-void func_us_801A3B88(Entity* self) {
+extern EInit g_EInitFireBreath;
+
+void EntityFireBreath(Entity* self) {
     Entity* entity;
 
-    if (D_us_801806E0 & 2) {
+    if (g_BossMgrState & BOSS_MGR_DEFEAT) {
         DestroyEntity(self);
         return;
     }
+
     switch (self->step) {
     case 0:
-        InitializeEntity(D_us_801804F0);
+        InitializeEntity(g_EInitFireBreath);
+        self->hitboxState = 0;
         self->animSet = 2;
         self->animCurFrame = 1;
+        self->drawFlags |= ENTITY_SCALEX | ENTITY_SCALEY | ENTITY_OPACITY;
+        self->drawFlags |= ENTITY_ROTATE;
+        self->blendMode |= BLEND_TRANSP | BLEND_ADD;
         self->opacity = 0x80;
         self->rotate = ROT(315);
-        self->drawFlags |=
-            ENTITY_SCALEX | ENTITY_SCALEY | ENTITY_ROTATE | ENTITY_OPACITY;
-        self->hitboxState = 0;
         self->scaleX = self->scaleY = 0x20;
-        self->blendMode |= BLEND_TRANSP | BLEND_ADD;
         if (self->facingLeft) {
             self->velocityX = FIX(4.40625);
         } else {
@@ -1058,34 +1197,36 @@ void func_us_801A3B88(Entity* self) {
             }
         }
         break;
+
     case 1:
-        AnimateEntity(D_us_80180A00, self);
+        AnimateEntity(anim_fire_grow, self);
         MoveEntity();
         self->velocityY -= FIX(0.078125);
         self->opacity -= 5;
-        self->scaleY = self->scaleX += 0x18;
+        self->scaleX += 0x18;
+        self->scaleY = self->scaleX;
         if (self->scaleX > 0xF0) {
-            self->velocityX /= 4;
+            self->velocityX = self->velocityX / 4;
             self->pose = 0;
             self->poseTimer = 0;
             self->step++;
         }
         if (self->params == 3 && (Random() & 1)) {
             entity = AllocEntity(&g_Entities[224], &g_Entities[256]);
-            if (entity != NULL) {
+            if (entity) {
                 DestroyEntity(entity);
-                CreateEntityFromEntity(E_UNK_26, self, entity);
+                CreateEntityFromEntity(E_ID(UNK_26), self, entity);
                 entity->facingLeft = self->facingLeft;
                 entity->params = self->params;
                 entity->scaleX = self->scaleX;
                 entity->scaleY = self->scaleY;
             }
         }
-        if (self->params == 0 && (Random() & 7)) {
+        if (!self->params && (Random() & 7)) {
             entity = AllocEntity(&g_Entities[224], &g_Entities[256]);
-            if (entity != NULL) {
+            if (entity) {
                 DestroyEntity(entity);
-                CreateEntityFromEntity(E_UNK_26, self, entity);
+                CreateEntityFromEntity(E_ID(UNK_26), self, entity);
                 entity->facingLeft = self->facingLeft;
                 entity->params = self->params;
                 entity->scaleX = self->scaleX;
@@ -1093,9 +1234,10 @@ void func_us_801A3B88(Entity* self) {
             }
         }
         break;
+
     case 2:
         MoveEntity();
-        if (!AnimateEntity(D_us_80180A0C, self)) {
+        if (!AnimateEntity(anim_fire_fade, self)) {
             DestroyEntity(self);
         }
         break;
@@ -1103,7 +1245,6 @@ void func_us_801A3B88(Entity* self) {
 }
 
 extern EInit g_EInitParticle;
-extern AnimateEntityFrame D_us_80180A18[];
 
 void func_us_801A3E78(Entity* self) {
     switch (self->step) {
@@ -1142,28 +1283,25 @@ void func_us_801A3E78(Entity* self) {
         }
         self->scaleX -= 0xA;
         self->opacity -= 6;
-        if (!AnimateEntity(D_us_80180A18, self)) {
+        if (!AnimateEntity(anim_fire_spark, self)) {
             DestroyEntity(self);
         }
         return;
     }
 }
 
-extern EInit D_us_801804E4;
-extern s16 D_us_80180ABC[];
-extern AnimateEntityFrame D_us_801809F0[];
-extern AnimateEntityFrame D_us_801809F8[];
+extern EInit g_EInitHippogryphEgg;
 
-void func_us_801A3FD4(Entity* self) {
+void EntityHippogryphEgg(Entity* self) {
     Entity* entity;
 
-    if (D_us_801806E0 & 2) {
+    if (g_BossMgrState & BOSS_MGR_DEFEAT) {
         self->flags |= FLAG_DEAD;
     }
 
     if (self->flags & FLAG_DEAD) {
         entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
-        if (entity != NULL) {
+        if (entity) {
             DestroyEntity(entity);
             CreateEntityFromEntity(E_EXPLOSION, self, entity);
             entity->params = 0;
@@ -1174,25 +1312,23 @@ void func_us_801A3FD4(Entity* self) {
 
     switch (self->step) {
     case 0:
-        InitializeEntity(D_us_801804E4);
+        InitializeEntity(g_EInitHippogryphEgg);
         self->hitboxState = 2;
         self->drawFlags |= ENTITY_ROTATE;
         self->rotate = ((Random() & 3) << 9) - 0x300;
-        self->ext.et_801A3FD4.rotateDir = 1;
+        self->ext.hippogryphEgg.rotateDir = 1;
         return;
-
     case 1:
-        if (UnkCollisionFunc3(D_us_80180ABC) & 1) {
+        if (UnkCollisionFunc3(sensors_egg) & 1) {
             self->step++;
         }
-
     case 2:
-        if (!self->ext.et_801A3FD4.timer) {
-            if (AnimateEntity(D_us_801809F0, self)) {
+        if (!self->ext.hippogryphEgg.timer) {
+            if (AnimateEntity(anim_egg_idle, self)) {
                 return;
             }
             entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
-            if (entity != NULL) {
+            if (entity) {
                 DestroyEntity(entity);
                 CreateEntityFromEntity(E_EXPLOSION, self, entity);
                 entity->params = 0;
@@ -1211,40 +1347,53 @@ void func_us_801A3FD4(Entity* self) {
             PlaySfxPositional(SFX_NO1_BIRD_CYCLE);
             self->step++;
             return;
-        } else if (self->ext.et_801A3FD4.timer-- < 8) {
-            self->rotate += self->ext.et_801A3FD4.rotateDir << 9;
-            self->ext.et_801A3FD4.rotateDir = -self->ext.et_801A3FD4.rotateDir;
+        } else if (self->ext.hippogryphEgg.timer-- < 8) {
+            self->rotate += self->ext.hippogryphEgg.rotateDir << 9;
+            self->ext.hippogryphEgg.rotateDir =
+                -self->ext.hippogryphEgg.rotateDir;
             return;
         }
         break;
-
     case 3:
-        AnimateEntity(D_us_801809F8, self);
+        AnimateEntity(anim_egg_fly, self);
         MoveEntity();
         self->velocityY -= FIX(0.0390625);
         break;
     }
 }
 
-void func_us_801A425C(Entity* self) {
-    Entity* entity;
+extern EInit g_EInitInteractable;
+
+static u8 hitbox_frames[] = {
+    0, 0, 0, 0, 0, 0, 1, 0, 3, 3, 3, 4, 0, 2, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 6, 6, 1, 1, 1, 6, 6, 6, 6, 6, 0, 0, 0, 1, 6, 6, 6, 6, 1,
+    0, 3, 3, 4, 0, 1, 1, 3, 0, 1, 6, 2, 0, 0, 1, 1, 5, 6, 6, 6, 6,
+    6, 6, 6, 6, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 6,
+    6, 6, 6, 6, 1, 1, 1, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0};
+
+void EntityHippogryphHitbox(Entity* self) {
+    Entity* parent;
     u8 frame;
 
     if (!self->step) {
         InitializeEntity(g_EInitInteractable);
         self->hitPoints = 0x7FFE;
         self->hitboxState = 2;
-        self->nextPart = self->parent = self - 1;
+        self->flags |= FLAG_SUPPRESS_STUN;
         self->attack = 0;
         self->attackElement = ELEMENT_NONE;
-        self->flags |= FLAG_SUPPRESS_STUN;
+        self->parent = self - 1;
+        self->nextPart = self - 1;
     }
-    entity = self - 1;
-    frame = entity->animCurFrame;
-    if (frame >= 0x68) {
+
+    parent = self - 1;
+    frame = parent->animCurFrame;
+    if (frame > 0x67) {
         frame = 0;
     }
-    switch (D_us_80180B0C[frame]) {
+
+    frame = hitbox_frames[frame];
+    switch (frame) {
     case 0:
         self->hitboxOffX = 0;
         self->hitboxOffY = 0;
@@ -1288,17 +1437,18 @@ void func_us_801A425C(Entity* self) {
         self->hitboxHeight = 24;
         break;
     }
-    self->facingLeft = entity->facingLeft;
-    self->posX.i.hi = entity->posX.i.hi;
-    self->posY.i.hi = entity->posY.i.hi;
-    if (entity->entityId != E_UNK_22) {
+
+    self->facingLeft = parent->facingLeft;
+    self->posX.i.hi = parent->posX.i.hi;
+    self->posY.i.hi = parent->posY.i.hi;
+    if (parent->entityId != E_ID(HIPPOGRYPH)) {
         DestroyEntity(self);
     }
 }
 
 void EntityFireDamageHitbox(Entity* self) {
     if (!self->step) {
-        InitializeEntity(D_us_801804F0);
+        InitializeEntity(g_EInitFireBreath);
         self->hitboxWidth = 24;
         self->hitboxHeight = 4;
         self->hitboxOffX = -48;

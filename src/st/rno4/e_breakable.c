@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rno4.h"
 
-
 static u8 D_us_80180D50[] = {0x04, 0x01, 0x04, 0x02, 0x00};
 static u8 D_us_80180D58[] = {0x04, 0x00, 0x04, 0x00, 0x00};
 static u8 D_us_80180D60[] = {

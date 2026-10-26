@@ -649,8 +649,8 @@ static AnimationFrame s_PcData_801837E0[];
 static AnimationFrame s_PcData_80182784[];
 static AnimationFrame s_PcData_8018309C[];
 AnimationFrame* g_DopAnimationFrames[];
-u8* g_PlOvlDopBatSpritesheet[];
-u8* g_SpriteSheet[];
+u8* bat_form_sprites[];
+u8* doppleganger_sprites[];
 
 AnimationFrame D_us_80183B98[] = {
     {128, 0},   {65535, 0}, {132, 95},  {65535, 0}, {132, 199}, {65535, 0},
@@ -4802,10 +4802,10 @@ AnimationFrame* g_DopAnimationFrames[] = {
     s_PcData_8018309C,
 };
 
-#define pc_rbo5_bat_form_sprites g_PlOvlDopBatSpritesheet
+#define pc_rbo5_bat_form_sprites bat_form_sprites
 #include "rbo5/gen/pc_rbo5_bat_form.h"
 #undef pc_rbo5_bat_form_sprites
 
-#define pc_rbo5_doppleganger_sprites g_SpriteSheet
+#define pc_rbo5_doppleganger_sprites doppleganger_sprites
 #include "rbo5/gen/pc_rbo5_doppleganger.h"
 #undef pc_rbo5_doppleganger_sprites

@@ -6,6 +6,7 @@
 #include "../../st/top/top.h"
 
 extern AbbreviatedOverlay2 g_Overlay;
+extern u8* richter_sprites[];
 extern PfnEntityUpdate EntityUpdates[];
 extern LayoutEntity* entityLayoutHorizontal[];
 extern LayoutEntity* entityLayoutVertical[];
@@ -20,6 +21,7 @@ void Psyz_ModuleStart(void* param) {
     InitTopCutscenePc();
 
     memcpy(o, &g_Overlay, sizeof(AbbreviatedOverlay2));
+    o->unk30 = richter_sprites;
     PfnEntityUpdates = EntityUpdates;
     g_pStObjLayoutHorizontal = entityLayoutHorizontal;
     g_pStObjLayoutVertical = entityLayoutVertical;

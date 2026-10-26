@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo5.h"
 
+s32 D_us_801806DC = 0;
+
 extern EInit g_EInitEnvironment;
-extern s32 D_us_801806DC;
 
 void EntityRbo3Door(Entity* self) {
-    s32 i;
-    s32 fgIndex;
-    s32 y;
     Entity* next;
+    s32 fgIndex;
+    s32 i;
+    s32 y;
 
     switch (self->step) {
     case 0:
@@ -16,7 +17,7 @@ void EntityRbo3Door(Entity* self) {
         self->zPriority = 0x5C;
         if (self->params & 2) {
             self->animCurFrame = 14;
-            return;
+            break;
         }
         if (self->params & 1) {
             self->animCurFrame = 13;
@@ -27,6 +28,7 @@ void EntityRbo3Door(Entity* self) {
             self->posX.i.hi = 16 - g_Tilemap.scrollX.i.hi;
             self->posY.i.hi = 32 - g_Tilemap.scrollY.i.hi;
         }
+
         next = self + 1;
         CreateEntityFromEntity(E_ID(RBO3DOOR), self, next);
         next->params = 2;
@@ -35,15 +37,17 @@ void EntityRbo3Door(Entity* self) {
             next->posX.i.hi += 16;
         }
         break;
+
     case 1:
         if (D_us_801806DC) {
             if (self->params & 2) {
                 self->step = 8;
-                return;
+                break;
             }
-            fgIndex = 0xC1;
             if (self->params) {
                 fgIndex = 0xDE;
+            } else {
+                fgIndex = 0xC1;
             }
             for (i = 0; i < 4; i++) {
                 g_Tilemap.fg[fgIndex] = 0x4B3;
@@ -52,6 +56,7 @@ void EntityRbo3Door(Entity* self) {
             self->step = 2;
         }
         break;
+
     case 2:
         self->posY.val += FIX(1.125);
         if (self->posY.val > FIX(70)) {
@@ -59,11 +64,13 @@ void EntityRbo3Door(Entity* self) {
             self->step++;
         }
         break;
+
     case 3:
         if (!D_us_801806DC) {
-            fgIndex = 0xC1;
             if (self->params) {
                 fgIndex = 0xDE;
+            } else {
+                fgIndex = 0xC1;
             }
             for (i = 0; i < 4; i++) {
                 g_Tilemap.fg[fgIndex] = 0;
@@ -72,6 +79,7 @@ void EntityRbo3Door(Entity* self) {
             self->step++;
         }
         break;
+
     case 4:
         self->posY.val -= FIX(0.75);
         y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
@@ -80,6 +88,7 @@ void EntityRbo3Door(Entity* self) {
             self->step++;
         }
         break;
+
     case 8:
         self->posY.val -= FIX(1.125);
         if (self->posY.val < FIX(129)) {
@@ -87,11 +96,13 @@ void EntityRbo3Door(Entity* self) {
             self->step++;
         }
         break;
+
     case 9:
         if (!D_us_801806DC) {
             self->step++;
         }
         break;
+
     case 10:
         self->posY.val += FIX(0.75);
         y = self->posY.i.hi + g_Tilemap.scrollY.i.hi;
@@ -100,6 +111,7 @@ void EntityRbo3Door(Entity* self) {
             self->step++;
         }
         break;
+
     case 11:
         break;
     }

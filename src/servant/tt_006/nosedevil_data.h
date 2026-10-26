@@ -161,14 +161,16 @@ static ServantSfxEventDesc s_SfxIntroPrevSummonedA[] = {
 static ServantSfxEventDesc s_SfxIntroPrevSummonedB[] = {
     {0, 9, NOSE_DEMON_INTRO_PREV_B}, {152, 0, 0}, {160, 8, 0}, {-1, 0, 0}};
 static intptr_t g_SfxNosedevilIntroPrevSummoned[] = {
-    0x7F, (intptr_t)s_SfxIntroPrevSummonedA, 0xFF, (intptr_t)s_SfxIntroPrevSummonedB};
+    0x7F, (intptr_t)s_SfxIntroPrevSummonedA, 0xFF,
+    (intptr_t)s_SfxIntroPrevSummonedB};
 
 static ServantSfxEventDesc s_SfxIntroNewSummonedA[] = {
     {0, 9, NOSE_DEMON_INTRO_NEW_A}, {272, 8, 0}, {-1, 0, 0}};
 static ServantSfxEventDesc s_SfxIntroNewSummonedB[] = {
     {0, 9, NOSE_DEMON_INTRO_NEW_B}, {112, 8, 0}, {-1, 0, 0}};
 static intptr_t g_SfxNosedevilIntroNewSummoned[] = {
-    0x7F, (intptr_t)s_SfxIntroNewSummonedA, 0xFF, (intptr_t)s_SfxIntroNewSummonedB};
+    0x7F, (intptr_t)s_SfxIntroNewSummonedA, 0xFF,
+    (intptr_t)s_SfxIntroNewSummonedB};
 
 static ServantSfxEventDesc s_SfxEventSwitch1[] = {
     {0, 0, NOSE_DEMON_SWITCH_1}, {232, 8, 0}, {144, 7, 0}, {-1, 0, 0}};
