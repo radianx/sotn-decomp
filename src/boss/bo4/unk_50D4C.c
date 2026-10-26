@@ -311,7 +311,7 @@ void EntitySubwpnReboundStone(Entity* self) {
     }
 }
 
-s32 UpdateUnarmedAnim(s8*, AnimationFrame*);
+s32 UpdateUnarmedAnim(s8*, u16**);
 extern EInit D_us_80180440;
 extern EInit D_us_8018044C;
 extern DopWeaponAnimation D_us_80184278[];

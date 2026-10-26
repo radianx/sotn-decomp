@@ -12,7 +12,6 @@ extern LayoutEntity* entityLayoutVertical[];
 extern PfnEntityUpdate* PfnEntityUpdates;
 extern LayoutEntity** g_pStObjLayoutHorizontal;
 extern LayoutEntity** g_pStObjLayoutVertical;
-
 void Psyz_ModuleStart(void* param) {
     Overlay* o = param;
 

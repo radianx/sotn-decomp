@@ -92,7 +92,7 @@ void EntityCavernDoorSwitch(Entity* self) {
         prim = prim->next;
         prim->drawMode |= DRAW_HIDE;
     } else {
-        dr_env = *((DR_ENV**)&prim->r1);
+        dr_env = PRIM_DR_ENV(prim);
         sp10 = g_CurrentBuffer->draw;
         sp10.isbg = 0;
         sp10.ofs[0] = 0;

@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rno4.h"
 
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", SetupPrimsForEntitySpriteParts);
+#define BLUE
+#define SPIKE_SPRITES sprites_rno4_4
+#define TENDRIL_COUNT 8
+#define DART_CLUT_START 0x234
+#define DEATH_CLUT 0x23A
+#define PLANT_CLUT 0x244
+#define SPIKE_CLUT_START 0x24E
+#define SPIKE_CLUT_END 0x25C
+#define GROWTH_SPEED 2
 
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", EntityVenusWeed);
+#define g_EInitVenusWeedRoot g_EInitBlueVenusWeed1
+#define g_EInitVenusWeedFlower g_EInitBlueVenusWeed2
+#define g_EInitVenusWeedTendril D_us_80180B9C
+#define g_EInitVenusWeedDart D_us_80180BA8
 
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", EntityVenusWeedFlower);
-
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", EntityVenusWeedTendril);
-
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", EntityVenusWeedDart);
-
-INCLUDE_ASM("st/rno4/nonmatchings/e_blue_venus_weed", EntityVenusWeedSpike);
+#include "../e_venus_weed.h"

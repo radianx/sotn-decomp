@@ -2,6 +2,7 @@
 // #include "sel.h"
 #include <game.h>
 #include <cutscene.h>
+#include "stream.h"
 
 u32 g_SkipCutscene;
 u32 g_Dialogue;
@@ -40,13 +41,7 @@ MemcardInfo g_MemcardInfo[2];
 #endif
 SaveSummary g_SaveSummary[PORT_COUNT];
 u32 D_801BD030;
-u32 g_StreamEndFrame;
-u32 g_StreamIsRGB24;
-u32 D_801BD03C;
-u32 D_801BD040;
-s32 g_StreamRewindSwitch[1];
-u8 g_StreamImageBuffer[0x14000];
-static s32 D_801D1048;
+StreamControl g_StreamControl;
 s32 D_801D104C[0x1680];
 StreamEnv g_StreamEnv;
 u32 D_801D6B00;

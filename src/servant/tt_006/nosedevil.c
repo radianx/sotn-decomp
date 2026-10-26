@@ -2,6 +2,11 @@
 #include "nosedevil.h"
 #include "../servant_private.h"
 
+#ifdef VERSION_PC
+#include "../shared_events.h"
+#include "../shared_globals.h"
+#endif
+
 static s32 s_ServantId;
 static FamiliarStats s_NosedevilStats;
 static s16 D_us_80178474[3][8];
@@ -1824,8 +1829,10 @@ void func_us_80177464(Entity* self) {
     DestroyEntity(self);
 }
 
+#ifndef VERSION_PC
 #include "../shared_events.h"
 #include "../shared_globals.h"
+#endif
 #include "../servant_update_anim.h"
 #include "../../destroy_entity.h"
 #include "../accumulate_toward_zero.h"

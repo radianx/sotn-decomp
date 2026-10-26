@@ -10,7 +10,11 @@ STATIC_PAD_BSS(0xC00);
 s32 g_SkipCutscene;
 Dialogue g_Dialogue;
 STATIC_PAD_BSS(0x68);
+#ifdef VERSION_PC
 u32 g_CutsceneFlags;
+#else
+static u32 g_CutsceneFlags;
+#endif
 s32 D_us_801BC514;
 static s32 g_IsCutsceneDone;
 
@@ -266,8 +270,12 @@ void EntityCutscene(Entity* self) {
                 ptr |= (u_long)*g_Dialogue.scriptCur++;
                 ptr <<= 4;
                 ptr |= (u_long)*g_Dialogue.scriptCur++;
+#ifdef VERSION_PC
+                ptr = (uintptr_t)CS_PTR(ptr);
+#else
                 ptr += 0x100000;
-                g_Dialogue.scriptCur += *(u8*)CS_NEXT(ptr) << 2;
+#endif
+                g_Dialogue.scriptCur += *(u8*)ptr << 2;
 
                 ptr = (u_long)*g_Dialogue.scriptCur++;
                 ptr <<= 4;
@@ -313,7 +321,11 @@ void EntityCutscene(Entity* self) {
                     ptr |= (u_long)*g_Dialogue.scriptCur++;
                     ptr <<= 4;
                     ptr |= (u_long)*g_Dialogue.scriptCur++;
-                    ptr = (u_long)CS_PTR(ptr);
+#ifdef VERSION_PC
+                    ptr = (uintptr_t)CS_PTR(ptr);
+#else
+                    ptr += 0x100000;
+#endif
                     nextChar2 = g_Dialogue.scriptCur++[0];
                     LoadTPage((u_long*)ptr, 1, 0, D_us_80180D48[nextChar2],
                               0x100, 48, 72);

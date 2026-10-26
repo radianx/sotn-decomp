@@ -350,7 +350,7 @@ void func_801B3A54(s32 arg0, s32 arg1) {
     D_801BB008 = arg1;
 }
 
-s32 func_801B3A94(s32 arg0) {
+s32 func_801B3A94(intptr_t arg0) {
     char saveFile[0x20];
     s32 ret;
     SaveData* save;

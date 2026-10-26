@@ -4,6 +4,14 @@
 
 #include <stage.h>
 
+typedef struct {
+    u16 animSet;
+    u16 unk5A;
+    u16 palette;
+    u16 blendMode;
+    u8* anim;
+} BeelzebubFlameInit;
+
 #define STAGE_IS_RBO1
 
 enum Palettes {

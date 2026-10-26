@@ -74,8 +74,8 @@
 #define LOWU(x) (*(u32*)&(x))
 
 #ifdef VERSION_PC
-// on 64-bit builds, this needs to read 64-bit, not 32-bit with LOW
-#define PRIM_DR_ENV(prim) (*(DR_ENV**)&(prim)->r1)
+// Native pointers must not overlap the vertex coordinates.
+#define PRIM_DR_ENV(prim) ((prim)->drawEnv)
 #else
 #define PRIM_DR_ENV(prim) ((DR_ENV*)LOW((prim)->r1))
 #endif

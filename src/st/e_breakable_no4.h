@@ -16,6 +16,12 @@ void EntityBreakable(Entity* self) {
         self->unk5A = unk5a_arr[breakableType];
         self->palette = palettes[breakableType];
         self->hitboxOffY = hitbox_y_offsets[breakableType];
+#ifdef STAGE_IS_RNO4
+        if (!breakableType) {
+            self->drawFlags = ENTITY_ROTATE;
+            self->rotate = ROT(180);
+        }
+#endif
     }
 
     AnimateEntity(anims[breakableType], self);
@@ -28,6 +34,13 @@ void EntityBreakable(Entity* self) {
         }
 
         switch (breakableType) {
+#ifdef STAGE_IS_RNO4
+        case 0:
+            self->drawFlags = ENTITY_DEFAULT;
+            self->rotate = 0;
+            g_api.PlaySfx(SFX_CANDLE_HIT);
+            break;
+#endif
         case 2:
         case 3:
             break;
@@ -42,6 +55,9 @@ void EntityBreakable(Entity* self) {
             break;
 
         case 7:
+#ifdef STAGE_IS_RNO4
+        case 8:
+#endif
             g_api.PlaySfx(SFX_GLASS_BREAK_E);
             entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
             if (entity != NULL) {
@@ -52,6 +68,7 @@ void EntityBreakable(Entity* self) {
             DestroyEntity(self);
             return;
 
+#ifndef STAGE_IS_RNO4
         case 8:
             g_api.PlaySfx(SFX_GLASS_BREAK_E);
             entity = AllocEntity(&g_Entities[160], &g_Entities[192]);
@@ -62,6 +79,7 @@ void EntityBreakable(Entity* self) {
             PreventEntityFromRespawning(self);
             DestroyEntity(self);
             return;
+#endif
 
         default:
             g_api.PlaySfx(SFX_CANDLE_HIT);
@@ -77,7 +95,11 @@ void EntityBreakableStatueBroken(Entity* self) {
     switch (self->step) {
     case 0:
         InitializeEntity(g_EInitInteractable);
+#ifdef STAGE_IS_RNO4
+        self->animSet = ANIMSET_OVL(9);
+#else
         self->animSet = ANIMSET_OVL(0xB);
+#endif
         self->unk5A = 0x5B;
         self->palette = PAL_BREAKABLE_STATUE;
         self->animCurFrame = 0x15;

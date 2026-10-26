@@ -84,7 +84,7 @@ extern PlayerState g_Dop;
 // this is similar to `WeaponAnimation` but
 // with fewer fields.
 typedef struct {
-    AnimationFrame* frames;
+    u16** frames;
     s8* frameProps;
     u16 soundId;
     u8 frameStart;

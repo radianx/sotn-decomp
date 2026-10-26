@@ -196,7 +196,14 @@ s32 MemcardReadFile(
 
     g_MemcardFd = fd;
     _clear_event();
+#ifdef VERSION_PC
+    if (read(fd, data, nBytes) != nBytes) {
+        close(fd);
+        return -1;
+    }
+#else
     read(fd, data, nBytes);
+#endif
     return 0;
 }
 
@@ -228,7 +235,14 @@ s32 MemcardWriteFile(s32 nPort, s32 nCard, const char* name, void* data,
     } else {
         g_MemcardFd = fd;
         _clear_event();
+#ifdef VERSION_PC
+        if (write(fd, data, len) != len) {
+            close(fd);
+            return -1;
+        }
+#else
         write(fd, data, len);
+#endif
     }
     return 0;
 }

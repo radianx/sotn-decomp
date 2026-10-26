@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "sword.h"
+#ifdef VERSION_PC
+#include "../../pc/gte.h"
+#endif
 #include "../servant_private.h"
 #include <items.h>
 #include <scratchpad.h>

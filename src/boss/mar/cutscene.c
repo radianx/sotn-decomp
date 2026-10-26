@@ -299,8 +299,12 @@ void EntityCutscene(Entity* self) {
                 ptr <<= 4;
                 ptr |= *g_Dialogue.scriptCur++;
                 // This needs help. Casting the const to short is good.
+#ifdef VERSION_PC
+                ptr = (uintptr_t)CS_NEXT(ptr);
+#else
                 ptr += (u16)0x100000;
-                g_Dialogue.scriptCur += *CS_NEXT(ptr) << 2;
+#endif
+                g_Dialogue.scriptCur += *(u16*)ptr << 2;
 
                 ptr = *g_Dialogue.scriptCur++;
                 ptr <<= 4;
@@ -351,7 +355,11 @@ void EntityCutscene(Entity* self) {
                     ptr |= *g_Dialogue.scriptCur++;
                     ptr <<= 4;
                     ptr |= *g_Dialogue.scriptCur++;
-                    ptr = (u_long)CS_PTR(ptr);
+#ifdef VERSION_PC
+                    ptr = (uintptr_t)CS_PTR(ptr);
+#else
+                    ptr += 0x100000;
+#endif
                     nextChar2 = g_Dialogue.scriptCur++[0];
                     LoadTPage((u_long*)ptr, 1, 0, D_us_801805E4[nextChar2],
                               0x100, 0x30, 0x48);

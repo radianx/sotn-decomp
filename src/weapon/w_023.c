@@ -11,13 +11,13 @@ extern s32 g_HandId;
 #include "shared.h"
 #include "sfx.h"
 
-extern s8 D_A5000_8017AAD8;
-extern AnimationFrame* D_A5000_8017AB20;
+extern s8 D_A5000_8017AAD8[];
+extern AnimationFrame* D_A5000_8017AB20[];
 
 extern s32 D_A5000_8017AB70[];
 
 extern u8 D_A5000_8017ABB0[];
-extern s32 D_A5000_8017AC50[];
+extern SVECTOR* D_A5000_8017AC50[];
 extern SVECTOR* D_A5000_8017AC90[];
 extern VECTOR D_A5000_8017ACD8;
 
@@ -160,7 +160,7 @@ static void EntityWeaponAttack(Entity* self) {
         break;
     }
     if (self->step != 4) {
-        g_api.PlayAnimation(&D_A5000_8017AAD8, &D_A5000_8017AB20);
+        g_api.PlayAnimation(D_A5000_8017AAD8, D_A5000_8017AB20);
     }
     self->drawFlags = PLAYER.drawFlags;
     self->scaleY = PLAYER.scaleY;
@@ -649,3 +649,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_023_pc.h"
+#endif

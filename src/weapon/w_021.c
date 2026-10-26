@@ -18,7 +18,7 @@ extern s32 g_HandId;
 
 // Similar to BottomCornerText which exists in many overlays
 // This one seems to process 2 characters at a time, weird.
-void func_97000_8017AB54(u8* str, u8 lowerLeft) {
+void func_97000_8017AB54(const u8* str, u8 lowerLeft) {
     u8 toPrint[64];
     Primitive* prim;
     s32 i;
@@ -555,3 +555,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_021_pc.h"
+#endif

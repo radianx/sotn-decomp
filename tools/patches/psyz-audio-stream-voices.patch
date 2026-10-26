@@ -1,0 +1,105 @@
+SPDX-License-Identifier: MPL-2.0
+PSY-Z native fixes; modified 2026-10-26. See README.md and LICENSE.MPL-2.0.
+
+diff --git a/psyz/src/psyz/libcd.c b/psyz/src/psyz/libcd.c
+index c783fb2..aeeae43 100644
+--- a/psyz/src/psyz/libcd.c
++++ b/psyz/src/psyz/libcd.c
+@@ -484,6 +484,8 @@ static struct {
+     // Hermite ring: index [0]=oldest .. [3]=newest per channel
+     short rh_l[4], rh_r[4];
+     unsigned int phase; // 16.16 fractional position into the input stream
++    uint64_t output_frames;
++    uint64_t sectors_read;
+     int cur_abs_sector; // absolute last sector used, for CdlGetlocL
+     int stream_ended;   // filtered file/channel ran out, emit silence
+ } xa;
+@@ -496,6 +498,8 @@ static void xa_reset_stream(void) {
+     memset(xa.rh_l, 0, sizeof(xa.rh_l));
+     memset(xa.rh_r, 0, sizeof(xa.rh_r));
+     xa.phase = 0;
++    xa.output_frames = 0;
++    xa.sectors_read = 0;
+     xa.stream_ended = 0;
+ }
+ 
+@@ -574,11 +578,17 @@ static int xa_read_and_decode_sector(void) {
+     unsigned char sector[SECTOR_SIZE];
+     int gap = 0;
+     while (!xa.stream_ended) {
++        // Filtering must not collapse gaps into the next clip using this filter.
++        unsigned sectors_per_second = (CD_mode & CdlModeSpeed) ? 150 : 75;
++        if (xa.sectors_read * 44100 / sectors_per_second > xa.output_frames) {
++            return -1; // next sector has not reached the pickup yet
++        }
+         const size_t n = fread(sector, 1, SECTOR_SIZE, track_file);
+         if (n != SECTOR_SIZE) {
+             return 0; // EOF or short read
+         }
+         xa.cur_abs_sector++;
++        xa.sectors_read++;
+         const unsigned char file = sector[0x10];
+         const unsigned char channel = sector[0x11];
+         const unsigned char submode = sector[0x12];
+@@ -616,8 +626,9 @@ static int xa_read_and_decode_sector(void) {
+ // Returns 1 on success, 0 if stream ended.
+ static int xa_advance_input(void) {
+     if (xa.decoded_pos >= xa.decoded_count) {
+-        if (!xa_read_and_decode_sector()) {
+-            return 0;
++        int ready = xa_read_and_decode_sector();
++        if (ready != 1) {
++            return ready;
+         }
+     }
+     short l = xa.decoded[xa.decoded_pos * 2 + 0];
+@@ -659,22 +670,18 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
+     if (!is_playing || !track_file || !xa.active) {
+         goto end;
+     }
+-    // Prime Hermite ring on first call so we have y0..y2 valid.
+-    while (xa.rh_l[3] == 0 && xa.rh_l[2] == 0 && xa.rh_l[1] == 0 &&
+-           xa.decoded_pos == 0 && xa.decoded_count == 0) {
+-        if (!xa_advance_input()) {
+-            hit_eof = 1;
+-            goto end;
+-        }
+-        if (xa.decoded_count > 0)
+-            break;
+-    }
+     while (written < max_frames) {
+-        // Advance input as many times as needed to get phase < 1.0.
++        int ready;
++        if (xa.decoded_count == 0) {
++            ready = xa_advance_input();
++            if (ready != 1) {
++                goto no_input;
++            }
++        }
+         while (xa.phase >= 0x10000) {
+-            if (!xa_advance_input()) {
+-                hit_eof = 1;
+-                goto end;
++            ready = xa_advance_input();
++            if (ready != 1) {
++                goto no_input;
+             }
+             xa.phase -= 0x10000;
+         }
+@@ -688,6 +695,16 @@ static size_t xa_pull_samples(short* buf, size_t max_frames) {
+                 xa.rh_r[0], xa.rh_r[1], xa.rh_r[2], xa.rh_r[3], xa.phase);
+         }
+         xa.phase += XA_STEP_Q16;
++        goto next_frame;
++    no_input:
++        if (ready == 0) {
++            hit_eof = 1;
++            break;
++        }
++        buf[written * 2 + 0] = 0;
++        buf[written * 2 + 1] = 0;
++    next_frame:
++        xa.output_frames++;
+         written++;
+     }
+ end:

@@ -224,6 +224,8 @@ u16 GetAngleBetweenEntities(Entity* a, Entity* b);
 u16 LimitAngleChange(u16 delta, u16 base, u16 target);
 u8 CheckColliderOffsets(s16* arg0, u8 facing);
 u8 UnkCollisionFunc4(u8 arg0);
+Primitive* FindFirstUnkPrim(Primitive* prim);
+Primitive* FindFirstUnkPrim2(Primitive* prim, u8 index);
 Primitive* PrimToggleVisibility(Primitive* prim, s32 count);
 Primitive* UnkRecursivePrimFunc2(
     Primitive* srcPrim, s32 iterations, Primitive* dstPrim, u8* dataPtr);

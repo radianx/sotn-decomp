@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/xeeynamo/sotn-decomp/tools/sotn-assets/assets"
@@ -30,7 +31,19 @@ func (h *handler) Name() string { return "paldef" }
 
 func (h *handler) Extract(e assets.ExtractArgs) error {
 	r := bytes.NewReader(e.Data)
-	defs, clutsOff, err := readPaletteDefs(r, e.RamBase, e.Start, e.End)
+	header, err := sotn.ReadStageHeader(r)
+	if err != nil {
+		return err
+	}
+	clutsOff := header.Cluts.Real(e.RamBase)
+	if clutsOff < e.Start || clutsOff >= e.End {
+		return fmt.Errorf("cluts offset 0x%X outside palette segment", clutsOff)
+	}
+	pointers, err := readClutsPointers(r, e.RamBase, clutsOff, e.End)
+	if err != nil {
+		return err
+	}
+	defs, err := readPaletteDefsAt(r, e.RamBase, pointers)
 	if err != nil {
 		return err
 	}
@@ -127,8 +140,7 @@ func (h *handler) Info(a assets.InfoArgs) (assets.InfoResult, error) {
 			start = addr
 		}
 	}
-	defs, _, err := readPaletteDefs(
-		r, boundaries.StageBegin, start.Real(boundaries.StageBegin), clutsOff)
+	defs, err := readPaletteDefsAt(r, boundaries.StageBegin, cluts)
 	if err != nil {
 		return assets.InfoResult{}, err
 	}
@@ -217,47 +229,39 @@ type paletteDefs struct {
 	Defs  []paletteDef `json:"defs"`
 }
 
-// readPaletteDefs parses consecutive pal_def blobs starting at 'start' until
-// the next word no longer looks like a palette op, which marks the beginning
-// of the cluts[] pointer array. It returns the parsed defs and the offset
-// where the cluts array starts.
-func readPaletteDefs(r io.ReadSeeker, baseAddr psx.Addr, start, end int) ([]paletteDef, int, error) {
+// Palette data may sit between definitions (NZ1); follow the cluts table
+// instead of assuming that definitions occupy a contiguous byte range.
+func readPaletteDefsAt(r io.ReadSeeker, baseAddr psx.Addr, pointers []psx.Addr) ([]paletteDef, error) {
 	var defs []paletteDef
-	off := start
-	for off < end {
-		addr := baseAddr.Sum(off)
+	seen := map[psx.Addr]bool{}
+	for _, addr := range pointers {
+		if seen[addr] {
+			continue
+		}
+		seen[addr] = true
 		if err := addr.MoveFile(r, baseAddr); err != nil {
-			return nil, 0, fmt.Errorf("invalid offset: %w", err)
+			return nil, fmt.Errorf("invalid palette definition: %w", err)
 		}
 		var op uint32
 		if err := binary.Read(r, binary.LittleEndian, &op); err != nil {
-			return nil, 0, fmt.Errorf("error reading palette op: %w", err)
+			return nil, fmt.Errorf("error reading palette op: %w", err)
 		}
-		flags := int(op & palFlagsMask)
 		kind := int(op & 0xFFFF &^ palFlagsMask)
-		freq := int(op >> 16)
-		// PSP aligns every def to 8 bytes, pad with a zero after terminator
-		if op == 0 {
-			off += 4
-			continue
+		if kind < palCopy || kind > palBulkCopy || op>>16 > 0xFF {
+			return nil, fmt.Errorf("invalid palette op 0x%X at %s", op, addr)
 		}
-		// a palette op has a small kind and frequency, anything else is a
-		// pointer and marks the beginning of the cluts[] array
-		if kind < palCopy || kind > palBulkCopy || freq > 0xFF {
-			break
-		}
-		def := paletteDef{Kind: kind, Flags: flags, Freq: freq, addr: addr}
+		def := paletteDef{Kind: kind, Flags: int(op & palFlagsMask), Freq: int(op >> 16), addr: addr}
 		if err := readPaletteEntries(r, baseAddr, addr, &def); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
-		cur, _ := r.Seek(0, io.SeekCurrent)
-		off = int(cur)
 		defs = append(defs, def)
 	}
 	if len(defs) == 0 {
-		return nil, 0, fmt.Errorf("no palette defs found at %s", baseAddr.Sum(start))
+		return nil, fmt.Errorf("empty palette definitions")
 	}
-	return defs, off, nil
+	// Preserve the original physical order for byte-matching builds.
+	sort.Slice(defs, func(i, j int) bool { return defs[i].addr < defs[j].addr })
+	return defs, nil
 }
 
 func readPaletteEntries(r io.ReadSeeker, baseAddr, defAddr psx.Addr, def *paletteDef) error {

@@ -2,8 +2,13 @@
 #include "stage.h"
 #include <romio.h>
 #include "memcard.h"
+#include "stream.h"
 
 #define DISP_W 512
+
+#ifdef VERSION_PC
+s32 func_801B3A94(intptr_t arg0);
+#endif
 
 #define NUM_MENU_OPTIONS 5
 
@@ -157,11 +162,24 @@ extern const char D_801AC038[]; // "%s timeout:\n"
 extern s32 D_801BC3E4;
 extern s32 D_801BC650;
 extern SaveSummary g_SaveSummary[PORT_COUNT];
-extern u32 g_StreamEndFrame;
+extern StreamControl g_StreamControl;
+
+#ifdef VERSION_PC
+#define g_StreamEndFrame g_StreamControl.endFrame
+#define g_StreamIsRGB24 g_StreamControl.isRGB24
+#define D_801BD03C g_StreamControl.flags
+#define D_801BD040 g_StreamControl.location
+#define g_StreamRewindSwitch g_StreamControl.rewind
+#define g_StreamImageBuffer g_StreamControl.frameBuffer
+#else
+// Linker symbols identify fields within g_StreamControl.
+extern u32 g_StreamEndFrame[1];
+extern u32 g_StreamIsRGB24[1];
 extern u32 D_801BD03C;
-extern u32 D_801BD040;
+extern CdlLOC D_801BD040;
 extern s32 g_StreamRewindSwitch[1];
-extern u8 g_StreamImageBuffer[0x14000];
+extern StreamBuffer g_StreamImageBuffer;
+#endif
 extern s32 D_801D104C[0x1680];
 extern StreamEnv g_StreamEnv;
 extern s32 g_MemcardBlockRead;

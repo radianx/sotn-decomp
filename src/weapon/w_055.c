@@ -64,7 +64,7 @@ void EntityWeaponAttack(Entity* self) {
     self->rotPivotY = PLAYER.rotPivotY;
 }
 
-extern SpriteParts D_185000_8017B160[];
+extern s16* D_185000_8017B160[];
 
 s32 func_ptr_80170004(Entity* self) {
     Primitive* prim;
@@ -200,3 +200,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_055_pc.h"
+#endif

@@ -2,6 +2,11 @@
 #include "demon.h"
 #include "../servant_private.h"
 
+#ifdef VERSION_PC
+#include "../shared_events.h"
+#include "../shared_globals.h"
+#endif
+
 static s32 s_ServantId;
 static FamiliarStats s_DemonStats;
 static s16 D_us_801786A0[3][8];
@@ -17,7 +22,9 @@ static s32 s_LastTargetedEntityIndex;
 extern s16 D_092F2810[];
 #define buggyPtr D_092F2810
 #else
+#ifndef VERSION_PC
 extern ServantEvent g_Events[];
+#endif
 #define buggyPtr ((s16*)g_Events)
 #endif
 
@@ -1827,8 +1834,10 @@ void func_us_80177690(Entity* self) {
 s16 D_092F2810[4] = {0};
 #endif
 
+#ifndef VERSION_PC
 #include "../shared_events.h"
 #include "../shared_globals.h"
+#endif
 #include "../servant_update_anim.h"
 #include "../../destroy_entity.h"
 #include "../accumulate_toward_zero.h"

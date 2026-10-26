@@ -1031,8 +1031,8 @@ void EntityVenusWeedFlower(Entity* self) {
         if (!(self->palette & PAL_UNK_FLAG)) {
             self->palette += self->ext.venusWeedFlower.clutOffset >> 4;
             self->ext.venusWeedFlower.clutOffset &= 0xF;
-            if (self->palette > 0x24f) {
-                self->palette = 0x24f;
+            if (self->palette > PLANT_CLUT - 1) {
+                self->palette = PLANT_CLUT - 1;
             }
         }
     }

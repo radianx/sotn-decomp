@@ -8,7 +8,7 @@ pub struct PlayerStatusTransformer {
 }
 
 lazy_static! {
-    static ref PLAYER_STATUSES: [(u32, &'static str); 31] = [
+    static ref PLAYER_STATUSES: [(u32, &'static str); 32] = [
         (1 << 0, "PLAYER_STATUS_BAT_FORM"),
         (1 << 1, "PLAYER_STATUS_MIST_FORM"),
         (1 << 2, "PLAYER_STATUS_WOLF_FORM"),
@@ -38,8 +38,9 @@ lazy_static! {
         (1 << 26, "PLAYER_STATUS_UNK4000000"),
         (1 << 27, "NO_AFTERIMAGE"),
         (1 << 28, "PLAYER_STATUS_UNK10000000"),
-        (1 << 29, "PLAYER_STATUS_UNK40000000"),
-        (1 << 30, "PLAYER_STATUS_UNK80000000")
+        (1 << 29, "PLAYER_STATUS_UNK20000000"),
+        (1 << 30, "PLAYER_STATUS_UNK40000000"),
+        (1 << 31, "PLAYER_STATUS_UNK80000000")
     ];
 }
 
@@ -74,6 +75,30 @@ mod tests {
         let expected_line = "g_Player.status = PLAYER_STATUS_STONE;";
         let result = DMT.transform_line(input_line);
         assert_eq!(result, expected_line)
+    }
+
+    #[test]
+    fn test_player_status_high_bits() {
+        for (input, expected) in [
+            (
+                "if (g_Player.status & 0x20000000) {",
+                "if (g_Player.status & PLAYER_STATUS_UNK20000000) {",
+            ),
+            (
+                "if (g_Player.status & 0x40000000) {",
+                "if (g_Player.status & PLAYER_STATUS_UNK40000000) {",
+            ),
+            (
+                "if (g_Player.status & 0x80000000) {",
+                "if (g_Player.status & PLAYER_STATUS_UNK80000000) {",
+            ),
+            (
+                "if (g_Player.status & 0xE0000000) {",
+                "if (g_Player.status & (PLAYER_STATUS_UNK80000000 | PLAYER_STATUS_UNK40000000 | PLAYER_STATUS_UNK20000000)) {",
+            ),
+        ] {
+            assert_eq!(DMT.transform_line(input), expected, "{input}");
+        }
     }
 
     #[test]

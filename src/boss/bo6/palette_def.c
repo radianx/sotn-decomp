@@ -2,11 +2,11 @@
 #include "bo6.h"
 
 // This table is not currently represented by the asset config.
-extern s16* D_us_8019E9A0[0x300];
-extern s16* D_us_8019EFA0[0x100];
-extern s16* D_us_8019F3A0[0x80];
-extern s16* D_us_8019F1A0[0x80];
-extern s16* D_us_8019F5A0[0x80];
+extern u16 D_us_8019E9A0[0x300];
+extern u16 D_us_8019EFA0[0x100];
+extern u16 D_us_8019F3A0[0x80];
+extern u16 D_us_8019F1A0[0x80];
+extern u16 D_us_8019F5A0[0x80];
 
 static u_long* D_us_80180094[] = {
     MAKE_PAL_OP(PAL_BULK_COPY, 0),

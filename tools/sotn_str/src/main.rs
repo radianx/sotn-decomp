@@ -704,6 +704,7 @@ fn cc(cc_args: &[String]) -> io::Result<i32> {
     let pp_args = preprocess_args(args);
     let pp_output = PCommand::new(compiler)
         .args(&pp_args)
+        .stderr(Stdio::inherit())
         .stdout(Stdio::piped())
         .output()?;
     if !pp_output.status.success() {

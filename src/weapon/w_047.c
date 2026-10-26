@@ -14,7 +14,19 @@ extern s32 g_HandId;
 extern AnimationFrame D_14D000_8017A528[];
 extern s16 D_14D000_8017A468[0x20];
 extern s16 D_14D000_8017A488[0x20];
-extern unsigned long D_14D000_8017A4A8[]; // image data
+#ifdef VERSION_PC
+extern u32 D_14D000_8017A4A8[];
+#else
+#ifdef VERSION_PC
+extern u32 D_14D000_8017A4A8[];
+#else
+#ifdef VERSION_PC
+extern u32 D_14D000_8017A4A8[];
+#else
+extern unsigned long D_14D000_8017A4A8[];
+#endif
+#endif
+#endif // image data
 extern s32 D_14D000_8017B6A4;
 
 void EntityWeaponAttack(Entity* self) {
@@ -357,3 +369,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_047_pc.h"
+#endif
