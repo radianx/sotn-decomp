@@ -821,6 +821,7 @@ static s16 g_QuadIndices2[] = {
 #if !defined(STAGE_IS_NZ0) && !defined(STAGE_IS_NO1) &&                        \
     !defined(STAGE_IS_CHI) && !defined(STAGE_IS_LIB) &&                        \
     !defined(STAGE_IS_CAT) && !defined(STAGE_IS_RNO0) &&                       \
+    !defined(STAGE_IS_BO7) &&                                                \
     !defined(BOSS_IS_BO1) && STAGE != STAGE_ST0 && !defined(STAGE_IS_TEK) &&   \
     (!defined(VERSION_PSP) ||                                                  \
      (!defined(BOSS_IS_BO0) && !defined(STAGE_IS_RLIB)))

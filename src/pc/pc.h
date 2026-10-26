@@ -25,9 +25,18 @@
 #define VRAM_H 512
 #define VRAM_STRIDE 2048
 
+bool PcPlayMovie(int index);
+bool PcTestSave(void);
+
 enum TestMode {
     NO_TEST,
     TEST_SNDLIB,
+    TEST_OVERLAYS,
+    TEST_MOVIE0,
+    TEST_MOVIE1,
+    TEST_MOVIE2,
+    TEST_MOVIE3,
+    TEST_SAVE,
 };
 struct InitGameParams {
     const char* diskPath;

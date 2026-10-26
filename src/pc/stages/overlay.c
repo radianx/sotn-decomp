@@ -3,6 +3,32 @@
 #include <psyz/module.h>
 #include "overlay.h"
 #include "../spawn_point.h"
+#include "overlay_names.h"
+#include <stdio.h>
+#include <string.h>
+
+bool TestOverlays(void) {
+    union {
+        Overlay stage;
+        ServantDesc servant;
+        Weapon weapon;
+    } exports;
+    unsigned failures = 0;
+    unsigned i;
+
+    for (i = 0; i < LEN(s_OverlayNames); i++) {
+        memset(&exports, 0, sizeof(exports));
+        PsyzModule module = Psyz_ModuleOpen(s_OverlayNames[i], &exports);
+        if (!module) {
+            fprintf(stderr, "FAIL: %s\n", s_OverlayNames[i]);
+            failures++;
+            continue;
+        }
+        Psyz_ModuleClose(module);
+    }
+    printf("Overlays: %u/%u loaded successfully\n", i - failures, i);
+    return failures == 0;
+}
 
 static const char* OverlayPath(const char* name, char* buf, int len) {
     (void)buf;

@@ -9,5 +9,6 @@
 bool LoadStageOverlay(const char* name, Overlay* o);
 bool LoadServantOverlay(const char* name, ServantDesc* o);
 bool LoadWeaponOverlay(const char* name, unsigned handId, Weapon* o);
+bool TestOverlays(void);
 
 #endif

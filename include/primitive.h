@@ -87,6 +87,9 @@ typedef struct Primitive {
     /* 0x30 */ u8 u3; // TODO not verified
     /* 0x31 */ u8 v3; // TODO not verified
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } Primitive; /* size=0x34 */
 
 SYNC_FIELD(POLY_GT3, Primitive, x0);
@@ -132,6 +135,9 @@ typedef struct FakePrim {
     /* 0x2C */ f32 accelerationY;
     /* 0x30 */ s16 timer;
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } FakePrim;
 
 // Not actually sure if this is for LineG2, but the only time LineG2
@@ -165,6 +171,9 @@ typedef struct PrimLineG2 {
     /* 0x2C */ f32 preciseY;
     /* 0x30 */ s16 timer;
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } PrimLineG2;
 
 typedef struct AxePrim {
@@ -197,6 +206,9 @@ typedef struct AxePrim {
     /* 0x30 */ u8 u3;
     /* 0x31 */ u8 v3;
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } AxePrim;
 
 // If we find more uses, can get a better name.
@@ -229,6 +241,9 @@ typedef struct EntranceCascadePrim {
     /* 0x2C */ f32 velocityX;
     /* 0x30 */ s16 : 16;
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } EntranceCascadePrim; /* size=0x34 */
 #endif
 
@@ -269,6 +284,9 @@ typedef struct FrozenShadePrim {
     /* 0x30 */ u8 u3; // TODO not verified
     /* 0x31 */ u8 v3; // TODO not verified
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } FrozenShadePrim; /* size=0x34 */
 
 typedef struct NumericPrim {
@@ -305,6 +323,9 @@ typedef struct NumericPrim {
     /* 0x30 */ u8 u3;
     /* 0x31 */ u8 v3;
     /* 0x32 */ u16 drawMode;
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } NumericPrim; /* size=0x34 */
 
 // Used in st0/3101C
@@ -329,6 +350,9 @@ typedef struct Primitive2 {
     u_long dummy;
 #endif
     struct SubPrim prim[4];
+#ifdef VERSION_PC
+    void* drawEnv;
+#endif
 } Primitive2;
 
 // Used in st0/prologue_scroll

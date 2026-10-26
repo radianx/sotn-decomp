@@ -1,0 +1,2556 @@
+version: us
+files:
+  - target: disks/us/ST/NZ1/NZ1.BIN
+    asset_path: assets/pc/nz1
+    src_path: src/pc/stages/palettes/nz1
+    splat_config_path: config/splat.us.stnz1.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40, skip]
+          - [0xA0, paldef, palette_def]
+          - [0x360, skip]
+          - [0x558, skip]
+          - [0x820, skip]
+          - [0x9C8, skip]
+          - [0x233C, skip]
+          - [0x23C8, skip]
+          - [0x3834, skip]
+          - [0x3AF0, skip]
+          - [0x3FA8, skip]
+          - [0x58F4, skip]
+          - [0x6530, skip]
+          - [0x684C, skip]
+          - [0x7CCC, skip]
+          - [0x9088, skip]
+          - [0xA0CC, skip]
+          - [0xA618, skip]
+          - [0xAEE0, skip]
+          - [0xBCF0, skip]
+          - [0xC984, skip]
+          - [0xD054, skip]
+          - [0xD510, skip]
+          - [0xDF40, skip]
+          - [0xE664, skip]
+          - [0xF130, skip]
+          - [0xF6F8, skip]
+          - [0x100AC, skip]
+          - [0x10AFC, skip]
+          - [0x11678, skip]
+          - [0x1222C, skip]
+          - [0x12B68, skip]
+          - [0x12DD8, palette, pc_nz1_pal_12DD8, 16]
+          - [0x12FD8, palette, pc_nz1_pal_12FD8, 16]
+          - [0x13098, palette, pc_nz1_pal_13098, 16]
+          - [0x13158, palette, pc_nz1_pal_13158, 16]
+          - [0x131D8, palette, pc_nz1_pal_131D8, 16]
+          - [0x13278, palette, pc_nz1_pal_13278, 16]
+          - [0x13498, palette, pc_nz1_pal_13498, 16]
+          - [0x134F8, palette, pc_nz1_pal_134F8, 16]
+          - [0x13558, palette, pc_nz1_pal_13558, 16]
+          - [0x135D8, palette, pc_nz1_pal_135D8, 16]
+          - [0x136D8, palette, pc_nz1_pal_136D8, 16]
+          - [0x13798, palette, pc_nz1_pal_13798, 16]
+          - [0x137D8, skip]
+          - [0x20BF8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C, palette, pc_nz1_pal_12C, 16]
+          - [0x14C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14C, palette, pc_nz1_pal_14C, 16]
+          - [0x16C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16C, palette, pc_nz1_pal_16C, 16]
+          - [0x18C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x18C, palette, pc_nz1_pal_18C, 16]
+          - [0x1AC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1AC, palette, pc_nz1_pal_1AC, 16]
+          - [0x1CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1CC, palette, pc_nz1_pal_1CC, 16]
+          - [0x1EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1EC, palette, pc_nz1_pal_1EC, 16]
+          - [0x20C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x20C, palette, pc_nz1_pal_20C, 16]
+          - [0x22C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x22C, palette, pc_nz1_pal_22C, 16]
+          - [0x24C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x24C, palette, pc_nz1_pal_24C, 16]
+          - [0x26C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x26C, palette, pc_nz1_pal_26C, 16]
+          - [0x28C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x28C, palette, pc_nz1_pal_28C, 16]
+          - [0x2AC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2AC, palette, pc_nz1_pal_2AC, 16]
+          - [0x2CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2CC, palette, pc_nz1_pal_2CC, 16]
+          - [0x2EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2EC, palette, pc_nz1_pal_2EC, 16]
+          - [0x30C, skip]
+  - target: disks/us/ST/RNZ1/RNZ1.BIN
+    asset_path: assets/pc/rnz1
+    src_path: src/pc/stages/palettes/rnz1
+    splat_config_path: config/splat.us.strnz1.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40, skip]
+          - [0xA0, paldef, palette_def]
+          - [0x398, skip]
+          - [0x590, skip]
+          - [0x840, skip]
+          - [0x9E8, skip]
+          - [0x24C4, skip]
+          - [0x2550, skip]
+          - [0x3674, skip]
+          - [0x39B8, skip]
+          - [0x3F5C, skip]
+          - [0x58A8, skip]
+          - [0x64E4, skip]
+          - [0x7360, skip]
+          - [0x7DF0, skip]
+          - [0x8754, skip]
+          - [0x9138, skip]
+          - [0x9FA4, skip]
+          - [0xA724, skip]
+          - [0xAF60, skip]
+          - [0xB828, skip]
+          - [0xBDF0, skip]
+          - [0xC060, skip]
+          - [0xCA14, skip]
+          - [0xD864, skip]
+          - [0xEA48, skip]
+          - [0xF844, skip]
+          - [0x10570, skip]
+          - [0x10D74, skip]
+          - [0x11C18, skip]
+          - [0x11DCC, skip]
+          - [0x12884, palette, pc_rnz1_pal_12884, 16]
+          - [0x12A84, palette, pc_rnz1_pal_12A84, 16]
+          - [0x12B44, palette, pc_rnz1_pal_12B44, 16]
+          - [0x12B64, palette, pc_rnz1_pal_12B64, 16]
+          - [0x12C04, palette, pc_rnz1_pal_12C04, 16]
+          - [0x12CA4, palette, pc_rnz1_pal_12CA4, 16]
+          - [0x12CE4, palette, pc_rnz1_pal_12CE4, 16]
+          - [0x12D64, palette, pc_rnz1_pal_12D64, 16]
+          - [0x12E64, palette, pc_rnz1_pal_12E64, 16]
+          - [0x12EC4, palette, pc_rnz1_pal_12EC4, 16]
+          - [0x12F84, palette, pc_rnz1_pal_12F84, 16]
+          - [0x13084, skip]
+          - [0x204A4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x114, palette, pc_rnz1_pal_114, 16]
+          - [0x134, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x134, palette, pc_rnz1_pal_134, 16]
+          - [0x154, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x154, palette, pc_rnz1_pal_154, 16]
+          - [0x174, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x174, palette, pc_rnz1_pal_174, 16]
+          - [0x194, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x194, palette, pc_rnz1_pal_194, 16]
+          - [0x1B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1B4, palette, pc_rnz1_pal_1B4, 16]
+          - [0x1D4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1D4, palette, pc_rnz1_pal_1D4, 16]
+          - [0x1F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F4, palette, pc_rnz1_pal_1F4, 16]
+          - [0x214, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x214, palette, pc_rnz1_pal_214, 16]
+          - [0x234, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x234, palette, pc_rnz1_pal_234, 16]
+          - [0x254, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x254, palette, pc_rnz1_pal_254, 16]
+          - [0x274, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x274, palette, pc_rnz1_pal_274, 16]
+          - [0x294, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x294, palette, pc_rnz1_pal_294, 16]
+          - [0x2B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2B4, palette, pc_rnz1_pal_2B4, 16]
+          - [0x2D4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2D4, palette, pc_rnz1_pal_2D4, 16]
+          - [0x2F4, skip]
+  - target: disks/us/ST/RNO1/RNO1.BIN
+    asset_path: assets/pc/rno1
+    src_path: src/pc/stages/palettes/rno1
+    splat_config_path: config/splat.us.strno1.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, skip]
+          - [0x8C, palette, pc_rno1_pal_8C, 16]
+          - [0xAC, paldef, palette_def]
+          - [0x154, skip]
+          - [0x32C, skip]
+          - [0x400, skip]
+          - [0x5A8, skip]
+          - [0x1E98, skip]
+          - [0x1F54, skip]
+          - [0x2D2C, skip]
+          - [0x3908, skip]
+          - [0x3C4C, skip]
+          - [0x41F0, skip]
+          - [0x4E48, skip]
+          - [0x5B40, skip]
+          - [0x640C, skip]
+          - [0x6A84, skip]
+          - [0x77C4, skip]
+          - [0x81F4, skip]
+          - [0x8FDC, skip]
+          - [0x9928, skip]
+          - [0xADC4, skip]
+          - [0xB778, skip]
+          - [0xC680, palette, pc_rno1_pal_C680, 16]
+          - [0xC6A0, palette, pc_rno1_pal_C6A0, 16]
+          - [0xC6C0, palette, pc_rno1_pal_C6C0, 16]
+          - [0xC6E0, palette, pc_rno1_pal_C6E0, 16]
+          - [0xC700, palette, pc_rno1_pal_C700, 16]
+          - [0xC7A0, palette, pc_rno1_pal_C7A0, 16]
+          - [0xC800, palette, pc_rno1_pal_C800, 16]
+          - [0xC820, palette, pc_rno1_pal_C820, 16]
+          - [0xCA20, palette, pc_rno1_pal_CA20, 16]
+          - [0xCAE0, palette, pc_rno1_pal_CAE0, 16]
+          - [0xCB20, palette, pc_rno1_pal_CB20, 16]
+          - [0xCBC0, palette, pc_rno1_pal_CBC0, 16]
+          - [0xCC20, palette, pc_rno1_pal_CC20, 16]
+          - [0xCD20, palette, pc_rno1_pal_CD20, 16]
+          - [0xCE20, skip]
+          - [0x1D650, skip]
+  - target: disks/us/ST/NO1/NO1.BIN
+    asset_path: assets/pc/no1
+    src_path: src/pc/stages/no1
+    splat_config_path: config/splat.us.stno1.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x90, paldef, palette_def]
+          - [0x1D4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x158, palette, pal_158, 16]
+          - [0x178, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1D4, layers, layers]
+          - [0x3AC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3AC, gfx_banks, graphics_banks]
+          - [0x618, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x44FC, cmpgfx, gfx_44FC, 128, 128, 4]
+          - [0x50D8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x50D8, cmpgfx, gfx_50D8, 128, 128, 4]
+          - [0x5FC8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5FC8, cmpgfx, gfx_5FC8, 128, 128, 4]
+          - [0x6BB8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6BB8, cmpgfx, gfx_6BB8, 128, 128, 4]
+          - [0x8054, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8054, cmpgfx, gfx_8054, 128, 128, 4]
+          - [0x8720, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8720, cmpgfx, gfx_8720, 128, 128, 4]
+          - [0x90CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x90CC, cmpgfx, gfx_90CC, 128, 128, 4]
+          - [0x9FD4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9FD4, cmpgfx, gfx_9FD4, 128, 128, 4]
+          - [0xA704, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA704, cmpgfx, gfx_A704, 128, 128, 4]
+          - [0xB264, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB264, cmpgfx, gfx_B264, 128, 128, 4]
+          - [0xB9A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB9A0, cmpgfx, gfx_B9A0, 128, 128, 4]
+          - [0xC4DC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC4DC, cmpgfx, gfx_C4DC, 128, 128, 4]
+          - [0xD2EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD2EC, cmpgfx, gfx_D2EC, 128, 128, 4]
+          - [0xDF80, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xDF80, cmpgfx, gfx_DF80, 128, 128, 4]
+          - [0xE650, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE650, cmpgfx, gfx_E650, 128, 128, 4]
+          - [0xF584, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF584, cmpgfx, gfx_F584, 128, 128, 4]
+          - [0x105E4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x105E4, cmpgfx, gfx_105E4, 128, 128, 4]
+          - [0x111F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x111F4, cmpgfx, gfx_111F4, 128, 128, 4]
+          - [0x11CB0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11CB0, cmpgfx, gfx_11CB0, 128, 128, 4]
+          - [0x1257C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1257C, cmpgfx, gfx_1257C, 128, 128, 4]
+          - [0x12D20, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12D20, cmpgfx, gfx_12D20, 128, 128, 4]
+          - [0x137E4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x137E4, cmpgfx, gfx_137E4, 128, 128, 4]
+          - [0x141F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x141F0, cmpgfx, gfx_141F0, 128, 128, 4]
+          - [0x14460, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14460, cmpgfx, gfx_14460, 128, 128, 4]
+          - [0x14E14, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14E14, cmpgfx, gfx_14E14, 128, 128, 4]
+          - [0x1519C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1519C, cmpgfx, gfx_1519C, 128, 128, 4]
+          - [0x15490, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15490, palette, pal_15490, 16]
+          - [0x154B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x154B0, palette, pal_154B0, 16]
+          - [0x154D0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x154D0, palette, pal_154D0, 16]
+          - [0x154F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x154F0, palette, pal_154F0, 16]
+          - [0x15510, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15510, palette, pal_15510, 16]
+          - [0x15530, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15530, palette, pal_15530, 16]
+          - [0x15550, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15550, palette, pal_15550, 16]
+          - [0x155B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x155B0, palette, pal_155B0, 16]
+          - [0x155D0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x155D0, palette, pal_155D0, 16]
+          - [0x15650, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15650, palette, pal_15650, 16]
+          - [0x156B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x156B0, palette, pal_156B0, 16]
+          - [0x157B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x157B0, palette, pal_157B0, 16]
+          - [0x157F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x157F0, palette, pal_157F0, 16]
+          - [0x15810, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15810, palette, pal_15810, 16]
+          - [0x15830, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15830, palette, pal_15830, 16]
+          - [0x158B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x158B0, palette, pal_158B0, 16]
+          - [0x158F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x158F0, palette, pal_158F0, 16]
+          - [0x15AD0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15AD0, palette, pal_15AD0, 16]
+          - [0x15B90, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15B90, palette, pal_15B90, 16]
+          - [0x15C50, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15C50, palette, pal_15C50, 16]
+          - [0x15CB0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15CB0, palette, pal_15CB0, 16]
+          - [0x15D10, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15D10, palette, pal_15D10, 16]
+          - [0x15D70, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15D70, palette, pal_15D70, 16]
+          - [0x15DB0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15DB0, palette, pal_15DB0, 16]
+          - [0x15EB0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15EB0, palette, pal_15EB0, 16]
+          - [0x160B0, skip]
+  - target: disks/us/BOSS/BO0/BO0.BIN
+    asset_path: assets/pc/bo0
+    src_path: src/pc/stages/bo0
+    splat_config_path: config/splat.us.bobo0.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, paldef, palette_def]
+          - [0xF8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF8, layers, layers]
+          - [0x120, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x120, gfx_banks, graphics_banks]
+          - [0x320, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x320, layout, entity_layouts]
+          - [0x4C8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2614, rooms, rooms]
+          - [0x2630, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x27B0, cmpgfx, gfx_27B0, 128, 128, 4]
+          - [0x2B80, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2B80, cmpgfx, gfx_2B80, 128, 128, 4]
+          - [0x31EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x31EC, cmpgfx, gfx_31EC, 128, 128, 4]
+          - [0x3E44, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3E44, cmpgfx, gfx_3E44, 128, 128, 4]
+          - [0x4B3C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4B3C, cmpgfx, gfx_4B3C, 128, 128, 4]
+          - [0x57BC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x57BC, cmpgfx, gfx_57BC, 128, 128, 4]
+          - [0x63C0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x63C0, cmpgfx, gfx_63C0, 128, 128, 4]
+          - [0x7084, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7084, cmpgfx, gfx_7084, 128, 128, 4]
+          - [0x7D78, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7D78, cmpgfx, gfx_7D78, 128, 128, 4]
+          - [0x89B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x89B4, cmpgfx, gfx_89B4, 128, 128, 4]
+          - [0x9B9C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9B9C, cmpgfx, gfx_9B9C, 128, 128, 4]
+          - [0xA900, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA900, cmpgfx, gfx_A900, 128, 128, 4]
+          - [0xB614, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB614, cmpgfx, gfx_B614, 128, 128, 4]
+          - [0xC168, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC168, cmpgfx, gfx_C168, 128, 128, 4]
+          - [0xCD10, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xCD10, cmpgfx, gfx_CD10, 128, 128, 4]
+          - [0xD920, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD920, cmpgfx, gfx_D920, 128, 128, 4]
+          - [0xE420, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE420, cmpgfx, gfx_E420, 128, 128, 4]
+          - [0xF328, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF328, cmpgfx, gfx_F328, 128, 128, 4]
+          - [0xFFE0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xFFE0, cmpgfx, gfx_FFE0, 128, 128, 4]
+          - [0x11064, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11064, cmpgfx, gfx_11064, 128, 128, 4]
+          - [0x11EDC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11EDC, cmpgfx, gfx_11EDC, 128, 128, 4]
+          - [0x12BF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12BF4, cmpgfx, gfx_12BF4, 128, 128, 4]
+          - [0x135A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x135A0, cmpgfx, gfx_135A0, 128, 128, 4]
+          - [0x14498, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14498, cmpgfx, gfx_14498, 128, 128, 4]
+          - [0x14B88, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14B88, cmpgfx, gfx_14B88, 128, 128, 4]
+          - [0x15A2C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15A2C, cmpgfx, gfx_15A2C, 128, 128, 4]
+          - [0x169A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16A68, palette, pal_16A68, 16]
+          - [0x16AC8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16AC8, palette, pal_16AC8, 16]
+          - [0x16B08, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16B08, palette, pal_16B08, 16]
+          - [0x16B48, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16B48, palette, pal_16B48, 16]
+          - [0x16D88, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16D88, palette, pal_16D88, 16]
+          - [0x16DA8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16DA8, palette, pal_16DA8, 16]
+          - [0x16E08, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16E08, palette, pal_16E08, 16]
+          - [0x16EE8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x16EE8, palette, pal_16EE8, 16]
+          - [0x17128, skip]
+  - target: disks/us/BOSS/BO2/BO2.BIN
+    asset_path: assets/pc/bo2
+    src_path: src/pc/stages/bo2
+    splat_config_path: config/splat.us.bobo2.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, paldef, palette_def]
+          - [0xE0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE0, layers, layers]
+          - [0x108, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x108, gfx_banks, graphics_banks]
+          - [0x26C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x26C, layout, entity_layouts]
+          - [0x414, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x17E0, rooms, rooms]
+          - [0x17FC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1E4C, cmpgfx, gfx_1E4C, 128, 128, 4]
+          - [0x2120, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2120, cmpgfx, gfx_2120, 128, 128, 4]
+          - [0x2664, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2664, cmpgfx, gfx_2664, 128, 128, 4]
+          - [0x3214, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3214, cmpgfx, gfx_3214, 128, 128, 4]
+          - [0x40F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40F0, cmpgfx, gfx_40F0, 128, 128, 4]
+          - [0x50A4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x50A4, cmpgfx, gfx_50A4, 128, 128, 4]
+          - [0x6004, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6004, cmpgfx, gfx_6004, 128, 128, 4]
+          - [0x70C8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x70C8, cmpgfx, gfx_70C8, 128, 128, 4]
+          - [0x8140, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8140, cmpgfx, gfx_8140, 128, 128, 4]
+          - [0x8FB0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8FB0, cmpgfx, gfx_8FB0, 128, 128, 4]
+          - [0x9FD4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9FD4, cmpgfx, gfx_9FD4, 128, 128, 4]
+          - [0xAEA8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xAEA8, cmpgfx, gfx_AEA8, 128, 128, 4]
+          - [0xB600, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB600, cmpgfx, gfx_B600, 128, 128, 4]
+          - [0xC4DC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC4DC, cmpgfx, gfx_C4DC, 128, 128, 4]
+          - [0xD2FC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD2FC, cmpgfx, gfx_D2FC, 128, 128, 4]
+          - [0xE284, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE284, cmpgfx, gfx_E284, 128, 128, 4]
+          - [0xF170, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF170, cmpgfx, gfx_F170, 128, 128, 4]
+          - [0x1006C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1006C, cmpgfx, gfx_1006C, 128, 128, 4]
+          - [0x10A90, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x10A90, cmpgfx, gfx_10A90, 128, 128, 4]
+          - [0x11874, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11874, cmpgfx, gfx_11874, 128, 128, 4]
+          - [0x11E14, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13934, palette, pal_13934, 16]
+          - [0x13AB4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13AB4, palette, pal_13AB4, 16]
+          - [0x13BF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13BF4, palette, pal_13BF4, 16]
+          - [0x13DF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13DF4, palette, pal_13DF4, 16]
+          - [0x13EB4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13EB4, palette, pal_13EB4, 16]
+          - [0x13ED4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13ED4, palette, pal_13ED4, 16]
+          - [0x13F14, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x13F14, palette, pal_13F14, 16]
+          - [0x14014, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14014, palette, pal_14014, 16]
+          - [0x14114, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14114, palette, pal_14114, 16]
+          - [0x14214, skip]
+  - target: disks/us/BOSS/BO5/BO5.BIN
+    asset_path: assets/pc/bo5
+    src_path: src/pc/stages/bo5
+    splat_config_path: config/splat.us.bobo5.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xAC, paldef, palette_def]
+          - [0xF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x104, layers, layers]
+          - [0x12C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C, gfx_banks, graphics_banks]
+          - [0x1F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F4, layout, entity_layouts]
+          - [0x39C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x187C, rooms, rooms]
+          - [0x1898, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1FA0, cmpgfx, gfx_1FA0, 128, 128, 4]
+          - [0x2294, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2294, cmpgfx, gfx_2294, 128, 128, 4]
+          - [0x2720, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2720, cmpgfx, gfx_2720, 128, 128, 4]
+          - [0x3F48, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3F48, cmpgfx, gfx_3F48, 128, 128, 4]
+          - [0x57E4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x57E4, cmpgfx, gfx_57E4, 128, 128, 4]
+          - [0x6018, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6018, cmpgfx, gfx_6018, 128, 128, 4]
+          - [0x680C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x680C, cmpgfx, gfx_680C, 128, 128, 4]
+          - [0x77A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x77A0, cmpgfx, gfx_77A0, 128, 128, 4]
+          - [0x8868, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8868, cmpgfx, gfx_8868, 128, 128, 4]
+          - [0x9AA4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9AA4, cmpgfx, gfx_9AA4, 128, 128, 4]
+          - [0xA928, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA928, rawgfx, gfx_A928, 48, 72, 8]
+          - [0xB6A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB6A8, rawgfx, gfx_B6A8, 48, 72, 8]
+          - [0xC428, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC428, cmpgfx, gfx_C428, 128, 128, 4]
+          - [0xD684, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD684, cmpgfx, gfx_D684, 128, 128, 4]
+          - [0xE704, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE704, palette, pal_E704, 16]
+          - [0xE904, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE904, palette, pal_E904, 16]
+          - [0xEBE4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEBE4, palette, pal_EBE4, 16]
+          - [0xEDE4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEC24, palette, pal_EC24, 16]
+          - [0xED24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEDE4, palette, pal_EDE4, 16]
+          - [0xEE24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEE24, palette, pal_EE24, 16]
+          - [0xEF24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEF24, palette, pal_EF24, 16]
+          - [0xF024, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF024, palette, pal_F024, 16]
+          - [0xF084, skip]
+  - target: disks/us/BOSS/BO6/BO6.BIN
+    asset_path: assets/pc/bo6
+    src_path: src/pc/stages/bo6
+    splat_config_path: config/splat.us.bobo6.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x34, sprite_banks, sprite_banks]
+          - [0x94, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x94, paldef, palette_def]
+          - [0xDC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xDC, layers, layers]
+          - [0x104, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x104, gfx_banks, graphics_banks]
+          - [0x180, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x180, layout, entity_layouts]
+          - [0x328, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1204, rooms, rooms]
+          - [0x1210, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1A4F4, cmpgfx, gfx_1A4F4, 128, 128, 4]
+          - [0x1ACC4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1ACC4, cmpgfx, gfx_1ACC4, 128, 128, 4]
+          - [0x1B528, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1B528, rawgfx, gfx_1B528, 48, 72, 8]
+          - [0x1C2A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1C2A8, rawgfx, gfx_1C2A8, 48, 72, 8]
+          - [0x1D028, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1D028, rawgfx, gfx_1D028, 48, 72, 8]
+          - [0x1DDA8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1DDA8, cmpgfx, gfx_1DDA8, 128, 128, 4]
+          - [0x1E9A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1E9A0, palette, pal_1E9A0, 16]
+          - [0x1EFA0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1EFA0, palette, pal_1EFA0, 16]
+          - [0x1F1A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F1A0, palette, pal_1F1A0, 16]
+          - [0x1F2A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F2A0, palette, pal_1F2A0, 16]
+          - [0x1F3A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F3A0, palette, pal_1F3A0, 16]
+          - [0x1F4A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F4A0, palette, pal_1F4A0, 16]
+          - [0x1F5A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F5A0, palette, pal_1F5A0, 16]
+          - [0x1F6A0, skip]
+  - target: disks/us/BOSS/BO7/BO7.BIN
+    asset_path: assets/pc/bo7
+    src_path: src/pc/stages/bo7
+    splat_config_path: config/splat.us.bobo7.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40, sprite_banks, sprite_banks]
+          - [0xA0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA0, paldef, palette_def]
+          - [0xC4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC4, layers, layers]
+          - [0xEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEC, gfx_banks, graphics_banks]
+          - [0x1BC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1BC, layout, entity_layouts]
+          - [0x364, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1404, rooms, rooms]
+          - [0x1420, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1514, cmpgfx, gfx_1514, 128, 128, 4]
+          - [0x1944, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1944, cmpgfx, gfx_1944, 128, 128, 4]
+          - [0x1E9C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1E9C, cmpgfx, gfx_1E9C, 128, 128, 4]
+          - [0x2848, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2848, cmpgfx, gfx_2848, 128, 128, 4]
+          - [0x3740, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3740, cmpgfx, gfx_3740, 128, 128, 4]
+          - [0x3E30, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3E30, cmpgfx, gfx_3E30, 128, 128, 4]
+          - [0x4DAC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4DAC, cmpgfx, gfx_4DAC, 128, 128, 4]
+          - [0x5388, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5388, cmpgfx, gfx_5388, 128, 128, 4]
+          - [0x5EEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5EEC, cmpgfx, gfx_5EEC, 128, 128, 4]
+          - [0x6B1C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6B1C, cmpgfx, gfx_6B1C, 128, 128, 4]
+          - [0x7678, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7678, cmpgfx, gfx_7678, 128, 128, 4]
+          - [0x7D00, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7D00, palette, pal_7D00, 16]
+          - [0x7F00, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7F00, palette, pal_7F00, 16]
+          - [0x7FC0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7FC0, palette, pal_7FC0, 16]
+          - [0x8020, skip]
+  - target: disks/us/BOSS/MAR/MAR.BIN
+    asset_path: assets/pc/mar
+    src_path: src/pc/stages/mar
+    splat_config_path: config/splat.us.bomar.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, paldef, palette_def]
+          - [0xBC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xCC, layers, layers]
+          - [0xF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF4, gfx_banks, graphics_banks]
+          - [0x168, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x168, layout, entity_layouts]
+          - [0x310, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12EC, rooms, rooms]
+          - [0x1308, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x30F0, cmpgfx, gfx_30F0, 128, 128, 4]
+          - [0x4220, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4220, cmpgfx, gfx_4220, 128, 128, 4]
+          - [0x4EE0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4EE0, palette, pal_4EE0, 16]
+          - [0x4FE0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4FE0, palette, pal_4FE0, 16]
+          - [0x50E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x50E0, palette, pal_50E0, 16]
+          - [0x51E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x51E0, palette, pal_51E0, 16]
+          - [0x52E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x52E0, palette, pal_52E0, 16]
+          - [0x5300, skip]
+  - target: disks/us/BOSS/RBO1/RBO1.BIN
+    asset_path: assets/pc/rbo1
+    src_path: src/pc/stages/rbo1
+    splat_config_path: config/splat.us.borbo1.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40, sprite_banks, sprite_banks]
+          - [0xA0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA0, paldef, palette_def]
+          - [0xC4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC4, layers, layers]
+          - [0xEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEC, gfx_banks, graphics_banks]
+          - [0x200, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x200, layout, entity_layouts]
+          - [0x3A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x150C, rooms, rooms]
+          - [0x1530, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1614, cmpgfx, gfx_1614, 128, 128, 4]
+          - [0x1958, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1958, cmpgfx, gfx_1958, 128, 128, 4]
+          - [0x1EFC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1EFC, cmpgfx, gfx_1EFC, 128, 128, 4]
+          - [0x2998, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2998, cmpgfx, gfx_2998, 128, 128, 4]
+          - [0x34A0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x34A0, cmpgfx, gfx_34A0, 128, 128, 4]
+          - [0x3E4C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3E4C, cmpgfx, gfx_3E4C, 128, 128, 4]
+          - [0x481C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x481C, cmpgfx, gfx_481C, 128, 128, 4]
+          - [0x5090, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5090, cmpgfx, gfx_5090, 128, 128, 4]
+          - [0x5864, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5864, cmpgfx, gfx_5864, 128, 128, 4]
+          - [0x64F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x64F4, cmpgfx, gfx_64F4, 128, 128, 4]
+          - [0x6D0C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6D0C, cmpgfx, gfx_6D0C, 128, 128, 4]
+          - [0x7C88, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7C88, cmpgfx, gfx_7C88, 128, 128, 4]
+          - [0x8634, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8634, cmpgfx, gfx_8634, 128, 128, 4]
+          - [0x952C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x952C, cmpgfx, gfx_952C, 128, 128, 4]
+          - [0x9C1C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9C1C, palette, pal_9C1C, 16]
+          - [0x9E1C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9E1C, palette, pal_9E1C, 16]
+          - [0x9EDC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9EDC, palette, pal_9EDC, 16]
+          - [0x9F3C, skip]
+  - target: disks/us/BOSS/RBO2/RBO2.BIN
+    asset_path: assets/pc/rbo2
+    src_path: src/pc/stages/rbo2
+    splat_config_path: config/splat.us.borbo2.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, paldef, palette_def]
+          - [0xC8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC8, layers, layers]
+          - [0xF0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF0, gfx_banks, graphics_banks]
+          - [0x1F0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1F0, layout, entity_layouts]
+          - [0x398, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x174C, rooms, rooms]
+          - [0x1768, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1990, cmpgfx, gfx_1990, 128, 128, 4]
+          - [0x1CD4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1CD4, cmpgfx, gfx_1CD4, 128, 128, 4]
+          - [0x2278, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2278, cmpgfx, gfx_2278, 128, 128, 4]
+          - [0x327C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x327C, cmpgfx, gfx_327C, 128, 128, 4]
+          - [0x43A4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x43A4, cmpgfx, gfx_43A4, 128, 128, 4]
+          - [0x5420, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5420, cmpgfx, gfx_5420, 128, 128, 4]
+          - [0x60D0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x60D0, cmpgfx, gfx_60D0, 128, 128, 4]
+          - [0x6FEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6FEC, cmpgfx, gfx_6FEC, 128, 128, 4]
+          - [0x7F1C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7F1C, cmpgfx, gfx_7F1C, 128, 128, 4]
+          - [0x8C90, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C90, cmpgfx, gfx_8C90, 128, 128, 4]
+          - [0x92E8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x92E8, cmpgfx, gfx_92E8, 128, 128, 4]
+          - [0x9E34, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9E34, cmpgfx, gfx_9E34, 128, 128, 4]
+          - [0xA314, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA314, cmpgfx, gfx_A314, 128, 128, 4]
+          - [0xACC0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xACC0, cmpgfx, gfx_ACC0, 128, 128, 4]
+          - [0xBBB8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xBBB8, cmpgfx, gfx_BBB8, 128, 128, 4]
+          - [0xC2A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC2A8, cmpgfx, gfx_C2A8, 128, 128, 4]
+          - [0xD224, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD224, rawgfx, gfx_D224, 48, 72, 8]
+          - [0xDFA4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xDFA4, rawgfx, gfx_DFA4, 48, 72, 8]
+          - [0xED24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xED24, palette, pal_ED24, 16]
+          - [0xEF24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEF24, palette, pal_EF24, 16]
+          - [0xEFE4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEFE4, palette, pal_EFE4, 16]
+          - [0xF1C4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF1C4, palette, pal_F1C4, 16]
+          - [0xF2C4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF2C4, palette, pal_F2C4, 16]
+          - [0xF3C4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF3C4, palette, pal_F3C4, 16]
+          - [0xF4C4, skip]
+  - target: disks/us/BOSS/RBO6/RBO6.BIN
+    asset_path: assets/pc/rbo6
+    src_path: src/pc/stages/rbo6
+    splat_config_path: config/splat.us.borbo6.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40, sprite_banks, sprite_banks]
+          - [0xA0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA0, paldef, palette_def]
+          - [0xDC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xDC, layers, layers]
+          - [0x134, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x134, gfx_banks, graphics_banks]
+          - [0x258, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x258, layout, entity_layouts]
+          - [0x400, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1460, rooms, rooms]
+          - [0x1484, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1D34, cmpgfx, gfx_1D34, 128, 128, 4]
+          - [0x2078, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2078, cmpgfx, gfx_2078, 128, 128, 4]
+          - [0x261C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x261C, cmpgfx, gfx_261C, 128, 128, 4]
+          - [0x2FC8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2FC8, cmpgfx, gfx_2FC8, 128, 128, 4]
+          - [0x3EC0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3EC0, cmpgfx, gfx_3EC0, 128, 128, 4]
+          - [0x45B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x45B0, cmpgfx, gfx_45B0, 128, 128, 4]
+          - [0x552C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x552C, cmpgfx, gfx_552C, 128, 128, 4]
+          - [0x6364, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6364, cmpgfx, gfx_6364, 128, 128, 4]
+          - [0x727C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x727C, cmpgfx, gfx_727C, 128, 128, 4]
+          - [0x7D34, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7D34, cmpgfx, gfx_7D34, 128, 128, 4]
+          - [0x8D24, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8D24, cmpgfx, gfx_8D24, 128, 128, 4]
+          - [0x9B5C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9B5C, cmpgfx, gfx_9B5C, 128, 128, 4]
+          - [0xB02C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB02C, cmpgfx, gfx_B02C, 128, 128, 4]
+          - [0xBB6C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xBB6C, cmpgfx, gfx_BB6C, 128, 128, 4]
+          - [0xC6B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC6B4, cmpgfx, gfx_C6B4, 128, 128, 4]
+          - [0xCD6C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xCD6C, cmpgfx, gfx_CD6C, 128, 128, 4]
+          - [0xDBBC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xDBBC, cmpgfx, gfx_DBBC, 128, 128, 4]
+          - [0xE0B8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE0B8, cmpgfx, gfx_E0B8, 128, 128, 4]
+          - [0xEE54, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEE54, cmpgfx, gfx_EE54, 128, 128, 4]
+          - [0xFA44, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xFA44, cmpgfx, gfx_FA44, 128, 128, 4]
+          - [0x1032C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1032C, cmpgfx, gfx_1032C, 128, 128, 4]
+          - [0x1113C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1113C, rawgfx, gfx_1113C, 48, 72, 8]
+          - [0x11EBC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11EBC, rawgfx, gfx_11EBC, 48, 72, 8]
+          - [0x12C3C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C3C, cmpgfx, gfx_12C3C, 128, 128, 4]
+          - [0x14E60, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14E60, palette, pal_14E60, 16]
+          - [0x15060, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15060, palette, pal_15060, 16]
+          - [0x15120, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15120, palette, pal_15120, 16]
+          - [0x152E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x152E0, palette, pal_152E0, 16]
+          - [0x153E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x153E0, palette, pal_153E0, 16]
+          - [0x154E0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x154E0, palette, pal_154E0, 16]
+          - [0x155E0, skip]
+  - target: disks/us/BOSS/RBO8/RBO8.BIN
+    asset_path: assets/pc/rbo8
+    src_path: src/pc/stages/rbo8
+    splat_config_path: config/splat.us.borbo8.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, palette, pal_8C, 16]
+          - [0xAC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xAC, palette, pal_AC, 16]
+          - [0xCC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xCC, palette, pal_CC, 16]
+          - [0xEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xEC, palette, pal_EC, 16]
+          - [0x12C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C, palette, pal_12C, 16]
+          - [0x14C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x14C, palette, pal_14C, 16]
+          - [0x18C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x18C, palette, pal_18C, 16]
+          - [0x1AC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1AC, palette, pal_1AC, 16]
+          - [0x1EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1EC, palette, pal_1EC, 16]
+          - [0x20C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x20C, palette, pal_20C, 16]
+          - [0x24C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x24C, palette, pal_24C, 16]
+          - [0x26C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x26C, palette, pal_26C, 16]
+          - [0x28C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x28C, palette, pal_28C, 16]
+          - [0x2CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2CC, palette, pal_2CC, 16]
+          - [0x2EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2EC, palette, pal_2EC, 16]
+          - [0x30C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x30C, palette, pal_30C, 16]
+          - [0x32C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x32C, palette, pal_32C, 16]
+          - [0x34C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x34C, palette, pal_34C, 16]
+          - [0x36C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x36C, palette, pal_36C, 16]
+          - [0x38C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x38C, palette, pal_38C, 16]
+          - [0x3AC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3AC, palette, pal_3AC, 16]
+          - [0x3CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3CC, palette, pal_3CC, 16]
+          - [0x3EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3EC, palette, pal_3EC, 16]
+          - [0x40C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x40C, palette, pal_40C, 16]
+          - [0x42C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x42C, palette, pal_42C, 16]
+          - [0x4CC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4CC, palette, pal_4CC, 16]
+          - [0x4EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x58C, paldef, palette_def]
+          - [0x6D4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6E4, layers, layers]
+          - [0x70C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x70C, gfx_banks, graphics_banks]
+          - [0x7C8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7C8, layout, entity_layouts]
+          - [0x970, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x22F8, rooms, rooms]
+          - [0x2314, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2420, cmpgfx, gfx_2420, 128, 128, 4]
+          - [0x2FFC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2FFC, cmpgfx, gfx_2FFC, 128, 128, 4]
+          - [0x3340, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3340, cmpgfx, gfx_3340, 128, 128, 4]
+          - [0x38E4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x38E4, cmpgfx, gfx_38E4, 128, 128, 4]
+          - [0x47EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x47EC, cmpgfx, gfx_47EC, 128, 128, 4]
+          - [0x558C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x558C, cmpgfx, gfx_558C, 128, 128, 4]
+          - [0x63B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x63B4, cmpgfx, gfx_63B4, 128, 128, 4]
+          - [0x717C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x717C, cmpgfx, gfx_717C, 128, 128, 4]
+          - [0x7B28, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7B28, cmpgfx, gfx_7B28, 128, 128, 4]
+          - [0x8A20, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8A20, cmpgfx, gfx_8A20, 128, 128, 4]
+          - [0x9110, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9110, cmpgfx, gfx_9110, 128, 128, 4]
+          - [0xA08C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA14C, palette, pal_A14C, 16]
+          - [0xA48C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA44C, palette, pal_A44C, 16]
+          - [0xA64C, skip]
+  - target: disks/us/ST/RARE/RARE.BIN
+    asset_path: assets/pc/rare
+    src_path: src/pc/stages/rare
+    splat_config_path: config/splat.us.strare.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2C, sprite_banks, sprite_banks]
+          - [0x8C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8C, paldef, palette_def]
+          - [0xE0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE0, layers, layers]
+          - [0x2B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2B0, gfx_banks, graphics_banks]
+          - [0x4BC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4BC, layout, entity_layouts]
+          - [0x664, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1C58, rooms, rooms]
+          - [0x1CFC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2AB8, cmpgfx, gfx_2AB8, 128, 128, 4]
+          - [0x2DFC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2DFC, cmpgfx, gfx_2DFC, 128, 128, 4]
+          - [0x3AEC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x3AEC, cmpgfx, gfx_3AEC, 128, 128, 4]
+          - [0x4B18, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4B18, cmpgfx, gfx_4B18, 128, 128, 4]
+          - [0x5AF8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x5AF8, cmpgfx, gfx_5AF8, 128, 128, 4]
+          - [0x6B98, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x6B98, cmpgfx, gfx_6B98, 128, 128, 4]
+          - [0x7CE4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x7CE4, cmpgfx, gfx_7CE4, 128, 128, 4]
+          - [0x8BF4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x8BF4, cmpgfx, gfx_8BF4, 128, 128, 4]
+          - [0x9704, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x9704, cmpgfx, gfx_9704, 128, 128, 4]
+          - [0xA67C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xA67C, cmpgfx, gfx_A67C, 128, 128, 4]
+          - [0xB5A8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xB5A8, cmpgfx, gfx_B5A8, 128, 128, 4]
+          - [0xC5B8, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xC5B8, cmpgfx, gfx_C5B8, 128, 128, 4]
+          - [0xD520, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xD520, cmpgfx, gfx_D520, 128, 128, 4]
+          - [0xE2EC, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE2EC, cmpgfx, gfx_E2EC, 128, 128, 4]
+          - [0xE564, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xE564, cmpgfx, gfx_E564, 128, 128, 4]
+          - [0xF348, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xF348, cmpgfx, gfx_F348, 128, 128, 4]
+          - [0xFC10, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xFC10, cmpgfx, gfx_FC10, 128, 128, 4]
+          - [0xFF84, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0xFF84, cmpgfx, gfx_FF84, 128, 128, 4]
+          - [0x103B0, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x103B0, cmpgfx, gfx_103B0, 128, 128, 4]
+          - [0x10C08, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x10C08, cmpgfx, gfx_10C08, 128, 128, 4]
+          - [0x1194C, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x1194C, cmpgfx, gfx_1194C, 128, 128, 4]
+          - [0x125F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x125F4, palette, pal_125F4, 16]
+          - [0x127F4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x127F4, palette, pal_127F4, 16]
+          - [0x128B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x128B4, palette, pal_128B4, 16]
+          - [0x129B4, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x129B4, palette, pal_129B4, 16]
+          - [0x12A34, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12A34, palette, pal_12A34, 16]
+          - [0x12B74, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12B74, palette, pal_12B74, 16]
+          - [0x12C34, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C34, palette, pal_12C34, 16]
+          - [0x12C54, skip]
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12C54, palette, pal_12C54, 16]
+          - [0x12C74, skip]
+  - target: disks/us/BOSS/BO2/BO2.BIN
+    asset_path: assets/pc/bo2
+    src_path: src/pc/stages/bo2
+    splat_config_path: config/splat.us.bobo2.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x11E14, rawgfx, gfx_11E14, 48, 72, 8]
+          - [0x12B94, skip]
+  - target: disks/us/BOSS/BO2/BO2.BIN
+    asset_path: assets/pc/bo2
+    src_path: src/pc/stages/bo2
+    splat_config_path: config/splat.us.bobo2.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x12B94, rawgfx, gfx_12B94, 48, 72, 8]
+          - [0x13914, skip]
+  - target: disks/us/BOSS/MAR/MAR.BIN
+    asset_path: assets/pc/mar
+    src_path: src/pc/stages/mar
+    splat_config_path: config/splat.us.bomar.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x15F0, rawgfx, gfx_15F0, 48, 72, 8]
+          - [0x2370, skip]
+  - target: disks/us/BOSS/MAR/MAR.BIN
+    asset_path: assets/pc/mar
+    src_path: src/pc/stages/mar
+    splat_config_path: config/splat.us.bomar.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x2370, rawgfx, gfx_2370, 48, 72, 8]
+          - [0x30F0, skip]
+  - target: disks/us/BOSS/RBO5/RBO5.BIN
+    asset_path: assets/pc/rbo5
+    src_path: src/pc/stages/rbo5
+    splat_config_path: config/splat.us.borbo5.yaml
+    segments:
+      - start: 0
+        vram: 0x80180000
+        assets:
+          - [0x4434, spritesheet, pc_rbo5_doppleganger]
+          - [0x2AE4C, spritesheet, pc_rbo5_bat_form]
+          - [0x2BF78, skip]
+  - target: disks/us/BIN/WEAPON0.BIN
+    asset_path: assets/pc/weapon
+    src_path: src/weapon
+    splat_config_path: config/splat.us.weapon.yaml
+    segments:
+      - start: 0x19000
+        vram: 0x8017A000
+        assets:
+          - [0x19884, palette, pc_w_003_clut_8017A884, 16]
+          - [0x19AA4, skip]
+      - start: 0x20000
+        vram: 0x8017A000
+        assets:
+          - [0x20EAC, palette, pc_w_004_clut_8017AEAC, 16]
+          - [0x210CC, skip]
+      - start: 0x27000
+        vram: 0x8017A000
+        assets:
+          - [0x27EAC, palette, pc_w_005_clut_8017AEAC, 16]
+          - [0x280CC, skip]
+      - start: 0x2E000
+        vram: 0x8017A000
+        assets:
+          - [0x2E884, palette, pc_w_006_clut_8017A884, 16]
+          - [0x2EAA4, skip]
+      - start: 0x43000
+        vram: 0x8017A000
+        assets:
+          - [0x43804, palette, pc_w_009_clut_8017A804, 16]
+          - [0x43844, skip]
+      - start: 0x51000
+        vram: 0x8017A000
+        assets:
+          - [0x51958, palette, pc_w_011_clut_8017A958, 16]
+          - [0x51998, skip]
+      - start: 0x5F000
+        vram: 0x8017A000
+        assets:
+          - [0x5F2B0, palette, pc_w_013_clut_8017A2B0, 16]
+          - [0x5F5B0, skip]
+      - start: 0x66000
+        vram: 0x8017A000
+        assets:
+          - [0x662B0, palette, pc_w_014_clut_8017A2B0, 16]
+          - [0x665B0, skip]
+      - start: 0x6D000
+        vram: 0x8017A000
+        assets:
+          - [0x6D478, palette, pc_w_015_clut_8017A478, 16]
+          - [0x6D6B8, skip]
+      - start: 0x74000
+        vram: 0x8017A000
+        assets:
+          - [0x742B0, palette, pc_w_016_clut_8017A2B0, 16]
+          - [0x745B0, skip]
+      - start: 0x82000
+        vram: 0x8017A000
+        assets:
+          - [0x82488, palette, pc_w_018_clut_8017A488, 16]
+          - [0x826A8, skip]
+      - start: 0x89000
+        vram: 0x8017A000
+        assets:
+          - [0x8930C, palette, pc_w_019_clut_8017A30C, 16]
+          - [0x8952C, skip]
+      - start: 0x90000
+        vram: 0x8017A000
+        assets:
+          - [0x90630, palette, pc_w_020_clut_8017A630, 16]
+          - [0x90850, skip]
+      - start: 0x97000
+        vram: 0x8017A000
+        assets:
+          - [0x97564, palette, pc_w_021_clut_8017A564, 16]
+          - [0x97784, skip]
+      - start: 0x9E000
+        vram: 0x8017A000
+        assets:
+          - [0x9E540, palette, pc_w_022_clut_8017A540, 16]
+          - [0x9E760, skip]
+      - start: 0xA5000
+        vram: 0x8017A000
+        assets:
+          - [0xA58A4, palette, pc_w_023_clut_8017A8A4, 16]
+          - [0xA5924, skip]
+      - start: 0xAC000
+        vram: 0x8017A000
+        assets:
+          - [0xAC804, palette, pc_w_024_clut_8017A804, 16]
+          - [0xACA24, skip]
+      - start: 0xB3000
+        vram: 0x8017A000
+        assets:
+          - [0xB3804, palette, pc_w_025_clut_8017A804, 16]
+          - [0xB3864, skip]
+      - start: 0xBA000
+        vram: 0x8017A000
+        assets:
+          - [0xBA804, palette, pc_w_026_clut_8017A804, 16]
+          - [0xBA864, skip]
+      - start: 0xC1000
+        vram: 0x8017A000
+        assets:
+          - [0xC1A18, palette, pc_w_027_clut_8017AA18, 16]
+          - [0xC1A58, skip]
+      - start: 0xC8000
+        vram: 0x8017A000
+        assets:
+          - [0xC8804, palette, pc_w_028_clut_8017A804, 16]
+          - [0xC88E4, skip]
+      - start: 0xCF000
+        vram: 0x8017A000
+        assets:
+          - [0xCF884, palette, pc_w_029_clut_8017A884, 16]
+          - [0xCFAC4, skip]
+      - start: 0xD6000
+        vram: 0x8017A000
+        assets:
+          - [0xD6040, palette, pc_w_030_clut_8017A040, 16]
+          - [0xD6300, skip]
+      - start: 0xDD000
+        vram: 0x8017A000
+        assets:
+          - [0xDD704, palette, pc_w_031_clut_8017A704, 16]
+          - [0xDD7A4, skip]
+      - start: 0xE4000
+        vram: 0x8017A000
+        assets:
+          - [0xE4704, palette, pc_w_032_clut_8017A704, 16]
+          - [0xE47A4, skip]
+      - start: 0xEB000
+        vram: 0x8017A000
+        assets:
+          - [0xEBA9C, palette, pc_w_033_clut_8017AA9C, 16]
+          - [0xEBB3C, skip]
+      - start: 0x100000
+        vram: 0x8017A000
+        assets:
+          - [0x100404, palette, pc_w_036_clut_8017A404, 16]
+          - [0x1004A4, skip]
+      - start: 0x10E000
+        vram: 0x8017A000
+        assets:
+          - [0x10EC08, palette, pc_w_038_clut_8017AC08, 16]
+          - [0x10ECA8, skip]
+      - start: 0x115000
+        vram: 0x8017A000
+        assets:
+          - [0x115C08, palette, pc_w_039_clut_8017AC08, 16]
+          - [0x115CA8, skip]
+      - start: 0x12A000
+        vram: 0x8017A000
+        assets:
+          - [0x12A3E4, palette, pc_w_042_clut_8017A3E4, 16]
+          - [0x12A604, skip]
+      - start: 0x14D000
+        vram: 0x8017A000
+        assets:
+          - [0x14D228, palette, pc_w_047_clut_8017A228, 16]
+          - [0x14D468, skip]
+      - start: 0x154000
+        vram: 0x8017A000
+        assets:
+          - [0x154A44, palette, pc_w_048_clut_8017AA44, 16]
+          - [0x154B24, skip]
+      - start: 0x154000
+        vram: 0x8017A000
+        assets:
+          - [0x154B24, palette, pc_w_048_clut_8017AB24, 16]
+          - [0x154C04, skip]
+      - start: 0x154000
+        vram: 0x8017A000
+        assets:
+          - [0x154C04, palette, pc_w_048_clut_8017AC04, 16]
+          - [0x154CE4, skip]
+      - start: 0x154000
+        vram: 0x8017A000
+        assets:
+          - [0x154CE4, palette, pc_w_048_clut_8017ACE4, 16]
+          - [0x154DC4, skip]
+      - start: 0x154000
+        vram: 0x8017A000
+        assets:
+          - [0x154DC4, palette, pc_w_048_clut_8017ADC4, 16]
+          - [0x154EA4, skip]
+      - start: 0x15B000
+        vram: 0x8017A000
+        assets:
+          - [0x15BC00, palette, pc_w_049_clut_8017AC00, 16]
+          - [0x15BEE0, skip]
+      - start: 0x177000
+        vram: 0x8017A000
+        assets:
+          - [0x177A44, palette, pc_w_053_clut_8017AA44, 16]
+          - [0x177D84, skip]
+      - start: 0x17E000
+        vram: 0x8017A000
+        assets:
+          - [0x17EA44, palette, pc_w_054_clut_8017AA44, 16]
+          - [0x17ECE4, skip]
+      - start: 0x185000
+        vram: 0x8017A000
+        assets:
+          - [0x185A44, palette, pc_w_055_clut_8017AA44, 16]
+          - [0x185B24, skip]
+      - start: 0x185000
+        vram: 0x8017A000
+        assets:
+          - [0x185B24, palette, pc_w_055_clut_8017AB24, 16]
+          - [0x185C04, skip]
+      - start: 0x185000
+        vram: 0x8017A000
+        assets:
+          - [0x185C04, palette, pc_w_055_clut_8017AC04, 16]
+          - [0x185CE4, skip]
+      - start: 0x185000
+        vram: 0x8017A000
+        assets:
+          - [0x185CE4, palette, pc_w_055_clut_8017ACE4, 16]
+          - [0x185DC4, skip]
+      - start: 0x185000
+        vram: 0x8017A000
+        assets:
+          - [0x185DC4, palette, pc_w_055_clut_8017ADC4, 16]
+          - [0x185EE4, skip]
+      - start: 0x18C000
+        vram: 0x8017A000
+        assets:
+          - [0x18CA44, palette, pc_w_056_clut_8017AA44, 16]
+          - [0x18CD84, skip]
+      - start: 0x193000
+        vram: 0x8017A000
+        assets:
+          - [0x193B24, palette, pc_w_057_clut_8017AB24, 16]
+          - [0x193EA4, skip]
+      - start: 0x19A000
+        vram: 0x8017A000
+        assets:
+          - [0x19A808, palette, pc_w_058_clut_8017A808, 16]
+          - [0x19A988, skip]

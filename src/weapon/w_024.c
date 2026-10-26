@@ -11,8 +11,8 @@ extern s32 g_HandId;
 #define g_Animset2 w_024_2
 #include "sfx.h"
 
-extern s8 D_AC000_8017ABD8;
-extern AnimationFrame* D_AC000_8017AC20;
+extern s8 D_AC000_8017ABD8[];
+extern AnimationFrame* D_AC000_8017AC20[];
 extern s16* D_AC000_8017ACF8[];
 extern s32 D_AC000_8017AD08[];
 
@@ -144,7 +144,7 @@ static void EntityWeaponAttack(Entity* self) {
         break;
     }
     if (self->step != 4) {
-        g_api.PlayAnimation(&D_AC000_8017ABD8, &D_AC000_8017AC20);
+        g_api.PlayAnimation(D_AC000_8017ABD8, D_AC000_8017AC20);
     }
     if (self->ext.darkShield.unk80 == 0) {
         self->ext.darkShield.unk80 =
@@ -647,3 +647,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_024_pc.h"
+#endif

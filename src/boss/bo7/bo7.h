@@ -8,6 +8,7 @@
 
 enum Palettes {
     PAL_NONE,
+    PAL_BREAKABLE_DEBRIS = 0x159,
     PAL_CERBEROS = 0x200,
     PAL_UNK_2E0 = 0x2E0,
 };
@@ -49,5 +50,7 @@ typedef enum EntityID {
     E_LIFE_UP_SPAWN,         // EntityLifeUpSpawn
     NUM_ENTITIES,
 };
+
+extern EInit D_us_80180454;
 
 #endif // BO7_H

@@ -32,7 +32,8 @@ void Psyz_ModuleStart(void* param) {
 void Psyz_ModuleStop(void) {}
 
 void func_801B9C80(void) {
-    // handles the video playback
-    // reset D_8003C728 to signal the end of video playback
-    D_8003C728 = 0;
+    if (D_8003C728) {
+        PcPlayMovie(g_CurrentStream);
+        D_8003C728 = 0;
+    }
 }

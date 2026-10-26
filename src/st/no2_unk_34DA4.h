@@ -67,7 +67,7 @@ void func_us_801B4DA4(Entity* self) {
         draw.clip = rect;
         draw.ofs[0] = 0;
         draw.ofs[1] = 0x100;
-        dr_env = *(DR_ENV**)&prim->r1;
+        dr_env = PRIM_DR_ENV(prim);
         SetDrawEnv(dr_env, &draw);
         prim->drawMode = DRAW_DEFAULT;
         prim = prim->next;

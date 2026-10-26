@@ -48,7 +48,11 @@ DR_ENV* func_800EDB08(Primitive* prim) {
 #endif
             dr->tag = 1;
             setcode(prim, 7);
+#ifdef VERSION_PC
+            prim->drawEnv = dr;
+#else
             *(DR_ENV**)&prim->r1 = dr;
+#endif
             return dr;
         }
     }
@@ -150,7 +154,11 @@ void FreePrimitives(s32 primitiveIndex) {
 
     for (prim = &g_PrimBuf[primitiveIndex]; prim != NULL; prim = prim->next) {
         if (prim->type == PRIM_ENV) {
+#ifdef VERSION_PC
+            ((DR_ENV*)prim->drawEnv)->tag = 0;
+#else
             **(DR_ENV***)&prim->r1 = NULL;
+#endif
             prim->type = PRIM_NONE;
         } else {
             prim->type = PRIM_NONE;
@@ -611,7 +619,7 @@ void RenderPrimitives(void) {
                 break;
             case PRIM_ENV:
                 if (g_GpuUsage.env < MAX_ENV_COUNT) {
-                    env = *(DR_ENV**)&prim->r1;
+                    env = PRIM_DR_ENV(prim);
                     if (prim->drawMode & DRAW_UNK_1000) {
                         drawOfs = g_CurrentBuffer->draw.ofs[0];
 #ifndef VERSION_PSP

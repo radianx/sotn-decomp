@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rnz1.h"
+#ifdef VERSION_PC
+#include "../../pc/gte.h"
+#endif
 
 typedef struct {
     s32 unk0;

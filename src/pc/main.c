@@ -2,6 +2,7 @@
 #include <game.h>
 #include "pc.h"
 #include "spawn_point.h"
+#include "stages/overlay.h"
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -24,7 +25,8 @@ static const char* allowed_stages[] = {
     "iwa_load", "iga_load", "hagi_load", "sel",      "te1",     "te2",
     "te3",      "te4",      "te5",       "top_alt"};
 static const char* allowed_players[] = {"alu", "ric", "mar"};
-static const char* allowed_tests[] = {"sndlib"};
+static const char* allowed_tests[] = {
+    "sndlib", "overlays", "movie0", "movie1", "movie2", "movie3", "save"};
 #define PARSE_PARAM(param, allowed) parseStrParam(param, allowed, LEN(allowed))
 static int parseIntParam(const char* param) {
     long i = strtol(param, NULL, 10);
@@ -56,7 +58,7 @@ static int parseStrParam(
 static void printHelp(void) {
     printf("Usage: ./sotn [OPTIONS]\n");
     printf("Options:\n");
-    printf("  --disk <path>      file name of the second track\n");
+    printf("  --disk <path>      path to the game disc CUE file\n");
     printf("  --stage <stage>    stage name or ID (e.g., nz0)\n");
     printf("  --player <name>    player name or ID (e.g. ric)\n");
     printf("  --demo <number>    play a specific Tactics demo\n");
@@ -64,6 +66,9 @@ static void printHelp(void) {
            "(default 1)\n");
     printf("  --test <mode>      run automated tests\n");
     printf("         sndlib      test sound library\n");
+    printf("         overlays    load every compiled game module\n");
+    printf("         movie0..movie3  play a decoded original movie\n");
+    printf("         save       test an isolated save/load round trip\n");
     printf("  --record <path>    record controller input to a file\n");
     printf("  --replay <path>    replay controller input from a file\n");
     printf("  --spawn-point <name>  start at a named spawn point\n");
@@ -81,7 +86,7 @@ static void printAllowedParams(const char* allowedValues[], int n) {
         }
         printf("%s, ", allowedValues[i]);
     }
-    printf("%s\n", allowedValues[i - 1]);
+    printf("%s\n", allowedValues[n - 1]);
 }
 static bool parseArgs(
     struct InitGameParams* outParams, int argc, char* argv[]) {
@@ -133,7 +138,8 @@ static bool parseArgs(
             }
         } else if (strcmp(argv[i], "--test") == 0 && i + 1 < argc) {
             outParams->testMode = PARSE_PARAM(argv[++i], allowed_tests) + 1;
-            if (outParams->testMode < 0) {
+            if (outParams->testMode <= NO_TEST ||
+                outParams->testMode > TEST_SAVE) {
                 printf("test '%s' is invalid or not recognized\n", argv[i]);
                 printAllowedParams(allowed_tests, LEN(allowed_tests));
                 return false;
@@ -170,9 +176,24 @@ int Main(int argc, char* argv[]) {
     if (params.stage < 0 && params.spawnPoint != NULL) {
         params.stage = SpawnPoint_StageForName(params.spawnPoint);
     }
+    if (params.testMode == TEST_OVERLAYS) {
+        return TestOverlays() ? 0 : 1;
+    }
     Psyz_VideoSetInternalResolution(params.scale);
     if (!InitGame(&params)) {
         return -1;
+    }
+    if (params.testMode >= TEST_MOVIE0 && params.testMode <= TEST_MOVIE3) {
+        ResetGraph(0);
+        PadInit(0);
+        bool ok = PcPlayMovie(params.testMode - TEST_MOVIE0);
+        ResetGame();
+        return ok ? 0 : 1;
+    }
+    if (params.testMode == TEST_SAVE) {
+        bool ok = PcTestSave();
+        ResetGame();
+        return ok ? 0 : 1;
     }
     MainGame();
     ResetGame();

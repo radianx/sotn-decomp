@@ -7,6 +7,8 @@ static volatile u16* D_8003B68C;
 
 extern volatile s32* D_80032E78;
 extern volatile s32* D_80032E7C;
+extern u32* D_80032E80;
+extern u8* D_80032E84;
 extern volatile s32* D_80032E88;
 extern volatile s32* D_80032E98;
 extern s32 D_80032EB0;
@@ -29,6 +31,9 @@ extern s32 D_800987C0;
 extern u16* D_800987C4;
 extern StHEADER* D_800987C8;
 extern s32 D_80098894;
+
+void dma_execute(s32 channel, void* address, u32 blockCount, u32 blockSize,
+                 u32 control, u8 enableInterrupt, s32 unused);
 
 void StCdInterrupt(void) {
     volatile s16 subroutine_arg8[4];
@@ -228,4 +233,58 @@ void mem2mem(s32* dst, s32* src, u32 num, u32 arg3) {
     }
 }
 
-INCLUDE_ASM("main/nonmatchings/psxsdk/libcd/c_011", dma_execute);
+void dma_execute(s32 channel, void* address, u32 blockCount, u32 blockSize,
+                 u32 control, u8 enableInterrupt, s32 unused) {
+    struct DmaChannel {
+        u32 address;
+        u32 block;
+        u32 control;
+        u32 unused;
+    };
+    volatile u32 status;
+    // Reused temporaries preserve the original register allocation.
+    s32 value;
+    s32 priority;
+    u32* dma;
+    u32 priorityMask;
+    u8* interruptRegister;
+
+    for (value = 0; ((volatile struct DmaChannel*)0x1F801080)[channel].control &
+                    0x01000000;
+         value++) {
+        if (value == 0x10000) {
+            printf("DMA STATUS ERROR %x\n",
+                   ((volatile struct DmaChannel*)0x1F801080)[channel].control);
+            break;
+        }
+    }
+    // Keep readbacks in their branches to preserve instruction ordering.
+    if (enableInterrupt == 1) {
+        interruptRegister = D_80032E84;
+        value = interruptRegister[2];
+        value |= 1 << channel;
+        interruptRegister[2] = value;
+        status = *(volatile u32*)D_80032E84;
+    } else {
+        interruptRegister = D_80032E84;
+        value = interruptRegister[2];
+        value &= ~(1 << channel);
+        interruptRegister[2] = value;
+        status = *(volatile u32*)D_80032E84;
+    }
+    priority = channel;
+    priority <<= 2;
+    priority += 3;
+    priorityMask = 1;
+    priorityMask <<= priority;
+    priority = *D_80032E80;
+    priority |= priorityMask;
+    *D_80032E80 = priority;
+    dma = (u32*)0x1F801080 + channel * 4;
+    *dma++ = (uintptr_t)address;
+    *dma++ = (blockCount << 16) | blockSize;
+    while (!(*libcd_CDRegister0 & 0x40)) {
+    }
+    *dma = control;
+    status = *(volatile u32*)dma;
+}

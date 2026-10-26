@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo0.h"
 
-extern Pos D_us_801CD6E4[];
+extern Pos D_us_801CD6E4[66];
 
 static s16 D_us_80180DC4[] = {
     0x0000, 0x0000, 0x000B, 0x0002, 0x000F, 0x0003, 0x0011, 0x0005, 0x0007,
@@ -287,7 +287,7 @@ void func_us_801B0930(Entity* self) {
 #else
         drawEnv.ofs[1] = 0;
 #endif
-        drEnv = (DR_ENV*)LOW(prim->r1);
+        drEnv = PRIM_DR_ENV(prim);
         SetDrawEnv(drEnv, &drawEnv);
 
         prim->priority = 0xCB;
@@ -313,7 +313,7 @@ void func_us_801B0930(Entity* self) {
     case 2:
         func_us_801B053C();
         prim = (Primitive*)self->ext.et_801B0930.prim2;
-        drEnv = (DR_ENV*)LOW(prim->r1);
+        drEnv = PRIM_DR_ENV(prim);
         drawEnv = g_CurrentBuffer->draw;
         drawEnv.isbg = 1;
         drawEnv.dtd = 0;

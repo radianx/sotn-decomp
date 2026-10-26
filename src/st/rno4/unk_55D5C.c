@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rno4.h"
 
-INCLUDE_ASM("st/rno4/nonmatchings/unk_55D5C", StepTowards);
+#include "../step_towards.h"
 
 void func_us_801D5DC8(Primitive* prim) {
     s32 yPos;
@@ -191,7 +191,11 @@ void func_us_801D5E90(Entity* self) {
             }
 
         case 1:
+#ifdef VERSION_PC
+            if (!AnimateEntity(D_us_8018236C, self)) {
+#else
             if (!AnimateEntity(D_us_8018236C, self, explosion)) {
+#endif
                 self->facingLeft ^= 0x1;
                 self->animCurFrame = 1;
                 SetSubStep(2);
@@ -313,7 +317,11 @@ void func_us_801D5E90(Entity* self) {
             }
 
         case 1:
+#ifdef VERSION_PC
+            if (!AnimateEntity(D_us_8018236C, self)) {
+#else
             if (!AnimateEntity(D_us_8018236C, self, explosion)) {
+#endif
                 self->facingLeft ^= 0x1;
                 self->animCurFrame = 1;
                 SetSubStep(2);
@@ -519,4 +527,83 @@ void func_us_801D68E0(Entity* self) {
     }
 }
 
-INCLUDE_ASM("st/rno4/nonmatchings/unk_55D5C", func_us_801D6B8C);
+extern EInit D_us_80180B78;
+extern u8 D_us_8018239C[];
+extern u8 D_us_801823B0[];
+
+void func_us_801D6B8C(Entity* self) {
+    s16 angle;
+    s32 radius;
+    s32 distanceX;
+    s32 distanceX2;
+    s32 distance;
+    Entity* parent;
+
+    switch (self->step) {
+    case 0:
+        InitializeEntity(D_us_80180B78);
+        self->animCurFrame = 0;
+        break;
+
+    case 1:
+        parent = self->ext.et_801D68E0.unk9C;
+        if (parent->pose == 4) {
+            self->step++;
+        }
+        break;
+
+    case 2:
+        AnimateEntity(D_us_8018239C, self);
+        parent = self->ext.et_801D68E0.unk9C;
+        if (parent->ext.et_801D5E90.unk90) {
+            self->drawFlags = ENTITY_SCALEX | ENTITY_SCALEY;
+            self->scaleX = self->scaleY = 0x180;
+            self->facingLeft = 0;
+            self->ext.et_801D68E0.unk80 = 96;
+            self->zPriority = parent->zPriority - 1;
+            SetStep(3);
+        }
+        break;
+
+    case 3:
+        AnimateEntity(D_us_801823B0, self);
+        if (self->scaleX < 0x200) {
+            self->scaleX = self->scaleY += 0x20;
+        } else if (!--self->ext.et_801D68E0.unk80) {
+            SetStep(4);
+        }
+        // fallthrough
+    case 4:
+        AnimateEntity(D_us_801823B0, self);
+        if (!self->scaleX) {
+            parent = self->ext.et_801D68E0.unk9C;
+            parent->ext.et_801D5E90.unk90 = 0;
+            DestroyEntity(self);
+            return;
+        }
+        self->scaleX = self->scaleY -= 4;
+        angle = GetAngleBetweenEntities(self, &PLAYER);
+        radius = (self->scaleX * 15) >> 7;
+        distanceX = GetDistanceToPlayerX();
+        // The original uses the horizontal distance for both terms.
+        distanceX2 = GetDistanceToPlayerX();
+        distance =
+            SquareRoot0(distanceX * distanceX + distanceX2 * distanceX2) - 4;
+        if (distance < radius) {
+            radius = distance;
+        }
+        self->hitboxOffX = (radius * rcos(angle)) >> 12;
+        self->hitboxOffY = (radius * rsin(angle)) >> 12;
+        break;
+    }
+
+    if (g_Timer & 1) {
+        self->palette = PAL_FLAG(PAL_CC_CRITICAL_EFFECT);
+    } else {
+        self->palette = PAL_FLAG(PAL_UNK_19C);
+    }
+    parent = self->ext.et_801D68E0.unk9C;
+    if (parent->entityId != E_UNK_40) {
+        DestroyEntity(self);
+    }
+}

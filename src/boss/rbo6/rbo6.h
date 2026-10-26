@@ -4,6 +4,15 @@
 
 #include <stage.h>
 
+typedef struct {
+    u16 animSet;
+    u16 unk2;
+    u16 palette;
+    u8 blendMode;
+    u8 unused;
+    u8* animation;
+} Borbo6ParticleData;
+
 #define STAGE_IS_RBO6
 
 enum Palettes {

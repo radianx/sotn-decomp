@@ -129,7 +129,7 @@ void EntityRealOlroxDrool(Entity* self) {
 }
 
 Primitive* FindFirstUnkPrim(Primitive* prim);
-Primitive* FindFirstUnkPrim2(Primitive* prim, int);
+Primitive* FindFirstUnkPrim2(Primitive* prim, u8 index);
 
 void func_us_801BA4AC(Entity* self) {
     Primitive* prim;
@@ -202,7 +202,7 @@ void func_us_801BA4AC(Entity* self) {
     }
 }
 
-void func_us_801BA724(Entity* self) UNUSED {
+UNUSED void func_us_801BA724(Entity* self) {
     DRAWENV draw;
     s16 primIndex;
     Primitive* prim;

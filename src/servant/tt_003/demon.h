@@ -35,7 +35,9 @@ typedef struct {
     s32 abilityId;
 } DemonAttackInfo;
 
+#ifndef VERSION_PC
 extern s32 g_PlaySfxStep;
+#endif
 extern SpriteParts* g_DemonSpriteParts[];
 
 #endif

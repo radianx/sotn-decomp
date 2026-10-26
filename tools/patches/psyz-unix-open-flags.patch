@@ -1,0 +1,22 @@
+SPDX-License-Identifier: MPL-2.0
+PSY-Z native fixes; modified 2026-10-26. See README.md and LICENSE.MPL-2.0.
+
+diff --git a/psyz/src/platform/plat_unix.c b/psyz/src/platform/plat_unix.c
+index 98f4607..5ce6660 100644
+--- a/psyz/src/platform/plat_unix.c
++++ b/psyz/src/platform/plat_unix.c
+@@ -185,11 +185,11 @@ long my_erase(char* path) {
+ int psyz_open(const char* devname, int flag) {
+     int oflag = O_RDONLY;
+     if ((flag & (FREAD | FWRITE)) == (FREAD | FWRITE)) {
+-        flag = O_RDWR;
++        oflag = O_RDWR;
+     } else if (flag & FREAD) {
+-        flag |= O_RDONLY;
++        oflag = O_RDONLY;
+     } else if (flag & FWRITE) {
+-        flag |= O_WRONLY;
++        oflag = O_WRONLY;
+     }
+     if (flag & FNBLOCK) {
+         DEBUGF("FNBLOCK ignored for %s", devname);

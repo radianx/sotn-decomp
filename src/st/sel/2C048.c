@@ -1532,7 +1532,7 @@ void Update(void) {
     case Upd_Eng_151:
         func_801ADF94(0x82, 0);
         D_800978C4 = 0;
-        temp_s1 = func_801B3A94(g_InputSaveName);
+        temp_s1 = func_801B3A94((intptr_t)g_InputSaveName);
         if (temp_s1 != 0) {
             D_800978C4 = 1;
         }

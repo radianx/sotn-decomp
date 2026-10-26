@@ -12,7 +12,7 @@ extern s32 g_HandId;
 #include "sfx.h"
 
 extern s8 D_C8000_8017AA98[];
-extern s32 D_C8000_8017AAE0[];
+extern AnimationFrame* D_C8000_8017AAE0[];
 extern s32 D_C8000_8017AB1C[];
 
 static void EntityWeaponAttack(Entity* self) {
@@ -670,3 +670,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_028_pc.h"
+#endif

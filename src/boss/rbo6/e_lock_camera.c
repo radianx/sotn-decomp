@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "rbo6.h"
 
-INCLUDE_ASM("boss/rbo6/nonmatchings/e_lock_camera", PlayerIsWithinHitbox);
+extern u8 entityLockCameraHitbox[];
+extern u8 entityLockCameraData[];
+extern u16 entityLockCameraTilemapProps[];
 
-INCLUDE_ASM("boss/rbo6/nonmatchings/e_lock_camera", EntityLockCamera);
+#include "../../st/e_lock_camera.h"

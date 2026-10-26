@@ -31,3 +31,11 @@ D_us_801B80A0 = 0x801B80A0;
 D_us_801BFB20 = 0x801BFB20;
 D_us_801CC998 = 0x801CC998;
 D_us_801DDBD4 = 0x801DDBD4;
+
+/* Field aliases for the SEL streaming allocation. */
+PROVIDE(g_StreamEndFrame = g_StreamControl);
+PROVIDE(g_StreamIsRGB24 = g_StreamControl + 4);
+PROVIDE(D_801BD03C = g_StreamControl + 8);
+PROVIDE(D_801BD040 = g_StreamControl + 12);
+PROVIDE(g_StreamRewindSwitch = g_StreamControl + 16);
+PROVIDE(g_StreamImageBuffer = g_StreamControl + 20);

@@ -12,7 +12,7 @@ extern s32 g_HandId;
 #include "sfx.h"
 
 extern s8 D_C1000_8017AC0C[];
-extern s32 D_C1000_8017AC54[];
+extern AnimationFrame* D_C1000_8017AC54[];
 extern AnimationFrame D_C1000_8017AC8C[];
 extern AnimationFrame D_C1000_8017ACB4[];
 extern s32 D_C1000_8017C6EC; // g_DebugWaitInfoTimer
@@ -590,3 +590,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_027_pc.h"
+#endif

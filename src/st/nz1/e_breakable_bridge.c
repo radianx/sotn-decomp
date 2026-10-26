@@ -286,7 +286,7 @@ void EntityBridgeBackgroundPiece(Entity* self) {
             prim->drawMode |= DRAW_HIDE;
         } else {
             // n.b.! this can't be right...
-            dr_env = *((DR_ENV**)&prim->r1);
+            dr_env = PRIM_DR_ENV(prim);
             sp10 = g_CurrentBuffer->draw;
             sp10.isbg = 0;
             sp10.ofs[0] = 0;

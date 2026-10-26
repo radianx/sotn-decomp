@@ -184,7 +184,7 @@ void func_801093C4(void) {
         drawEnv.ofs[0] = 0x200;
         drawEnv.clip = D_800ACE60;
         drawEnv.ofs[1] = 0x1C0;
-        dr_env = *(DR_ENV**)&prim->r1;
+        dr_env = PRIM_DR_ENV(prim);
 #if defined(VERSION_PSP)
         if (dr_env == NULL) {
             return;

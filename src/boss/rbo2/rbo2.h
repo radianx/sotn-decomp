@@ -4,6 +4,14 @@
 
 #include <stage.h>
 
+typedef struct {
+    u16 animSet;
+    u16 unk5A;
+    u16 palette;
+    u16 blendMode;
+    AnimateEntityFrame* frames;
+} DeathFlamesInit;
+
 #define STAGE_IS_RBO2
 
 enum Palettes {
@@ -56,6 +64,7 @@ typedef enum EntityID {
 enum BossMgrState {
     BOSS_MGR_ROOM_ENTERED = 0x01,
     BOSS_MGR_DEATH_FIGHT_ON = 0x02,
+    BOSS_MGR_DEATH_FIRST_FORM_DEFEAT = 0x08,
     BOSS_MGR_DEATH_DEFEAT = 0x10,
     BOSS_MGR_DEATH_REWARD_READY = 0x40,
     BOSS_MGR_DEATH_REWARD_SPAWNED = 0x80,

@@ -356,7 +356,95 @@ void _SsContRpn2(s16 arg0, s16 arg1, u8 arg2) {
     score->delta_value = _SsReadDeltaValue(arg0, arg1);
 }
 
-INCLUDE_ASM("main/nonmatchings/psxsdk/libsnd/seqread", _SsContDataEntry);
+void _SsContDataEntry(s16 seqId, s16 sepId, u8 value) {
+    ProgAtr prog;
+    //! @bug The original passes these structures uninitialized by value.
+#ifdef FIX_UB
+    VagAtr vag = {0};
+    struct Unk adsr = {0};
+#else
+    VagAtr vag;
+    struct Unk adsr;
+#endif
+    struct SeqStruct* score;
+    u8 channel;
+    u16 tuning;
+    // !FAKE: Preserve the original compiler's repeated byte mask.
+    u16 fineValue;
+    s32 i;
+    // !FAKE: The zero high-byte terms retain the SDK's unused spill slots.
+    s16 pitchBendToneCount;
+    s16 tuningToneCount;
+
+    score = &_ss_score[seqId][sepId];
+    channel = score->channel;
+    SsUtGetProgAtr(score->unk4c, score->programs[channel], &prog);
+    if (score->unk27 == 1 && score->unk10 == 0) {
+        score->unk28 = value;
+        score->unk10 = 1;
+        score->delta_value = _SsReadDeltaValue(seqId, sepId);
+        return;
+    }
+    if (score->unk29 == 2) {
+        if (score->unk13 == 0 && score->unk14 == 0) {
+            for (i = 0; (pitchBendToneCount = prog.tones),
+                i < prog.tones + (pitchBendToneCount >> 8);
+                 i++) {
+                SsUtGetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+                vag.pbmax = (u8)(value << 1) >> 1;
+                vag.pbmin = vag.pbmax;
+                SsUtSetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+            }
+        }
+        if (score->unk13 == 1 && score->unk14 == 0) {
+            fineValue = value;
+            if ((u8)(value - 65) < 63) {
+                tuning = (value * 100 / 0x2000) * 0x2000;
+            } else {
+                tuning = fineValue & 0xFF00;
+            }
+            for (i = 0; (tuningToneCount = prog.tones),
+                i < prog.tones + (tuningToneCount >> 8);
+                 i++) {
+                SsUtGetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+                vag.shift += tuning;
+                SsUtSetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+            }
+        }
+        if (score->unk13 == 2 && score->unk14 == 0) {
+            if (value >= 64 && value < 128) {
+                tuning = value * 100 * 64;
+            } else {
+                tuning = 0;
+            }
+            for (i = 0; (tuningToneCount = prog.tones),
+                i < prog.tones + (tuningToneCount >> 8);
+                 i++) {
+                SsUtGetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+                vag.center += tuning;
+                SsUtSetVagAtr(score->unk4c, score->programs[channel], i, &vag);
+            }
+        }
+        score->delta_value = _SsReadDeltaValue(seqId, sepId);
+        score->unk29 = 0;
+        return;
+    }
+    if (score->unk2a == 2) {
+        if (score->unk16 == 16) {
+            for (i = 0; i < prog.tones; i++) {
+                _SsSndSetVabAttr(score->unk4c, score->programs[channel], i, vag,
+                                 adsr, score->unk15, value);
+            }
+        } else {
+            _SsSndSetVabAttr(score->unk4c, score->programs[channel],
+                             score->unk16, vag, adsr, score->unk15, value);
+        }
+        score->delta_value = _SsReadDeltaValue(seqId, sepId);
+        score->unk2a = 0;
+        return;
+    }
+    score->delta_value = _SsReadDeltaValue(seqId, sepId);
+}
 
 #define DE_PRIORITY 0
 #define DE_MODE 1

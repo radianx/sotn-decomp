@@ -55,6 +55,8 @@ jobs:
           git submodule update --init tools/psyz
           cd tools/psyz
           git submodule update --init --recursive external/SDL
+          git apply ../patches/psyz-unix-open-flags.patch
+          git apply ../patches/psyz-audio-stream-voices.patch
       - name: Get dependencies
         uses: ./.github/actions/get-dependencies
         with:
@@ -63,6 +65,8 @@ jobs:
         run: |
           make extract_assets
           make build_assets
+          ./sotn.sh extract-assets config/assets.pc.yaml
+          ./sotn.sh build-assets config/assets.pc.yaml
       - name: Build
         run: |
           if [[ "${{ matrix.arch }}" == "i686" ]]; then
@@ -100,6 +104,8 @@ jobs:
           git submodule update --init tools/psyz
           cd tools/psyz
           git submodule update --init --recursive external/SDL
+          git apply ../patches/psyz-unix-open-flags.patch
+          git apply ../patches/psyz-audio-stream-voices.patch
       - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.work'
@@ -113,6 +119,8 @@ jobs:
         run: |
           make extract_assets
           make build_assets
+          ./sotn.sh extract-assets config/assets.pc.yaml
+          ./sotn.sh build-assets config/assets.pc.yaml
       - name: Build
         run: |
           cmake -B ${{github.workspace}}/pc -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_ASAN=OFF
@@ -146,6 +154,8 @@ jobs:
         git submodule update --init tools/psyz
         cd tools/psyz
         git submodule update --init --recursive external/SDL
+        git apply ../patches/psyz-unix-open-flags.patch
+        git apply ../patches/psyz-audio-stream-voices.patch
     - name: Get dependencies
       uses: ./.github/actions/get-dependencies
       with:
@@ -159,6 +169,8 @@ jobs:
         $SOTN_ASSETS = (Get-Command sotn-assets).Source
         make extract_assets
         & make build_assets SOTNASSETS=$SOTN_ASSETS
+        & $SOTN_ASSETS extract-assets config/assets.pc.yaml
+        & $SOTN_ASSETS build-assets config/assets.pc.yaml
     - name: Build
       run: |
         cmake -B ${{github.workspace}}/pc -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}

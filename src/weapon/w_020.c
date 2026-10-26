@@ -18,9 +18,9 @@ extern AnimationFrame D_90000_8017A8D8[];
 extern AnimationFrame D_90000_8017A8E8[];
 extern AnimationFrame D_90000_8017A954[];
 extern AnimationFrame D_90000_8017A9D8[];
-extern FrameProperty D_90000_8017A9E0;
+extern FrameProperty D_90000_8017A9E0[];
 extern u16 D_90000_8017AA10[];
-extern u8 D_90000_8017AA1C;
+extern u8 D_90000_8017AA1C[];
 extern s32 D_90000_8017AADC[];
 extern s32 D_90000_8017AB44[];
 extern s32 D_90000_8017C238;
@@ -209,7 +209,7 @@ static void EntityWeaponAttack(Entity* self) {
                 prim->tpage = 0x19;
                 prim->clut = sp60;
                 prim = prim->next;
-                var_s1 = &D_90000_8017AA1C;
+                var_s1 = D_90000_8017AA1C;
                 for (var_s2 = 0; var_s2 < 24; var_s2++) {
                     prim->x0 = *var_s1++;
                     prim->u0 = prim->x0 + 0x80;
@@ -267,7 +267,7 @@ static void EntityWeaponAttack(Entity* self) {
             DestroyEntity(self);
             return;
         }
-        g_api.UpdateAnim(&D_90000_8017A9E0, NULL);
+        g_api.UpdateAnim(D_90000_8017A9E0, NULL);
         return;
     case 5:
         if (!(g_GameTimer & 3)) {
@@ -383,7 +383,7 @@ static void EntityWeaponAttack(Entity* self) {
     prim = prim->next;
     prim->clut = sp60;
     prim = prim->next;
-    var_s1 = &D_90000_8017AA1C;
+    var_s1 = D_90000_8017AA1C;
     for (var_s2 = 0; var_s2 < 24; var_s2++) {
         prim->drawMode &= ~DRAW_HIDE;
         if (var_s2 == 0) {
@@ -490,3 +490,7 @@ static void WeaponUnused34(void) {}
 static void WeaponUnused38(void) {}
 
 static void WeaponUnused3C(void) {}
+
+#ifdef VERSION_PC
+#include "w_020_pc.h"
+#endif

@@ -35,7 +35,21 @@ void EntityBreakable(Entity* self) {
 
 #include "func_us_801955a0.h"
 
-INCLUDE_ASM("boss/rbo8/nonmatchings/unk_1546C", func_us_801955F8);
+s32 func_us_801955F8(Entity* self, s32 facingLeft) {
+    Collider unused; // !FAKE: preserves the original stack frame.
+    s32 result = 0;
+    s32 posX = g_Tilemap.scrollX.i.hi + self->posX.i.hi;
+
+    if (facingLeft) {
+        posX += 0x50;
+    } else {
+        posX -= 0x50;
+    }
+    if ((u32)(posX - 0x30) > 0x1C0) {
+        result |= 2;
+    }
+    return result;
+}
 
 void func_801CE1E8(s32 step) {
     s32 i;

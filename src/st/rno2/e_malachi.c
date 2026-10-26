@@ -417,7 +417,7 @@ void EntityMalachi(Entity* self) {
             self->animCurFrame = 0;
             prim = self->ext.malachi.prim;
             prim->type = PRIM_ENV;
-            dr_env = *(DR_ENV**)&prim->r1;
+            dr_env = PRIM_DR_ENV(prim);
             drawEnv = g_CurrentBuffer->draw;
             drawEnv.isbg = 0;
             drawEnv.dtd = 0;

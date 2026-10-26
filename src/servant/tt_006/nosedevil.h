@@ -35,9 +35,13 @@ typedef struct {
     s32 abilityId;
 } NosedevilAttackInfo;
 
+#ifndef VERSION_PC
 extern s32 g_PlaySfxStep;
+#endif
 extern SpriteParts* g_NosedevilSpriteParts[];
 
+#ifndef VERSION_PC
 extern AnimationFrame* g_NosedevilAnimationFrames[];
+#endif
 
 #endif
