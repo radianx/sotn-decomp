@@ -23,6 +23,8 @@ the local modifications without requiring an unpublished submodule revision.
 clock, rounded native-canvas fitting, native presentation cropping, and
 synchronized fullscreen teardown. It also exposes ordered native draw-canvas
 copies for widescreen background transitions in both SDL GPU and OpenGL backends.
+Constant-UV palette quads check their actual texel for framebuffer dependencies,
+avoiding unnecessary synchronization when only the texture page overlaps it.
 The default SDL GPU path has rendering/readback checks at 1×/2×/4× resolution;
 the OpenGL addition is compile-checked only.
 Apply it after the XA patch:

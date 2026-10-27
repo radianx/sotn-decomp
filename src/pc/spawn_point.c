@@ -32,6 +32,7 @@ enum SpawnPointStep {
 static enum SpawnPointStep s_Step = SpawnPoint_Off;
 static const struct SpawnPoint* s_Spawn = NULL;
 static void (*s_InitRoomEntities)(s32 layoutId) = NULL;
+static s32 s_PreviousLoadMode;
 
 static const struct SpawnPoint* FindSpawnPoint(const char* name) {
     s32 i;
@@ -80,6 +81,7 @@ void SpawnPoint_OnFrame(void) {
     room = &g_api.o.rooms[s_Spawn->roomIndex];
     g_Tilemap.left = room->left;
     g_Tilemap.top = room->top;
+    s_PreviousLoadMode = D_8003C730;
     D_8003C730 = 1;
     s_Step = SpawnPoint_PlacePlayer;
 }
@@ -107,6 +109,7 @@ static void SpawnPoint_PlacePlayerNow(void) {
     g_Tilemap.scrollY.i.hi = (D_8009791C.y - g_Tilemap.top) << 8;
     g_PrevScrollX = g_Tilemap.scrollX.i.hi;
     g_PrevScrollY = g_Tilemap.scrollY.i.hi;
+    D_8003C730 = s_PreviousLoadMode;
 }
 
 static void SpawnPoint_InitRoomEntities(s32 layoutId) {

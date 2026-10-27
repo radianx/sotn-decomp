@@ -5,12 +5,33 @@
 
 static int s_Left, s_Right = 256, s_Top, s_Bottom = 240;
 static bool s_CameraNeedsSync;
+static Entity* s_CaptureOwner;
+static int s_CaptureId, s_CaptureStage;
+static bool s_CaptureWide;
 
 int PcViewMargin(void) { return -s_Left; }
 int PcViewLeft(void) { return s_Left; }
 int PcViewRight(void) { return s_Right; }
 int PcViewTop(void) { return s_Top; }
 int PcViewBottom(void) { return s_Bottom; }
+
+void PcHoldViewport(Entity* entity) {
+    s_CaptureOwner = entity;
+    s_CaptureId = entity->entityId;
+    s_CaptureStage = g_StageId;
+    s_CaptureWide = PcViewMargin() != 0;
+}
+
+static bool CaptureActive(void) {
+    return s_CaptureOwner && s_CaptureId &&
+           s_CaptureOwner->entityId == s_CaptureId &&
+           g_StageId == s_CaptureStage && g_GameState == Game_Play &&
+           g_GameStep == Play_Default;
+}
+
+bool PcViewportChangePending(void) {
+    return CaptureActive() && !!g_PcSettings.widescreen != s_CaptureWide;
+}
 
 static int CopyDrawArea(const u_long* words, int available, void* userdata) {
     if (available < 4)
@@ -29,9 +50,12 @@ void PcUpdateViewport(void) {
     int previousLeft = s_Left;
     DISPENV display;
     GetDispEnv(&display);
-    bool active = g_PcSettings.widescreen && g_GameState == Game_Play &&
-                  g_GameStep == Play_Default && display.disp.w == 256 &&
-                  display.disp.h == 240;
+    if (!CaptureActive())
+        s_CaptureOwner = NULL;
+    bool wide = s_CaptureOwner ? s_CaptureWide : g_PcSettings.widescreen;
+    bool active =
+        wide && g_GameState == Game_Play && g_GameStep == Play_Default &&
+        display.disp.w == 256 && display.disp.h == 240;
     if (active) {
         Psyz_VideoSetAnchor(PSYZ_ANCHOR_CENTER);
         // The game's visible rows are 20..226; omit their surrounding border.

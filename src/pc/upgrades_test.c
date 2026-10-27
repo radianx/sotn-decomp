@@ -7,6 +7,7 @@
 #include "../dra/dra.h"
 #include "pc.h"
 #include "upgrades.h"
+#include "spawn_point.h"
 #include <SDL3/SDL.h>
 #include <psyz.h>
 #include <assert.h>
@@ -146,6 +147,62 @@ static TILE* ArtworkTileAt(int depth) {
     return (TILE*)getaddr(mode);
 }
 
+static void CheckArtworkPalettePixels(int flags) {
+    DRAWENV oldDraw, draw;
+    GetDrawEnv(&oldDraw);
+    SetDefDrawEnv(&draw, 0, 0, 256, 240);
+    draw.isbg = 0;
+    PutDrawEnv(&draw);
+    RECT clear = {0, 0, 256, 240};
+    ClearImage(&clear, 64, 64, 64);
+    RECT texture = {640, 256, 5, 2};
+    u16 pixels[10] = {0x1111, 0x1111, 0x1111, 0x1111, 0x1111,
+                      0x2222, 0x2222, 0x2222, 0x2222, 0x2222};
+    LoadImage(&texture, (u_long*)pixels);
+    SPRT reference[2];
+    for (int i = 0; i < 2; i++) {
+        setSprt(&reference[i]);
+        setShadeTex(&reference[i], 1);
+        setSemiTrans(&reference[i], flags & LAYER_SEMI_TRANS);
+        setXY0(&reference[i], 8, 40 + i * 2);
+        setWH(&reference[i], i ? 10 : 20, 1);
+        setUV0(&reference[i], 0, i);
+        reference[i].clut = g_ClutIds[3 + ((flags & LAYER_CLUT_ALT) ? 256 : 0)];
+        addPrim(&g_CurrentBuffer->ot[0x90], &reference[i]);
+    }
+    DR_MODE mode;
+    RECT window = {0, 0, 0, 0};
+    SetDrawMode(&mode, 0, 0,
+                GetTPage(0, (flags & LAYER_TPAGE_ID) >> 5, 640, 256), &window);
+    addPrim(&g_CurrentBuffer->ot[0x90], &mode);
+    DrawOTag(&g_CurrentBuffer->ot[OTSIZE - 1]);
+    DrawSync(0);
+    int width, height;
+    u8* frame = Psyz_VideoAllocCapturedFrame(&width, &height);
+    unsigned scale = Psyz_VideoGetInternalResolution();
+    assert(frame && width == (PcViewRight() - PcViewLeft()) * scale &&
+           height == 207 * scale);
+    for (int row = 0; row < 2; row++) {
+        int y = (40 + row * 2 - 20) * scale + scale / 2;
+        for (int x = 0; x < 20; x++) {
+            u8* edge = frame + (y * width + x * scale + scale / 2) * 3;
+            u8* original =
+                frame +
+                (y * width + (8 - PcViewLeft() + x) * scale + scale / 2) * 3;
+            if (memcmp(edge, original, 3))
+                fprintf(stderr,
+                        "Palette pixel row%d x%d: edge %u,%u,%u reference "
+                        "%u,%u,%u\n",
+                        row, x, edge[0], edge[1], edge[2], original[0],
+                        original[1], original[2]);
+            assert(!memcmp(edge, original, 3));
+        }
+    }
+    free(frame);
+    PutDrawEnv(&oldDraw);
+    DrawSync(0);
+}
+
 static void CheckIndexedArtwork(void) {
     assert(SDL_CreateDirectory("pack/widescreen/indexed"));
     SDL_Surface* rgb = SDL_CreateSurface(296, 256, SDL_PIXELFORMAT_RGBA32);
@@ -165,7 +222,10 @@ static void CheckIndexedArtwork(void) {
     const char* indexPath = "pack/widescreen/indexed/1F_00_F_L.png";
     assert(SDL_SavePNG(rgb, rgbPath) && SDL_SavePNG(indices, indexPath));
     u16 oldColors[] = {g_Clut[0][49], g_Clut[0][50], g_Clut[1][49],
-                       g_Clut[1][50]};
+                       g_Clut[1][50], g_Clut[2][49], g_Clut[2][50]};
+    u16 oldIds[0x300];
+    memcpy(oldIds, g_ClutIds, sizeof(oldIds));
+    func_800EAD7C();
     GpuBuffer* oldBuffer = g_CurrentBuffer;
     g_CurrentBuffer = &g_GpuBuffers[0];
     g_cameraOffsetX = g_cameraOffsetY = 0;
@@ -177,35 +237,64 @@ static void CheckIndexedArtwork(void) {
     g_Clut[1][49] = 0x3FF;
     g_Clut[1][50] = 0;
     int flags = LAYER_SHOW | LAYER_SEMI_TRANS;
+    g_Clut[2][49] = 0xFC00;
+    g_Clut[2][50] = 31;
+    PcUploadPalette(g_Clut[2], 256, 240);
+    g_ClutIds[3] = GetClut(304, 240);
+    assert(DrawIndexedArtwork(flags) == 2);
+    CheckArtworkPalettePixels(flags);
+    g_ClutIds[3] = GetClut(560, 240);
+    PcUploadPalette(g_Clut[0], 512, 240);
+    PcUploadPalette(g_Clut[1], 0, 240);
     assert(DrawIndexedArtwork(flags) == 2 && g_GpuUsage.drawModes == 2);
-    TILE* tile = ArtworkTileAt(0x82);
-    assert(tile->r0 == 248 && tile->g0 == 0 && getcode(tile) == 0x60);
-    tile = ArtworkTileAt(0x84);
-    assert(tile->g0 == 248 && getcode(tile) == 0x62);
+    CheckArtworkPalettePixels(flags);
 
-    // Palette edits must work from the cache, even without the metadata file.
+    // Palette edits and remaps must work without reloading the metadata file.
     assert(!remove(indexPath));
     g_Clut[0][49] = 0xFC00;
     g_Clut[0][50] = 0;
-    assert(DrawIndexedArtwork(flags) == 1 && g_GpuUsage.drawModes == 1);
-    tile = ArtworkTileAt(0x82);
-    assert(tile->b0 == 248 && tile->r0 == 0 && getcode(tile) == 0x62);
-    g_PcSettings.palette = 2;
-    assert(DrawIndexedArtwork(flags) == 1);
-    tile = ArtworkTileAt(0x82);
-    u16 filtered = PcPaletteColor(g_Clut[0][49], 2);
-    assert(tile->r0 == (filtered & 31) << 3);
-    assert(tile->g0 == ((filtered >> 5) & 31) << 3);
-    assert(tile->b0 == ((filtered >> 10) & 31) << 3);
+    PcUploadPalette(g_Clut[0], 512, 240);
+    assert(DrawIndexedArtwork(flags) == 2 && g_GpuUsage.drawModes == 2);
+    CheckArtworkPalettePixels(flags);
+    for (int mode = 0; mode < 4; mode++) {
+        g_PcSettings.palette = mode;
+        for (int bank = 0; bank < 3; bank++) {
+            PcUploadPalette(g_Clut[bank],
+                            bank == 0   ? 512
+                            : bank == 1 ? 0
+                                        : 256,
+                            240);
+            g_ClutIds[3] = g_ClutIds[0x103] = GetClut(
+                bank == 0   ? 560
+                : bank == 1 ? 48
+                            : 304,
+                240);
+            for (int blend = 0; blend < 4; blend++) {
+                for (int alternate = 0; alternate < 2; alternate++) {
+                    int layer =
+                        flags | (blend << 5) | (alternate ? LAYER_CLUT_ALT : 0);
+                    assert(DrawIndexedArtwork(layer) == 2);
+                    CheckArtworkPalettePixels(layer);
+                }
+            }
+        }
+    }
     g_PcSettings.palette = 0;
-    assert(DrawIndexedArtwork(flags | LAYER_CLUT_ALT) == 1);
-    tile = ArtworkTileAt(0x82);
-    assert(tile->r0 == 248 && tile->g0 == 248 && tile->b0 == 0 &&
-           getcode(tile) == 0x60);
+    g_ClutIds[3] = GetClut(560, 240);
     g_Clut[0][49] = 0x8000;
-    assert(DrawIndexedArtwork(flags) == 1);
-    tile = ArtworkTileAt(0x82);
-    assert(!tile->r0 && !tile->g0 && !tile->b0 && getcode(tile) == 0x62);
+    PcUploadPalette(g_Clut[0], 512, 240);
+    assert(DrawIndexedArtwork(flags) == 2);
+    CheckArtworkPalettePixels(flags);
+    // A valid CLUT may also live outside the standard CPU palette banks.
+    u16 custom[16] = {0};
+    custom[1] = 0x801F;
+    custom[2] = 0x03E0;
+    RECT customRect = {800, 300, 16, 1};
+    LoadImage(&customRect, (u_long*)custom);
+    g_ClutIds[3] = GetClut(800, 300);
+    assert(DrawIndexedArtwork(flags) == 2);
+    CheckArtworkPalettePixels(flags);
+    TILE* tile;
 
     for (int bad = 0; bad < 3; bad++) {
         PcArtworkShutdown();
@@ -224,6 +313,9 @@ static void CheckIndexedArtwork(void) {
     g_Clut[0][50] = oldColors[1];
     g_Clut[1][49] = oldColors[2];
     g_Clut[1][50] = oldColors[3];
+    g_Clut[2][49] = oldColors[4];
+    g_Clut[2][50] = oldColors[5];
+    memcpy(g_ClutIds, oldIds, sizeof(oldIds));
     g_PcSettings.widescreen = 0;
     PcUpdateViewport();
     ClearOTagR(g_CurrentBuffer->ot, OTSIZE);
@@ -233,8 +325,9 @@ static void CheckIndexedArtwork(void) {
     assert(!remove(rgbPath) && !remove(indexPath));
     assert(SDL_RemovePath("pack/widescreen/indexed"));
     assert(SDL_RemovePath("pack/widescreen"));
-    puts("Indexed artwork follows live palettes, STP, depth and accessibility; "
-         "invalid metadata falls back: PASS");
+    puts(
+        "Indexed artwork matches original GPU palette pixels across all banks, "
+        "remaps, blends, accessibility modes and custom VRAM CLUTs: PASS");
 }
 
 #ifndef _WIN32
@@ -1030,10 +1123,14 @@ static void CheckBackgroundDematerialize(void) {
         func_800EDAE4();
         Entity* self = g_CurrentEntity = &g_Entities[64];
         memset(self, 0, sizeof(*self) * 2);
+        self->entityId = 35;
         g_randomNext = 0x12345678;
         update(self);
         update(self);
         assert(self->step == 4);
+        g_PcSettings.widescreen = !wide;
+        PcUpdateViewport();
+        assert(PcViewportChangePending() && !!PcViewMargin() == wide);
         int atlas[256][256];
         memset(atlas, -1, sizeof(atlas));
         if (wide) {
@@ -1108,10 +1205,12 @@ static void CheckBackgroundDematerialize(void) {
         for (lifetime[wide] = 1; self->step; lifetime[wide]++) {
             assert(lifetime[wide] < 512);
             update(self);
+            PcUpdateViewport();
+            assert(!!PcViewMargin() == (self->step ? wide : !wide));
             if (self[1].entityId && !vortexFrame[wide])
                 vortexFrame[wide] = lifetime[wide];
         }
-        assert(vortexFrame[wide]);
+        assert(vortexFrame[wide] && !PcViewportChangePending());
     }
     assert(randomAfter[0] == randomAfter[1]);
     assert(lifetime[0] == lifetime[1] && vortexFrame[0] == vortexFrame[1]);
@@ -1143,6 +1242,296 @@ static void CheckBackgroundDematerialize(void) {
     PcUpdateViewport();
     puts("Room breakup captures and reconstructs all 61272 visible pixels, "
          "preserving RNG and transition timing: PASS");
+}
+
+static void CheckWidePhotograph(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    SDL_SharedObject* module = OpenOverlay("st0");
+    void (*update)(Entity*) =
+        (void*)SDL_LoadFunction(module, "EntityCutscenePhotograph");
+    assert(update);
+    GpuBuffer* oldBuffer = g_CurrentBuffer;
+    g_CurrentBuffer = &g_GpuBuffers[0];
+    DRAWENV oldDraw = g_CurrentBuffer->draw;
+    SetDefDrawEnv(&g_CurrentBuffer->draw, 0, 0, 256, 240);
+    int transitions[2][13];
+    memset(transitions, -1, sizeof(transitions));
+    u32 randomAfter[2];
+    for (int wide = 0; wide < 2; wide++) {
+        DestroyEntitiesFromIndex(1);
+        DestroyAllPrimitives();
+        func_800EDAE4();
+        g_PcSettings.widescreen = wide;
+        g_GameEngineStep = Engine_Normal;
+        PcUpdateViewport();
+        Entity* self = g_CurrentEntity = &g_Entities[255];
+        memset(self, 0, sizeof(*self));
+        self->entityId = 44;
+        g_randomNext = 0x12345678;
+        int atlas[256][256];
+        memset(atlas, -1, sizeof(atlas));
+        for (int frame = 0; g_GameEngineStep != Engine_10; frame++) {
+            assert(frame < 1024);
+            update(self);
+            assert(self->step <= 12);
+            if (!frame) {
+                g_PcSettings.widescreen = !wide;
+                PcUpdateViewport();
+            }
+            PcUpdateViewport();
+            assert(PcViewportChangePending() && !!PcViewMargin() == wide);
+            int first = transitions[wide][self->step] < 0;
+            if (first)
+                transitions[wide][self->step] = frame;
+            Primitive* nodes[24];
+            Primitive* prim = self->ext.cutscenePhoto.prim;
+            int count = 0;
+            for (; prim; prim = prim->next) {
+                assert(count < LEN(nodes));
+                nodes[count++] = prim;
+            }
+            assert(count == (wide ? 24 : 8));
+            if (wide && self->step == 2 && first) {
+                unsigned char covered[207][296] = {0};
+                for (int i = 8; i < 12; i++) {
+                    assert(nodes[i]->type == PRIM_ENV &&
+                           nodes[i]->priority == 0x1F7);
+                    DR_ENV* env = PRIM_DR_ENV(nodes[i]);
+                    int length = getlen(env);
+                    assert(length == (i == 11 ? 8 : 12));
+                    for (int j = 0; j < length; j += 4) {
+                        assert(env->code[j] ==
+                               (u_long)PC_COPY_DRAW_AREA_OPCODE << 24);
+                        int sx = (short)env->code[j + 1],
+                            sy = (short)(env->code[j + 1] >> 16);
+                        int dx = (unsigned short)env->code[j + 2] - 768;
+                        int dy = (unsigned short)(env->code[j + 2] >> 16);
+                        int w = (unsigned short)env->code[j + 3],
+                            h = (unsigned short)(env->code[j + 3] >> 16);
+                        assert(sx >= -20 && sx + w <= 276 && sy >= 20 &&
+                               sy + h <= 227);
+                        assert(dx >= 0 && dx + w <= 256 && dy >= 0 &&
+                               dy + h <= 256);
+                        for (int y = 0; y < h; y++)
+                            for (int x = 0; x < w; x++) {
+                                assert(atlas[dy + y][dx + x] == -1);
+                                atlas[dy + y][dx + x] =
+                                    (sy + y) * 296 + sx + x + 20;
+                            }
+                    }
+                }
+                for (int i = 0; i < 12; i++) {
+                    prim = nodes[i ? 12 + i - 1 : 0];
+                    assert(prim->u1 - prim->u0 == prim->x1 - prim->x0);
+                    assert(prim->v2 - prim->v0 == prim->y2 - prim->y0);
+                    for (int y = prim->y0; y < prim->y2; y++)
+                        for (int x = prim->x0; x < prim->x1; x++) {
+                            int u = prim->u0 + x - prim->x0,
+                                v = prim->v0 + y - prim->y0;
+                            assert(atlas[v][u] == y * 296 + x + 20);
+                            assert(!covered[y - 20][x + 20]++);
+                        }
+                }
+                for (int y = 0; y < 207; y++)
+                    for (int x = 0; x < 296; x++)
+                        assert(covered[y][x] == 1);
+            }
+            if (wide &&
+                (self->step == 2 || self->step == 5 || self->step == 6)) {
+                for (int i = 0; i < 12; i++) {
+                    prim = nodes[i ? 12 + i - 1 : 0];
+                    Primitive adjusted = *prim;
+                    PcAdjustPrimitive(&adjusted);
+                    assert(!memcmp(prim, &adjusted, sizeof(*prim)));
+                    assert(prim->tpage == 0x10C && prim->priority == 0x1F8);
+                    assert(prim->r0 == nodes[0]->r0 &&
+                           prim->g0 == nodes[0]->g0 &&
+                           prim->b0 == nodes[0]->b0);
+                }
+            }
+            if (wide && self->step == 5 && first) {
+                for (int i = 8; i < 12; i++)
+                    assert(nodes[i]->type == PRIM_GT4 &&
+                           nodes[i]->drawMode == DRAW_HIDE);
+                assert(nodes[23]->x0 == -26 && nodes[23]->x1 == 282);
+                assert(nodes[23]->y0 == 14 && nodes[23]->y2 == 233);
+            }
+            if (wide && self->step == 7 && first) {
+                assert(nodes[1]->x1 == 128 && nodes[5]->x0 == 128);
+                for (int i = 1; i <= 5; i += 4) {
+                    Primitive adjusted = *nodes[i];
+                    PcAdjustPrimitive(&adjusted);
+                    assert(!memcmp(nodes[i], &adjusted, sizeof(adjusted)));
+                }
+            }
+            if (wide && self->step == 8 && first) {
+                assert(nodes[5]->drawMode == DRAW_HIDE);
+                prim = nodes[0];
+                assert(prim->tpage == 0x110);
+                assert(prim->u0 == prim->x0 && prim->u1 == prim->x1);
+                assert(prim->u2 == prim->x2 && prim->u3 == prim->x3);
+                for (int i = 12; i < 24; i++)
+                    assert(nodes[i]->drawMode == DRAW_HIDE);
+                int left =
+                    MIN(MIN(prim->x0, prim->x1), MIN(prim->x2, prim->x3));
+                int right =
+                    MAX(MAX(prim->x0, prim->x1), MAX(prim->x2, prim->x3));
+                int top = MIN(MIN(prim->y0, prim->y1), MIN(prim->y2, prim->y3));
+                int bottom =
+                    MAX(MAX(prim->y0, prim->y1), MAX(prim->y2, prim->y3));
+                assert(left >= 0 && right < 256 && top >= 0 && bottom < 256);
+                assert(nodes[4]->x0 == left && nodes[4]->y0 == top);
+                assert(nodes[4]->u0 == right - left &&
+                       nodes[4]->v0 == bottom - top);
+            }
+        }
+        randomAfter[wide] = g_randomNext;
+    }
+    assert(!memcmp(transitions[0], transitions[1], sizeof(transitions[0])));
+    assert(randomAfter[0] == randomAfter[1]);
+    g_PcSettings.widescreen = 1;
+    PcUpdateViewport();
+    for (int freeEnvs = 0; freeEnvs < 4; freeEnvs++) {
+        DestroyEntitiesFromIndex(1);
+        DestroyAllPrimitives();
+        func_800EDAE4();
+        for (int i = freeEnvs; i < LEN(D_800974AC); i++)
+            D_800974AC[i].tag = 1;
+        g_GameEngineStep = Engine_Normal;
+        Entity* self = g_CurrentEntity = &g_Entities[255];
+        memset(self, 0, sizeof(*self));
+        self->entityId = 44;
+        update(self);
+        assert(self->step == 12);
+        for (int i = 0; i < LEN(D_800974AC); i++)
+            assert(D_800974AC[i].tag == (i < freeEnvs ? 0 : 1));
+        update(self);
+        assert(g_GameEngineStep == Engine_10);
+    }
+    DestroyEntitiesFromIndex(1);
+    DestroyAllPrimitives();
+    func_800EDAE4();
+    SDL_UnloadObject(module);
+    g_CurrentBuffer->draw = oldDraw;
+    g_CurrentBuffer = oldBuffer;
+    g_GameEngineStep = Engine_Normal;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Photograph preserves every wide-view pixel, projection, burn bounds, "
+         "randomness and original phase timing: PASS");
+}
+
+static void CheckCaptureViewportLifetime(void) {
+    Entity* owner = &g_Entities[254];
+    Entity oldOwner = *owner;
+    int oldStage = g_StageId, oldState = g_GameState, oldStep = g_GameStep;
+    for (int wide = 0; wide < 2; wide++) {
+        for (int invalidation = 0; invalidation < 5; invalidation++) {
+            memset(owner, 0, sizeof(*owner));
+            PcUpdateViewport();
+            g_StageId = STAGE_ST0;
+            g_GameState = Game_Play;
+            g_GameStep = Play_Default;
+            g_PcSettings.widescreen = wide;
+            PcUpdateViewport();
+            owner->entityId = 35;
+            PcHoldViewport(owner);
+            g_PcSettings.widescreen = !wide;
+            PcUpdateViewport();
+            assert(!!PcViewMargin() == wide && PcViewportChangePending());
+            assert(g_PcSettings.widescreen == !wide);
+            g_PcSettings.widescreen = wide;
+            assert(!PcViewportChangePending());
+            g_PcSettings.widescreen = !wide;
+            switch (invalidation) {
+            case 0:
+                owner->entityId = 0;
+                break;
+            case 1:
+                owner->entityId = 36;
+                break;
+            case 2:
+                g_StageId = STAGE_NO3;
+                break;
+            case 3:
+                g_GameState = Game_GameOver;
+                break;
+            case 4:
+                g_GameStep = 0;
+                break;
+            }
+            PcUpdateViewport();
+            assert(!PcViewportChangePending());
+            g_StageId = STAGE_ST0;
+            g_GameState = Game_Play;
+            g_GameStep = Play_Default;
+            owner->entityId = 35;
+            PcUpdateViewport();
+            assert(!!PcViewMargin() == !wide && !PcViewportChangePending());
+        }
+    }
+    *owner = oldOwner;
+    g_StageId = oldStage;
+    g_GameState = oldState;
+    g_GameStep = oldStep;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Capture aspect changes defer in both directions and release on "
+         "entity, stage or game-state exit: PASS");
+}
+
+static int s_SpawnLoadMode, s_SpawnCallbacks;
+
+static void CheckSpawnRoomInit(s32 layoutId) {
+    assert(layoutId == 7 && D_8003C730 == s_SpawnLoadMode);
+    assert(g_PlayerX == 600 && g_PlayerY == 168);
+    s_SpawnCallbacks++;
+}
+
+static void CheckSpawnLoadMode(void) {
+    RoomHeader rooms[1] = {0};
+    RoomHeader* oldRooms = g_api.o.rooms;
+    Tilemap oldTilemap = g_Tilemap;
+    Entity oldPlayer = PLAYER;
+    Point32 oldCell = D_8009791C;
+    int oldX = g_PlayerX, oldY = g_PlayerY;
+    int oldPrevX = g_PrevScrollX, oldPrevY = g_PrevScrollY;
+    int oldMode = D_8003C730, oldStage = g_StageId;
+    int oldState = g_GameState, oldStep = g_GameStep;
+    g_StageId = STAGE_ST0;
+    g_GameState = Game_Play;
+    g_GameStep = Play_Default;
+    g_api.o.rooms = rooms;
+    struct InitGameParams params = {.spawnPoint = "prologue-dracula-dialogue"};
+    s_SpawnCallbacks = 0;
+    for (int mode = 0; mode < 4; mode++) {
+        D_8003C730 = s_SpawnLoadMode = mode;
+        SpawnPoint_Init(&params);
+        Overlay overlay = {.InitRoomEntities = CheckSpawnRoomInit};
+        SpawnPoint_HookOverlay(&overlay);
+        SpawnPoint_OnFrame();
+        assert(D_8003C730 == 1);
+        overlay.InitRoomEntities(7);
+        assert(D_8003C730 == mode);
+    }
+    assert(s_SpawnCallbacks == 4);
+    params.spawnPoint = NULL;
+    SpawnPoint_Init(&params);
+    g_api.o.rooms = oldRooms;
+    g_Tilemap = oldTilemap;
+    PLAYER = oldPlayer;
+    D_8009791C = oldCell;
+    g_PlayerX = oldX;
+    g_PlayerY = oldY;
+    g_PrevScrollX = oldPrevX;
+    g_PrevScrollY = oldPrevY;
+    D_8003C730 = oldMode;
+    g_StageId = oldStage;
+    g_GameState = oldState;
+    g_GameStep = oldStep;
+    puts("Diagnostic spawn restores its temporary load mode before normal "
+         "room/entity initialization: PASS");
 }
 
 static void CheckTitleReveal(void) {
@@ -1397,6 +1786,9 @@ bool PcTestUpgrades(void) {
     CheckBackgroundVortex();
     CheckBackgroundDematerialize();
     CheckDrawAreaCapture();
+    CheckWidePhotograph();
+    CheckCaptureViewportLifetime();
+    CheckSpawnLoadMode();
     CheckTitleReveal();
 #endif
     puts("Viewport, camera, full-screen dialogue and content pack integration: "

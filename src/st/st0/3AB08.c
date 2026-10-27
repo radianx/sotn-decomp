@@ -3,6 +3,7 @@
 #include <scratchpad.h>
 #include <sfx.h>
 #include "../clock_tower.h"
+#include "pc_wide_capture.h"
 
 static s16 D_80182084[] = {
     0x0000, 0x0000, 0x0000, 0x0000, 0xC181, 0xC1BE, 0xDE81, 0xDEBE, 0xE181,
@@ -496,6 +497,110 @@ static s16 D_8018245C[] = {
     0x98, 0x90, 0x58, 0x90, 0xA8, 0x90, 0x70, 0x78, 0x80, 0x78, 0x90, 0x78,
     0x78, 0x70, 0x88, 0x70, 0x80, 0x68, -1,   -1};
 
+#ifdef VERSION_PC
+enum {
+    PHOTO_CAPTURE = 8,
+    PHOTO_EXTRA = 12,
+    PHOTO_PAPER = 23,
+    PHOTO_PRIMS = 24,
+};
+static s32 s_WidePhoto;
+static Primitive* s_PhotoPrims[PHOTO_PRIMS];
+
+static RECT WidePhotoPiece(s32 i, s32* u, s32* v) {
+    if (i < 2) {
+        *u = i ? 128 : 0;
+        *v = 0;
+        return (RECT){*u, 20, i ? 127 : 128, 207};
+    }
+    s32 band = (i - 2) / 2;
+    s32 right = (i - 2) % 2;
+    *u = band * 41 + (right ? 20 : 0);
+    *v = 207;
+    return (RECT){right ? 255 : -20, s_CaptureBands[band], right ? 21 : 20,
+                  s_CaptureBands[band + 1] - s_CaptureBands[band]};
+}
+
+static void TintWidePhotograph(void) {
+    s32 i, u, v;
+    Primitive* first = s_PhotoPrims[0];
+    for (i = 0; i < 12; i++) {
+        Primitive* prim = s_PhotoPrims[i ? PHOTO_EXTRA + i - 1 : 0];
+        RECT r = WidePhotoPiece(i, &u, &v);
+        prim->type = PRIM_GT4;
+        prim->tpage = 0x10C;
+        prim->u0 = prim->u2 = u;
+        prim->u1 = prim->u3 = u + r.w;
+        prim->v0 = prim->v1 = v;
+        prim->v2 = prim->v3 = v + r.h;
+        prim->x0 = prim->x2 = r.x;
+        prim->x1 = prim->x3 = r.x + r.w;
+        prim->y0 = prim->y1 = r.y;
+        prim->y2 = prim->y3 = r.y + r.h;
+        LOW(prim->r0) = LOW(first->r0);
+        LOW(prim->r1) = LOW(first->r1);
+        LOW(prim->r2) = LOW(first->r2);
+        LOW(prim->r3) = LOW(first->r3);
+        prim->priority = 0x1F8;
+        prim->drawMode = DRAW_DITHERING | DRAW_COLORS;
+    }
+}
+
+static void FreezeWidePhotograph(void) {
+    s32 i;
+    Primitive* prim;
+    for (i = PHOTO_CAPTURE; i < PHOTO_EXTRA; i++) {
+        prim = s_PhotoPrims[i];
+        if (prim->type == PRIM_ENV) {
+            DR_ENV* env = PRIM_DR_ENV(prim);
+            env->tag = 0;
+            prim->type = PRIM_GT4;
+        }
+        prim->drawMode = DRAW_HIDE;
+    }
+    prim = s_PhotoPrims[PHOTO_PAPER];
+    prim->type = PRIM_G4;
+    PRED(prim) = PGRN(prim) = 0x70;
+    PBLU(prim) = 0x60;
+    prim->priority = 0x1F7;
+    prim->drawMode = DRAW_COLORS;
+}
+
+static void ProjectWidePhotograph(void) {
+    s32 i, u, v;
+    SVECTOR corners[4];
+    for (i = 0; i < 13; i++) {
+        Primitive* prim = s_PhotoPrims[i == 12 ? PHOTO_PAPER
+                                       : i     ? PHOTO_EXTRA + i - 1
+                                               : 0];
+        RECT r =
+            i == 12 ? (RECT){-26, 14, 308, 219} : WidePhotoPiece(i, &u, &v);
+        corners[0] = (SVECTOR){r.x - 128, r.y - 128, 0};
+        corners[1] = (SVECTOR){r.x + r.w - 128, r.y - 128, 0};
+        corners[2] = (SVECTOR){r.x - 128, r.y + r.h - 128, 0};
+        corners[3] = (SVECTOR){r.x + r.w - 128, r.y + r.h - 128, 0};
+        gte_ldv3c(corners);
+        gte_rtpt();
+        gte_stsxy3_gt3(prim);
+        gte_ldv0(&corners[3]);
+        gte_rtps();
+        gte_stsxy((long*)&prim->x3);
+    }
+}
+
+static void BeginWidePhotographBurn(void) {
+    Primitive* first = s_PhotoPrims[0];
+    Primitive* paper = s_PhotoPrims[PHOTO_PAPER];
+    LOW(first->x0) = LOW(paper->x0);
+    LOW(first->x1) = LOW(paper->x1);
+    LOW(first->x2) = LOW(paper->x2);
+    LOW(first->x3) = LOW(paper->x3);
+    for (s32 i = PHOTO_EXTRA; i <= PHOTO_PAPER; i++)
+        s_PhotoPrims[i]->drawMode = DRAW_HIDE;
+    s_PhotoPrims[5]->drawMode = DRAW_HIDE;
+}
+#endif
+
 void EntityCutscenePhotograph(Entity* self) {
     RECT clipRect;
     DRAWENV drawEnv;
@@ -529,16 +634,32 @@ void EntityCutscenePhotograph(Entity* self) {
         func_psp_0891B0BC(0);
 #endif
         InitializeEntity(g_EInit3DObject);
+#ifdef VERSION_PC
+        s_WidePhoto = PcViewMargin() != 0;
+        primIndex =
+            g_api.AllocPrimitives(PRIM_GT4, s_WidePhoto ? PHOTO_PRIMS : 8);
+#else
         primIndex = g_api.AllocPrimitives(PRIM_GT4, 8);
+#endif
         if (primIndex == -1) {
             self->step = 0;
             return;
         }
         self->flags |= FLAG_HAS_PRIMS;
         self->primIndex = primIndex;
+#ifdef VERSION_PC
+        PcHoldViewport(self);
+#endif
         prim = &g_PrimBuf[primIndex];
         self->ext.cutscenePhoto.prim = prim;
+#ifdef VERSION_PC
+        i = 0;
+#endif
         while (prim != NULL) {
+#ifdef VERSION_PC
+            if (s_WidePhoto)
+                s_PhotoPrims[i++] = prim;
+#endif
             prim->drawMode = DRAW_HIDE;
             prim = prim->next;
         }
@@ -596,6 +717,14 @@ void EntityCutscenePhotograph(Entity* self) {
         return;
 #else
     case 1:
+#ifdef VERSION_PC
+        if (s_WidePhoto &&
+            !CaptureWideFrame(s_PhotoPrims[PHOTO_CAPTURE], 0x1F7)) {
+            FreezeWidePhotograph();
+            SetStep(12);
+            return;
+        }
+#endif
         prim = self->ext.cutscenePhoto.prim;
         drawEnv = g_CurrentBuffer->draw;
         if (drawEnv.ofs[0] == 0) {
@@ -648,6 +777,10 @@ void EntityCutscenePhotograph(Entity* self) {
             }
         }
 
+#ifdef VERSION_PC
+        if (s_WidePhoto)
+            TintWidePhotograph();
+#endif
         if (dualFlag == 0) {
             return;
         }
@@ -655,6 +788,13 @@ void EntityCutscenePhotograph(Entity* self) {
         return;
 #endif
     case 3:
+#ifdef VERSION_PC
+        if (s_WidePhoto) {
+            FreezeWidePhotograph();
+            self->step++;
+            break;
+        }
+#endif
         prim = self->ext.cutscenePhoto.prim;
         prim = prim->next;
 
@@ -741,31 +881,34 @@ void EntityCutscenePhotograph(Entity* self) {
         self->step++;
         break;
     case 4:
-        prim = self->ext.cutscenePhoto.prim;
-        prim = prim->next;
-        prim->drawMode = DRAW_HIDE;
-        prim = prim->next;
-        for (i = 0; i < 2; i++) {
-            dr_env = PRIM_DR_ENV(prim);
-            dr_env->tag = 0;
-            prim->type = PRIM_GT4;
+#ifdef VERSION_PC
+        if (!s_WidePhoto) {
+#endif
+            prim = self->ext.cutscenePhoto.prim;
             prim = prim->next;
-        }
-        prim->drawMode = DRAW_HIDE;
-        // useless line due to the following line!
-        prim = prim->next;
+            prim->drawMode = DRAW_HIDE;
+            prim = prim->next;
+            for (i = 0; i < 2; i++) {
+                dr_env = PRIM_DR_ENV(prim);
+                dr_env->tag = 0;
+                prim->type = PRIM_GT4;
+                prim = prim->next;
+            }
+            prim->drawMode = DRAW_HIDE;
+            // useless line due to the following line!
+            prim = prim->next;
 
-        prim = self->ext.cutscenePhoto.prim;
-        prim->tpage = 0x110;
-        prim->u0 = prim->u2 = 0;
-        prim->u1 = prim->u3 = 0xFF;
+            prim = self->ext.cutscenePhoto.prim;
+            prim->tpage = 0x110;
+            prim->u0 = prim->u2 = 0;
+            prim->u1 = prim->u3 = 0xFF;
 #ifdef VERSION_PSP
-        prim->v0 = prim->v1 = 20;
-        prim->v2 = prim->v3 = 20 + 0xD0;
-        prim->x0 = prim->x2 = 0;
-        prim->x1 = prim->x3 = 0xFF;
-        prim->y0 = prim->y1 = 20;
-        prim->y2 = prim->y3 = 20 + 0xD0;
+            prim->v0 = prim->v1 = 20;
+            prim->v2 = prim->v3 = 20 + 0xD0;
+            prim->x0 = prim->x2 = 0;
+            prim->x1 = prim->x3 = 0xFF;
+            prim->y0 = prim->y1 = 20;
+            prim->y2 = prim->y3 = 20 + 0xD0;
 #else
         prim->v0 = prim->v1 = 12;
         prim->v2 = prim->v3 = 12 + 0xE0;
@@ -774,13 +917,16 @@ void EntityCutscenePhotograph(Entity* self) {
         prim->y0 = prim->y1 = 12;
         prim->y2 = prim->y3 = 12 + 0xE0;
 #endif
-        prim->r0 = prim->g0 = prim->b0 = 0x80;
-        LOW(prim->r1) = LOW(prim->r0);
-        LOW(prim->r2) = LOW(prim->r0);
-        LOW(prim->r3) = LOW(prim->r0);
+            prim->r0 = prim->g0 = prim->b0 = 0x80;
+            LOW(prim->r1) = LOW(prim->r0);
+            LOW(prim->r2) = LOW(prim->r0);
+            LOW(prim->r3) = LOW(prim->r0);
 
-        prim->priority = 0x1F9;
-        prim->drawMode = DRAW_DEFAULT;
+            prim->priority = 0x1F9;
+            prim->drawMode = DRAW_DEFAULT;
+#ifdef VERSION_PC
+        }
+#endif
 
         for (otherEnt = &g_Entities[1], i = 1; i < 256; i++, otherEnt++) {
             if (otherEnt != self) {
@@ -822,12 +968,20 @@ void EntityCutscenePhotograph(Entity* self) {
         transVector.vz += self->ext.cutscenePhoto.cameraDistance;
         TransMatrix(&m, &transVector);
         SetTransMatrix(&m);
-        gte_ldv3(&D_8018243C, &D_80182444, &D_8018244C);
-        gte_rtpt();
-        gte_stsxy3_gt3(prim);
-        gte_ldv0(&D_80182454);
-        gte_rtps();
-        gte_stsxy((long*)&prim->x3);
+#ifdef VERSION_PC
+        if (s_WidePhoto) {
+            ProjectWidePhotograph();
+        } else {
+#endif
+            gte_ldv3(&D_8018243C, &D_80182444, &D_8018244C);
+            gte_rtpt();
+            gte_stsxy3_gt3(prim);
+            gte_ldv0(&D_80182454);
+            gte_rtps();
+            gte_stsxy((long*)&prim->x3);
+#ifdef VERSION_PC
+        }
+#endif
 
         if (!self->ext.cutscenePhoto.rotationTimer) {
             self->rotate += 2;
@@ -920,9 +1074,25 @@ void EntityCutscenePhotograph(Entity* self) {
         prim->r0 = prim->g0 = prim->b0 = 8;
         prim->priority = 0x1FC;
         prim->drawMode = DRAW_TPAGE2 | DRAW_TPAGE | DRAW_TRANSP;
+#ifdef VERSION_PC
+        if (s_WidePhoto) {
+            // Split the VRAM copy so fullscreen expansion cannot stretch it.
+            Primitive* left = s_PhotoPrims[1];
+            Primitive* right = s_PhotoPrims[5];
+            Primitive* next = right->next;
+            *right = *left;
+            right->next = next;
+            left->x1 = left->x3 = left->u1 = left->u3 = 128;
+            right->x0 = right->x2 = right->u0 = right->u2 = 128;
+        }
+#endif
         self->step++;
         return;
     case 7:
+#ifdef VERSION_PC
+        if (s_WidePhoto)
+            BeginWidePhotographBurn();
+#endif
         prim = self->ext.cutscenePhoto.prim;
         prim->tpage = 0x110;
         prim->u0 = prim->x0;
@@ -971,6 +1141,22 @@ void EntityCutscenePhotograph(Entity* self) {
         prim->r0 = prim->g0 = prim->b0 = 0;
         prim->priority = 0x1FC;
         prim->drawMode = DRAW_UNK_40 | DRAW_TPAGE | DRAW_TRANSP;
+#ifdef VERSION_PC
+        if (s_WidePhoto) {
+            Primitive* photo = self->ext.cutscenePhoto.prim;
+            s32 left =
+                MIN(MIN(photo->x0, photo->x1), MIN(photo->x2, photo->x3));
+            s32 top = MIN(MIN(photo->y0, photo->y1), MIN(photo->y2, photo->y3));
+            s32 right =
+                MAX(MAX(photo->x0, photo->x1), MAX(photo->x2, photo->x3));
+            s32 bottom =
+                MAX(MAX(photo->y0, photo->y1), MAX(photo->y2, photo->y3));
+            prim->x0 = left;
+            prim->y0 = top;
+            prim->u0 = right - left;
+            prim->v0 = bottom - top;
+        }
+#endif
         self->pose = 0;
         g_api.PlaySfx(SFX_BURNING_PHOTOGRAPH);
         self->step++;

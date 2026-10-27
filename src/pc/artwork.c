@@ -20,7 +20,11 @@ typedef struct {
 
 // Four visible 20x240 strips need at most 19,200 one-pixel spans.
 #define ARTWORK_TILE_COUNT 32768
-static TILE s_Tiles[2][ARTWORK_TILE_COUNT];
+typedef union {
+    TILE tile;
+    POLY_FT4 indexed;
+} ArtworkPrimitive;
+static ArtworkPrimitive s_Prims[2][ARTWORK_TILE_COUNT];
 static ArtworkEdge s_Edges[2][2];
 static int s_Stage = -1, s_AssetStage, s_Layer = -1, s_Used;
 static char s_Root[768];
@@ -187,7 +191,7 @@ int PcArtworkDrawLayer(int background, int width, int height, int scrollX,
         return 0;
     int first = s_Used;
     DR_MODE* modes[24] = {0};
-    TILE* tiles = s_Tiles[g_CurrentBuffer != &g_GpuBuffers[0]];
+    ArtworkPrimitive* prims = s_Prims[g_CurrentBuffer != &g_GpuBuffers[0]];
     for (int side = 0; side < 2; side++) {
         ArtworkEdge* edge = &s_Edges[background][side];
         if (edge->height != height)
@@ -204,11 +208,6 @@ int PcArtworkDrawLayer(int background, int width, int height, int scrollX,
             int depth = order + span->page;
             if (depth >= OTSIZE)
                 continue;
-            u16 color = edge->indexed
-                            ? g_Clut[(flags & LAYER_CLUT_ALT) != 0][span->color]
-                            : span->color;
-            if (!color)
-                continue;
             if (s_Used == ARTWORK_TILE_COUNT) {
                 WARNF("Widescreen artwork primitive capacity exceeded");
                 break;
@@ -222,7 +221,27 @@ int PcArtworkDrawLayer(int background, int width, int height, int scrollX,
                 SetDrawMode(
                     modes[span->page], 0, 0, flags & LAYER_TPAGE_ID, &window);
             }
-            TILE* tile = &tiles[s_Used++];
+            ArtworkPrimitive* prim = &prims[s_Used++];
+            if (edge->indexed) {
+                u16 palette = g_ClutIds[(span->color >> 4) +
+                                        ((flags & LAYER_CLUT_ALT) ? 256 : 0)];
+                int x = (palette & 63) * 16 + (span->color & 15);
+                int paletteY = (palette >> 6) & 511;
+                POLY_FT4* quad = &prim->indexed;
+                setPolyFT4(quad);
+                setShadeTex(quad, 1);
+                setSemiTrans(quad, flags & LAYER_SEMI_TRANS);
+                quad->tpage =
+                    GetTPage(2, (flags & LAYER_TPAGE_ID) >> 5, x, paletteY);
+                setXYWH(quad, x0, y, x1 - x0, 1);
+                // Sample the live palette entry directly, including STP.
+                setUV4(quad, x & 63, paletteY & 255, x & 63, paletteY & 255,
+                       x & 63, paletteY & 255, x & 63, paletteY & 255);
+                AddPrim(&g_CurrentBuffer->ot[depth], quad);
+                continue;
+            }
+            u16 color = span->color;
+            TILE* tile = &prim->tile;
             if (g_PcSettings.palette)
                 color = PcPaletteColor(color, g_PcSettings.palette);
             setTile(tile);

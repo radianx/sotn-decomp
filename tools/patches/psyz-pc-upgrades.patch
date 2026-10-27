@@ -65,7 +65,7 @@ index 0dd7581..46e9ca5 100644
  }
  #endif
 diff --git a/psyz/src/platform/sdl3_common.h b/psyz/src/platform/sdl3_common.h
-index 2a08e62..f501962 100644
+index 2a08e62..20f7eb6 100644
 --- a/psyz/src/platform/sdl3_common.h
 +++ b/psyz/src/platform/sdl3_common.h
 @@ -125,6 +125,7 @@ static PsyzAspectMode aspect_mode = PSYZ_ASPECT_DISPLAY;
@@ -122,7 +122,33 @@ index 2a08e62..f501962 100644
      PsyzSize sim = simulated_display;
      PsyzRect p = l->present;
      if (sim.w > 0 && sim.h > 0) {
-@@ -677,12 +708,29 @@ static void WaitForNextFrame(int frames) {
+@@ -446,9 +477,11 @@ static inline u_char To15BitChannel(u_char c) {
+     return (u_char)(((c >> 3) * 255 + 15) / 31);
+ }
+ 
++#include "../texture_read.h"
++
+ static bool PrimSamplesDirtyFb(
+     const u_long* p, int len, bool is_poly, bool is_gouraud, u16 cur_tpage,
+-    SDL_Rect pending) {
++    unsigned int twin, SDL_Rect pending) {
+     const int tpage_word = is_gouraud ? 5 : 4;
+     if (len <= (is_poly ? tpage_word : 2)) {
+         return false;
+@@ -458,6 +491,12 @@ static bool PrimSamplesDirtyFb(
+     int bpp = MIN((tpage >> 7) & 3, 2);
+     SDL_Rect page = {(tpage & 15) * 64, ((tpage >> 4) & 1) * 256, 64 << bpp,
+                      256};
++    if (is_poly && bpp == 2) {
++        PsyzRect texel;
++        if (Psyz_ConstantTexel(p, len, is_gouraud, twin, &texel)) {
++            page = (SDL_Rect){page.x + texel.sx, page.y + texel.sy, 1, 1};
++        }
++    }
+     SDL_Rect pal = {(clut & 63) * 16, (clut >> 6) & 511, bpp ? 256 : 16, 1};
+     return OverlapsDirtyCanvas(page, pending) ||
+            (bpp < 2 && OverlapsDirtyCanvas(pal, pending));
+@@ -677,12 +716,29 @@ static void WaitForNextFrame(int frames) {
      last_frame_time = frame_end_time;
  }
  
@@ -154,7 +180,7 @@ index 2a08e62..f501962 100644
      // a line is approximated as 64 us
      now_us = (Uint32)(SDL_GetTicksNS() / 1000);
 diff --git a/psyz/src/platform/sdl3_gl.c b/psyz/src/platform/sdl3_gl.c
-index ccfa984..1a5b3f9 100644
+index ccfa984..7790517 100644
 --- a/psyz/src/platform/sdl3_gl.c
 +++ b/psyz/src/platform/sdl3_gl.c
 @@ -843,6 +843,40 @@ static void CanvasUploadImage(
@@ -198,8 +224,17 @@ index ccfa984..1a5b3f9 100644
  // the area the open batch draws on; a prim sampling it must see that batch
  static SDL_Rect PendingBatchRect(void) {
      if (n_vertices == 0) {
+@@ -1326,7 +1360,7 @@ int Draw_PushPrim(u_long* packets, int max_len) {
+     Vertex* v;
+ 
+     if (isTextured && PrimSamplesDirtyFb(packets, max_len, isPoly, isGouraud,
+-                                         cur_tpage, PendingBatchRect())) {
++                                         cur_tpage, cur_twin, PendingBatchRect())) {
+         Draw_FlushBuffer();
+         SyncDirtyCanvases(NULL);
+     }
 diff --git a/psyz/src/platform/sdl3_gpu.c b/psyz/src/platform/sdl3_gpu.c
-index 321fe7b..ba66141 100644
+index 321fe7b..6f79303 100644
 --- a/psyz/src/platform/sdl3_gpu.c
 +++ b/psyz/src/platform/sdl3_gpu.c
 @@ -896,6 +896,41 @@ static void CanvasUploadImage(
@@ -284,6 +319,15 @@ index 321fe7b..ba66141 100644
      }
      SyncCanvasesForRead();
      *w = display_size.x;
+@@ -1522,7 +1565,7 @@ int Draw_PushPrim(u_long* packets, int max_len) {
+     Vertex* v;
+ 
+     if (isTextured && PrimSamplesDirtyFb(packets, max_len, isPoly, isGouraud,
+-                                         cur_tpage, PendingBatchRect())) {
++                                         cur_tpage, cur_twin, PendingBatchRect())) {
+         Draw_FlushBuffer();
+         SyncDirtyCanvases(NULL);
+     }
 diff --git a/psyz/src/psyz/psyz_spu.c b/psyz/src/psyz/psyz_spu.c
 index b75e9fd..a5d454f 100644
 --- a/psyz/src/psyz/psyz_spu.c
@@ -341,3 +385,33 @@ index eeca899..3a99aa4 100644
      return Psyz_RectFromSize((display.w - w) >> 1, (display.h - h) >> 1, w, h);
  }
  
+diff --git a/psyz/src/texture_read.h b/psyz/src/texture_read.h
+new file mode 100644
+--- /dev/null
++++ b/psyz/src/texture_read.h
+@@ -0,0 +1,25 @@
++// SPDX-License-Identifier: MPL-2.0
++#ifndef PSYZ_TEXTURE_READ_H
++#define PSYZ_TEXTURE_READ_H
++#include <psyz/types.h>
++#include <stdbool.h>
++
++// Constant-UV polygons sample one texel, even when its page overlaps a framebuffer.
++static inline bool Psyz_ConstantTexel(const u_long* p, int len, bool gouraud,
++                                     unsigned int twin, PsyzRect* texel) {
++    if (len <= 0)
++        return false;
++    int stride = gouraud ? 3 : 2;
++    int vertices = (p[0] & 0x08000000) ? 4 : 3;
++    if (len <= 2 + (vertices - 1) * stride)
++        return false;
++    for (int i = 1; i < vertices; i++) {
++        if ((unsigned short)p[2 + i * stride] != (unsigned short)p[2])
++            return false;
++    }
++    int u = ((p[2] & 255) & (twin & 255)) | ((twin >> 16) & 255);
++    int v = (((p[2] >> 8) & 255) & ((twin >> 8) & 255)) | (twin >> 24);
++    *texel = (PsyzRect){u, v, u + 1, v + 1};
++    return true;
++}
++#endif

@@ -218,8 +218,9 @@ static void DrawSettings(void) {
         const char* mark = row == s_Row ? ">" : " ";
         switch (row) {
         case 0:
-            snprintf(text, sizeof(text), "%s Widescreen: %s", mark,
-                     g_PcSettings.widescreen ? "16:9" : "Original");
+            snprintf(text, sizeof(text), "%s Widescreen: %s%s", mark,
+                     g_PcSettings.widescreen ? "16:9" : "Original",
+                     PcViewportChangePending() ? " (after transition)" : "");
             break;
         case 1:
             snprintf(text, sizeof(text), "%s Reduce flashes: %s", mark,

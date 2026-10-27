@@ -51,6 +51,17 @@ snapshot uses the original scratch texture space and excludes the HUD. Native
 regressions preserve transition timing and gameplay randomness; live checks use
 an assisted first-form defeat and cover aspect restoration, not a full fight.
 
+The post-battle photograph includes the complete wide scene and HUD through
+sepia tint, shrink, rotation and fire. Capture and projection reuse the room
+breakup's scratch-texture layout; the paper border is drawn separately. Its
+larger burn bounds and split feedback copy avoid cropping or re-stretching it.
+Assisted live captures verify phase timing through the following game state;
+aspect changes during captured effects are queued until those effects finish.
+The saved choice remains visible in F1 with an "after transition" indicator.
+Live checks cover both directions for each effect and the story-scroll handoff
+back into Alucard gameplay. Diagnostic spawn placement restores its temporary
+room-loading mode before normal entity initialization.
+
 ### Extended artwork
 
 Build the native artwork pack from the local verified AI drafts:
@@ -65,6 +76,9 @@ protected. The renderer loads edges by stage, room-layer index, foreground or
 background, and side. They follow that layer's scrolling, depth, visibility and
 palette assistance. The builder also creates matching data PNGs under `indexed/`
 so extensions follow live palette changes, per-color transparency and tile depth.
+Indexed edges sample the selected GPU palette through `g_ClutIds`, including
+remapped lightning/lamp palettes, custom VRAM palettes and per-color blending.
+They receive the same accessibility palette transform as the original tiles.
 These are metadata; keep the root RGB images for artwork editing. Widescreen
 must be enabled; original-aspect mode ignores the additions. Restart or change
 rooms after rebuilding the pack.

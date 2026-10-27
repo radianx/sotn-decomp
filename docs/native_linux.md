@@ -205,4 +205,18 @@ changing gameplay randomness or transition timing. The following vortex also
 uses wide culling bounds. Native tests cover full pixel reconstruction and GPU
 capture ordering on both framebuffer origins at 1×/2×/4× resolution. A disc-backed,
 health-assisted transition probe reaches the second form and restores widescreen
-after an aspect switch. The post-battle photograph/fire and full fight remain open.
+after an aspect switch. Full fights and end-to-end route coverage remain open.
+
+The post-battle photograph also captures the complete wide view and HUD. Its
+sepia image keeps the same pixel scale while shrinking/rotating; a separate
+paper border and wider burn mask follow its projected bounds. Native regressions
+check complete image reconstruction, resource failure and unchanged phase timing.
+An assisted disc-backed probe reaches the fire, fade and following game state;
+all relative effect timings match the previous implementation. Aspect
+changes now wait for captured effects to finish; F1 indicates a queued change.
+The hold clears when the effect is destroyed or the stage/game state changes.
+Diagnostic spawn placement also restores its temporary room-loading mode so it
+cannot carry prologue room coordinates into the entrance. A disc-backed probe
+follows the complete story scroll into Alucard's entrance, then 600 frames of
+normal scripted movement with widescreen restored. Both boss deaths and the
+prologue health are diagnostic overrides; combat and later routes remain open.

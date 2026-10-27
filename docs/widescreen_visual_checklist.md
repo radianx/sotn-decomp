@@ -322,20 +322,52 @@ destination transitions remain unchecked.
   checks use temporary high health and an injected first-form defeat, with a
   normal camera. They do not establish a legitimate boss victory, audible
   audio quality, or post-battle photograph/fire coverage. Evidence:
-  `build/local-pc/dematerialize-repair-evidence.json`. Start this transition in
-  the intended aspect: a snapshot taken in original aspect has no side pixels
-  to reveal if widescreen is enabled during the breakup. That switch remains
-  open; the tested live aspect switches occur during the following vortex.
+  `build/local-pc/dematerialize-repair-evidence.json`. Aspect changes now wait
+  until the effect finishes, so an original-aspect snapshot is never asked to
+  supply uncaptured side pixels. The saved choice is preserved and F1 labels
+  the queued change; native tests cover both directions and lifecycle cleanup.
+
+- [x] Prologue photograph capture/projection: preserve the complete wide scene
+  and HUD during sepia tint, shrink and rotation. The shared ordered capture
+  packs the visible pixels into the existing scratch texture. Twelve textured
+  pieces keep their original pixel scale, with a separate paper border. The
+  later framebuffer copy is split so fullscreen expansion cannot stretch it;
+  its burn mask covers the larger projected photograph.
+  Actual-overlay tests cover every visible pixel, projection without automatic
+  stretching, unchanged randomness/phase timing, and safe partial ENV failure.
+  Eighteen disc-backed captures reach the fire effect, final fade and following
+  game state. Relative phase timings match the checkpoint exactly (461 frames
+  from the first observed tint state through exit). Both boss defeats are
+  injected with temporary high health; no legitimate victory or audio listening
+  claim. Aspect changes now wait for the photograph to finish; native tests
+  exercise both starting aspects and retain the same timing. Evidence:
+  `build/local-pc/photograph-repair-evidence.json`.
+
+- [x] Capture-aspect changes and prologue handoff: queue aspect changes until
+  the owning room-breakup or photograph effect ends. Keep the saved choice;
+  clear the hold when the entity is destroyed/replaced or stage/game state
+  changes. Native tests cover both directions and lifecycle exits; 25 live
+  captures confirm both directions for both effects without invalid copies.
+  The natural story scroll reaches Alucard's `NO3` entrance with a wide view,
+  then continues for 600 frames (camera X 0→3616) with no hold retained.
+  The probe exposed a diagnostic spawn flag leaking into the next stage;
+  restoring its previous value fixes that crash. The new regression fails
+  against the checkpoint helper and passes for all four prior load modes.
+  Boss defeats/health are injected; later combat and routes remain unchecked.
+  The F1 pending label uses the tested query; its window was not visually tested.
+  Evidence: `build/local-pc/capture-aspect-repair-evidence.json`.
 
 Quick routes (enable widescreen in F1; F4 enters fullscreen):
 
 ```sh
 ./run-linux.sh --demo 0
-./run-linux.sh --player ric --spawn-point prologue-dracula-dialogue
+./run-linux.sh --player alu --spawn-point prologue-dracula-dialogue
 ```
 
 From the dialogue spawn point, walk left into Dracula's lair. This starts before
-the camera setup trigger so that the normal entry sequence runs.
+the camera setup trigger so that the normal entry sequence runs. Alucard story
+mode still plays Richter in the prologue and can continue into Alucard's game;
+`--player ric` instead selects the debug Richter route.
 
 ## How to check and report
 
@@ -359,7 +391,7 @@ dialogue was active, screenshot/video, and settings. Classify the problem as
 | [ ] | Prologue `ST0` | Exterior stairs, clouds, moon, rotating 3D Clock Tower; reveal extra geometry without gaps | `st/st0/3AB08.c` |
 | [ ] | Prologue `ST0` | First-form defeat, dissolving room background, vortex and second-form arena | `st/st0/3D8F0.c`, `st/st0/e_bg_vortex.c` |
 | [ ] | Prologue `ST0` | Photograph shrink/rotation and fire transition after the battle | `st/st0/3AB08.c`, `EntityCutscenePhotograph` |
-| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Outdoor parallax, trees/bushes, lightning and far ends of backgrounds | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
+| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Outdoor parallax, trees/bushes, lightning and far ends of backgrounds; indexed-edge GPU palette remaps have regression coverage, live lightning cycle still needs inspection | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
 | [ ] | Entrance `NO3` / `NP3` / `RNO3` | Merman-room transparent water; left/right water edges and camera scrolling | `st/e_transparent_water.h` |
 | [ ] | Entrance / reverse entrance | Story camera pans, entrance gates and transition into interior rooms | `st/no3/cutscene.c`, `st/rno3/` |
 | [ ] | Caverns `NO4` / `RNO4` | Water surface/body, waterfalls, surfacing bubbles, submerged views | `st/water_effects.h`, `st/water_effects_rev.h` |
