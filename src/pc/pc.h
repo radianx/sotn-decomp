@@ -25,8 +25,17 @@
 #define VRAM_H 512
 #define VRAM_STRIDE 2048
 
+FILE* PcOpenPackFile(const char* relative);
+FILE* PcOpenAsset(const char* filename);
+int PcVoiceStart(int id);
+int PcVoiceDuration(void);
+void PcVoiceStop(void);
+void PcVoicePause(bool paused);
+void PcVoiceUpdate(void);
+bool PcValidateDisc(const char* cuePath);
 bool PcPlayMovie(int index);
 bool PcTestSave(void);
+bool PcTestUpgrades(void);
 
 enum TestMode {
     NO_TEST,
@@ -37,6 +46,7 @@ enum TestMode {
     TEST_MOVIE2,
     TEST_MOVIE3,
     TEST_SAVE,
+    TEST_UPGRADES,
 };
 struct InitGameParams {
     const char* diskPath;

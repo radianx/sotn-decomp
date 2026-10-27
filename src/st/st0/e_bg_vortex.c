@@ -255,11 +255,15 @@ void EntityBackgroundVortex(Entity* self) {
                         gte_stsxy((long*)&prim->x3);
                         gte_ldrgb(&scratchColor[i] + 1);
                         gte_dpcs();
-                        if (prim->x0 <= 0x100 || prim->x1 <= 0x100 ||
-                            prim->x2 <= 0x100 || prim->x3 <= 0x100) {
+                        if (prim->x0 <= PC_RIGHT(0x100) ||
+                            prim->x1 <= PC_RIGHT(0x100) ||
+                            prim->x2 <= PC_RIGHT(0x100) ||
+                            prim->x3 <= PC_RIGHT(0x100)) {
                             gte_strgb(&prim->r3);
-                            if (prim->x0 >= 0 || prim->x1 >= 0 ||
-                                prim->x2 >= 0 || prim->x3 >= 0) {
+                            if (prim->x0 >= PC_LEFT(0) ||
+                                prim->x1 >= PC_LEFT(0) ||
+                                prim->x2 >= PC_LEFT(0) ||
+                                prim->x3 >= PC_LEFT(0)) {
                                 gte_stszotz((long*)&zSize);
                                 if (zSize < 0x55) {
                                     prim->priority = 0x58 - zSize;

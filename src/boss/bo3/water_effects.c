@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo3.h"
+#ifdef VERSION_PC
+#include "../../pc/upgrades.h"
+#endif
 
 extern EInit g_EInitInteractable;
 extern EInit g_EInitCommon;
@@ -641,6 +644,11 @@ void func_us_801A1BE8(Entity* self) {
     u16 flag;
     s16 y;
 
+#ifdef VERSION_PC
+    if (g_PcSettings.bugFixes && g_CastleFlags[SCYLLA_DEFEATED]) {
+        D_us_80180C66 &= ~1u;
+    }
+#endif
     params = self->params;
     flag = D_us_80180C66 & (1 << params);
     params <<= 1;

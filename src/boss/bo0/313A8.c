@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo0.h"
+#ifdef VERSION_PC
+#include "../../pc/upgrades.h"
+#endif
 #include <scratchpad.h>
 
 extern EInit D_us_80180708;
@@ -1910,6 +1913,13 @@ void func_us_801B365C(Entity* self) {
         }
         break;
     case 16:
+#ifdef VERSION_PC
+        // The waiting death phases share a timer; a second decrement can wrap
+        // it.
+        if (g_PcSettings.bugFixes && self->ext.olroxTrueForm.timer < 0) {
+            self->ext.olroxTrueForm.timer = 96;
+        }
+#endif
         func_us_801B21F0();
         if (self->ext.olroxTrueForm.unk88 == 0) {
             unkExt = self->ext.olroxTrueForm.unk80;

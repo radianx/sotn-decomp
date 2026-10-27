@@ -48,7 +48,21 @@ int main(void) {
     Psyz_SpuWrite(0x1AA, 0xC000);
     CheckVoices(1, 1);
     CheckVoices(3, 0);
+    short mixed[512 * 2];
+    Psyz_SpuWrite(0x180, 0x3FFF);
+    Psyz_SpuWrite(0x182, 0x3FFF);
+    Psyz_SpuSetMixVolume(0, 100);
+    Psyz_SpuPullSamples(mixed, 512);
+    for (unsigned i = 0; i < 1024; i++)
+        assert(mixed[i] == 0);
+    Psyz_SpuSetMixVolume(100, 100);
+    Psyz_SpuPullSamples(mixed, 512);
+    int audible = 0;
+    for (unsigned i = 0; i < 1024; i++)
+        audible |= mixed[i] != 0;
+    assert(audible);
     CheckVoices(1, 1);
-    puts("Finished samples release all 24 voices; looping voices survive: PASS");
+    puts(
+        "Finished samples release all 24 voices; looping voices survive: PASS");
     return 0;
 }

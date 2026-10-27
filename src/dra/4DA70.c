@@ -247,7 +247,18 @@ void RenderPrimitives(void) {
         }
     } else {
         unkBool = 0;
+#ifdef VERSION_PC
+        Primitive widePrim;
+        for (i = 0; i < MAX_PRIM_COUNT; i++) {
+            prim = &g_PrimBuf[i];
+            if (PcViewMargin()) {
+                widePrim = *prim;
+                PcAdjustPrimitive(&widePrim);
+                prim = &widePrim;
+            }
+#else
         for (i = 0, prim = &g_PrimBuf[0]; i < MAX_PRIM_COUNT; prim++, i++) {
+#endif
             primType = prim->type;
             if (!primType) {
                 continue;
@@ -303,6 +314,17 @@ void RenderPrimitives(void) {
                     }
                     primbuf->tile.w = prim->u0;
                     primbuf->tile.h = prim->v0;
+#ifdef VERSION_PC
+                    if (PcViewMargin() && prim->priority == 0x1FD &&
+                        prim->y0 == 0 && prim->v0 >= 240) {
+                        if (prim->x0 == 0) {
+                            primbuf->tile.x0 -= PcViewMargin();
+                            primbuf->tile.w += PcViewMargin();
+                        }
+                        if (prim->x0 + prim->u0 >= 256)
+                            primbuf->tile.w += PcViewMargin();
+                    }
+#endif
                     *r->tile = primbuf->tile;
 #ifdef VERSION_PSP
                     if (prim->priority < 0 || prim->priority >= 0x200) {

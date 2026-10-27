@@ -94,6 +94,12 @@ void EntityTransparentWater(Entity* self) {
     if (self->params) {
         prim_xPos = 0x60 + PARAM_OFFSET;
     }
+#ifdef VERSION_PC
+    if (!self->params) {
+        s32 extra = (PcViewMargin() + TILE_WIDTH - 1) / TILE_WIDTH * TILE_WIDTH;
+        prim_xPos += SIGN extra;
+    }
+#endif
 
     uvPtr = transWaterUV;
     uvPtr += 4 * self->animCurFrame;
@@ -102,9 +108,13 @@ void EntityTransparentWater(Entity* self) {
     selfY = self->posY.i.hi;
     prim = self->ext.transparentWater.prim;
 #if !defined(INVERTED_STAGE)
-    while (prim_xPos > 0) {
+    while (prim_xPos > PC_LEFT(0)) {
 #else
-    while (prim_xPos < 0x100) {
+    while (prim_xPos < PC_RIGHT(0x100)) {
+#endif
+#ifdef VERSION_PC
+        if (!prim)
+            break;
 #endif
         prim->u0 = prim->u2 = uCoord;
         prim->u1 = prim->u3 = uCoord + TILE_WIDTH;

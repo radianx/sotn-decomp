@@ -138,7 +138,11 @@ typedef enum {
 #define MAX_POLY_G4_COUNT 0x100
 #define MAX_POLY_GT3_COUNT 0x30
 #define MAX_LINE_G2_COUNT 0x100
+#ifdef VERSION_PC
+#define MAXSPRT16 0x2000
+#else
 #define MAXSPRT16 0x280
+#endif
 #define MAX_TILE_COUNT 0x100
 #define MAX_SPRT_COUNT 0x200
 
@@ -2280,5 +2284,15 @@ extern s32 D_80098894;
 
 #include "palettes.h"
 #include "enemies.h"
+
+#ifdef VERSION_PC
+#define PC_LEFT(x) ((x) - PcViewMargin())
+#define PC_RIGHT(x) ((x) + PcViewMargin())
+#include "../src/pc/upgrades.h"
+void PcAdjustPrimitive(Primitive* prim);
+#else
+#define PC_LEFT(x) (x)
+#define PC_RIGHT(x) (x)
+#endif
 
 #endif

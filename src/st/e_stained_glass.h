@@ -153,7 +153,7 @@ Primitive* StainedGlassRecurseDepth(
         UV(tempPrim->u2) = uvValues[index2];
         UV(tempPrim->u3) = uvValues[index3];
 
-        if ((tempPrim->x1 >= 0) && (tempPrim->x0 <= 256)) {
+        if ((tempPrim->x1 >= PC_LEFT(0)) && (tempPrim->x0 <= PC_RIGHT(256))) {
             if (iterations == 1) {
                 dstPrimNext = dstPrim->next;
                 *dstPrim = *tempPrim;

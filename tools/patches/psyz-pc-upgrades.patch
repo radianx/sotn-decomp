@@ -1,0 +1,343 @@
+SPDX-License-Identifier: MPL-2.0
+PSY-Z native PC upgrades; modified 2026-10-26-27. See README.md and LICENSE.MPL-2.0.
+
+diff --git a/psyz/include/psyz/audio.h b/psyz/include/psyz/audio.h
+index 620a98a..8660359 100644
+--- a/psyz/include/psyz/audio.h
++++ b/psyz/include/psyz/audio.h
+@@ -32,6 +32,7 @@ void Psyz_AudioDestroy(void);
+  * Psyz_AudioUnpause must be called to resume.
+  */
+ void Psyz_AudioPause(void);
++int Psyz_AudioIsPaused(void);
+ 
+ /**
+  * @brief Resume audio playback after Psyz_AudioPause
+diff --git a/psyz/include/psyz/spu.h b/psyz/include/psyz/spu.h
+index d52c64b..e7223ff 100644
+--- a/psyz/include/psyz/spu.h
++++ b/psyz/include/psyz/spu.h
+@@ -139,6 +139,8 @@ unsigned char* Psyz_SpuGetRam(void);
+  */
+ void Psyz_SpuPullSamples(short* out, int numFrames);
+ 
++void Psyz_SpuSetMixVolume(int effects, int cd);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/psyz/include/psyz/video.h b/psyz/include/psyz/video.h
+index 0dd7581..46e9ca5 100644
+--- a/psyz/include/psyz/video.h
++++ b/psyz/include/psyz/video.h
+@@ -197,6 +197,8 @@ int Psyz_VideoSimulateDisplay(PsyzSize size);
+  * @return 0 on success, -1 on invalid size or when the target cannot do it
+  */
+ int Psyz_VideoSetResolution(PsyzSize size);
++/** SDL3 GPU: crop native presentation vertically; (0, 0) restores it. */
++int Psyz_VideoSetVerticalCrop(int top, int height);
+ 
+ /**
+  * @brief Choose where the PS1 framebuffer sits inside the canvas
+@@ -303,6 +305,14 @@ int Psyz_VideoStats(PsyzVideoStats* stats);
+  */
+ unsigned char* Psyz_VideoAllocCapturedFrame(int* w, int* h);
+ 
++/**
++ * Copy logical pixels from the current draw canvas to VRAM, without the HUD
++ * or a presentation-frame delay. Call from an ordered GP0 command handler.
++ * Rectangles must fit the canvas and VRAM; returns -1 on invalid input.
++ */
++int Psyz_VideoCopyDrawArea(PsyzRect source, int x, int y);
++
++
+ /**
+  * @brief Dump the whole video memory plane as RGB888
+  *
+@@ -312,6 +322,9 @@ unsigned char* Psyz_VideoAllocCapturedFrame(int* w, int* h);
+  */
+ unsigned char* Psyz_VideoAllocVramDump(int* w, int* h);
+ 
++void Psyz_VideoPauseClock(int paused);
++uint64_t Psyz_VideoClockNS(void);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/psyz/src/platform/sdl3_common.h b/psyz/src/platform/sdl3_common.h
+index 2a08e62..f501962 100644
+--- a/psyz/src/platform/sdl3_common.h
++++ b/psyz/src/platform/sdl3_common.h
+@@ -125,6 +125,7 @@ static PsyzAspectMode aspect_mode = PSYZ_ASPECT_DISPLAY;
+ static WndSize wnd_size_in_pixels = {0, 0};
+ static PsyzSize fb_size = {256, 240}; // PS1 display mode
+ static PsyzSize res_request = {0, 0}; // PSYZ_DEFAULT_RESOLUTION
++static int present_crop_top, present_crop_height;
+ static PsyzAnchor video_anchor = PSYZ_ANCHOR_CENTER;
+ static PsyzSize simulated_display;
+ 
+@@ -281,6 +282,16 @@ int Psyz_VideoSetResolution(PsyzSize size) {
+     return 0;
+ }
+ 
++int Psyz_VideoSetVerticalCrop(int top, int height) {
++    if (top < 0 || height < 0 || top > fb_size.h ||
++        height > fb_size.h - top || (!height && top)) {
++        return -1;
++    }
++    present_crop_top = top;
++    present_crop_height = height;
++    return 0;
++}
++
+ int Psyz_VideoSetAnchor(PsyzAnchor anchor) {
+     if (!VideoLayout_IsValidAnchor(anchor)) {
+         return -1;
+@@ -407,8 +418,28 @@ static void InvalidateCanvas(
+     canvas_shift[fb_index] = shift;
+ }
+ 
++static SDL_Rect GetCanvasSourceRect(const VideoLayout* l) {
++    SDL_Rect source = {0, 0, l->canvas.w, l->canvas.h};
++    if (present_crop_height) {
++        int top = CLAMP(present_crop_top - l->screen.sy, 0, l->canvas.h);
++        int bottom = CLAMP(present_crop_top + present_crop_height - l->screen.sy,
++                           top, l->canvas.h);
++        source.y = top;
++        source.h = bottom - top;
++    }
++    return source;
++}
++
+ static SDL_Rect GetCanvasPresentRect(
+     const VideoLayout* l, int win_w, int win_h) {
++    if (present_crop_height) {
++        SDL_Rect source = GetCanvasSourceRect(l);
++        if (!source.h)
++            return (SDL_Rect){0, 0, 0, 0};
++        float aspect = GetCurrentGameAspectRatio(l->fb.w, l->fb.h) *
++                       source.w / l->fb.w * l->fb.h / source.h;
++        return FitGameToWindow(aspect, (WndSize){win_w, win_h});
++    }
+     PsyzSize sim = simulated_display;
+     PsyzRect p = l->present;
+     if (sim.w > 0 && sim.h > 0) {
+@@ -677,12 +708,29 @@ static void WaitForNextFrame(int frames) {
+     last_frame_time = frame_end_time;
+ }
+ 
++static Uint64 paused_clock_total, paused_clock_start;
++static bool clock_paused;
++void Psyz_VideoPauseClock(int paused) {
++    Uint64 now = SDL_GetTicksNS();
++    if (paused && !clock_paused) {
++        paused_clock_start = now;
++    }
++    if (!paused && clock_paused) {
++        paused_clock_total += now - paused_clock_start;
++    }
++    clock_paused = paused != 0;
++}
++uint64_t Psyz_VideoClockNS(void) {
++    return (clock_paused ? paused_clock_start : SDL_GetTicksNS()) -
++           paused_clock_total;
++}
++
+ int Psyz_VideoVSync(int mode) {
+     Uint32 now_us;
+     unsigned short ret;
+     Sdl3Common_ApplyPendingTimingReset();
+     if (mode < 0) {
+-        return (int)((double)SDL_GetTicksNS() * target_frame_rate / 1e9);
++        return (int)((double)Psyz_VideoClockNS() * target_frame_rate / 1e9);
+     }
+     // a line is approximated as 64 us
+     now_us = (Uint32)(SDL_GetTicksNS() / 1000);
+diff --git a/psyz/src/platform/sdl3_gl.c b/psyz/src/platform/sdl3_gl.c
+index ccfa984..1a5b3f9 100644
+--- a/psyz/src/platform/sdl3_gl.c
++++ b/psyz/src/platform/sdl3_gl.c
+@@ -843,6 +843,40 @@ static void CanvasUploadImage(
+          ScaleRect(dst, (int)canvas_res));
+ }
+ 
++int Psyz_VideoCopyDrawArea(PsyzRect source, int x, int y) {
++    Draw_FlushBuffer();
++    const VideoLayout layout = ResolveVideoLayout();
++    int i = layout.native
++                ? FindFbContaining(scissor_rect.x, scissor_rect.y)
++                : -1;
++    if (i < 0 || x < 0 || x >= VRAM_W || y < 0 || y >= VRAM_H ||
++        source.ex <= source.sx || source.ey <= source.sy ||
++        source.sx < layout.screen.sx || source.sy < layout.screen.sy ||
++        source.ex > layout.screen.ex || source.ey > layout.screen.ey) {
++        return -1;
++    }
++    int w = source.ex - source.sx, h = source.ey - source.sy;
++    if (w > VRAM_W - x || h > VRAM_H - y || !PrepareCanvas(&layout, i)) {
++        return -1;
++    }
++    SDL_Rect src = {source.sx - layout.screen.sx,
++                    source.sy - layout.screen.sy, w, h};
++    SDL_Rect dst = {x, y, w, h};
++    Blit(canvas_fbo[i], ScaleRect(src, (int)canvas_res), vram_fbo, dst);
++    if (HasSeparateDrawTarget()) {
++        Blit(canvas_fbo[i], ScaleRect(src, (int)canvas_res),
++             scaled_vram_fbo, ScaleRect(dst, (int)internal_res));
++    }
++    MarkRgb24Dirty(x, y, w, h);
++    for (int j = 0; j < fb_origin_count; j++) {
++        SDL_Rect fb = GetFbRect(j);
++        if (SDL_HasRectIntersection(&dst, &fb) && PrepareCanvas(&layout, j)) {
++            CopyVramToCanvas(j, dst);
++        }
++    }
++    return 0;
++}
++
+ // the area the open batch draws on; a prim sampling it must see that batch
+ static SDL_Rect PendingBatchRect(void) {
+     if (n_vertices == 0) {
+diff --git a/psyz/src/platform/sdl3_gpu.c b/psyz/src/platform/sdl3_gpu.c
+index 321fe7b..ba66141 100644
+--- a/psyz/src/platform/sdl3_gpu.c
++++ b/psyz/src/platform/sdl3_gpu.c
+@@ -896,6 +896,41 @@ static void CanvasUploadImage(
+     MarkVramDirty(staging);
+ }
+ 
++int Psyz_VideoCopyDrawArea(PsyzRect source, int x, int y) {
++    Draw_FlushBuffer();
++    const VideoLayout layout = ResolveVideoLayout();
++    int i = layout.native
++                ? FindFbContaining(scissor_rect.x, scissor_rect.y)
++                : -1;
++    if (i < 0 || x < 0 || x >= VRAM_W || y < 0 || y >= VRAM_H ||
++        source.ex <= source.sx || source.ey <= source.sy ||
++        source.sx < layout.screen.sx || source.sy < layout.screen.sy ||
++        source.ex > layout.screen.ex || source.ey > layout.screen.ey) {
++        return -1;
++    }
++    int w = source.ex - source.sx, h = source.ey - source.sy;
++    if (w > VRAM_W - x || h > VRAM_H - y || !PrepareCanvas(&layout, i)) {
++        return -1;
++    }
++    SDL_Rect src = {source.sx - layout.screen.sx,
++                    source.sy - layout.screen.sy, w, h};
++    SDL_Rect dst = {x, y, w, h};
++    Blit(canvas_tex[i], ScaleRect(src, (int)canvas_res),
++         vram_render, dst, false);
++    if (internal_res > 1 && scaled_vram_render) {
++        Blit(canvas_tex[i], ScaleRect(src, (int)canvas_res),
++             scaled_vram_render, ScaleRect(dst, (int)internal_res), false);
++    }
++    MarkVramDirty(dst);
++    for (int j = 0; j < fb_origin_count; j++) {
++        SDL_Rect fb = GetFbRect(j);
++        if (SDL_HasRectIntersection(&dst, &fb) && PrepareCanvas(&layout, j)) {
++            CopyVramToCanvas(j, dst);
++        }
++    }
++    return 0;
++}
++
+ // the area the open batch draws on; a prim sampling it must see that batch
+ static SDL_Rect PendingBatchRect(void) {
+     if (n_vertices == 0) {
+@@ -1071,8 +1106,8 @@ static void PlatformBackend_Present(void) {
+                     SDL_BeginGPURenderPass(cmd, &blank_target, 1, NULL);
+                 SDL_EndGPURenderPass(blank_pass);
+             } else if (native_present) {
+-                const SDL_Rect src = {0, 0, layout.canvas.w * (int)canvas_res,
+-                                      layout.canvas.h * (int)canvas_res};
++                const SDL_Rect src = ScaleRect(GetCanvasSourceRect(&layout),
++                                              (int)canvas_res);
+                 Blit(canvas_tex[fb_index], src, swapchain,
+                      GetCanvasPresentRect(&layout, (int)sc_w, (int)sc_h), true);
+             } else {
+@@ -1215,6 +1250,10 @@ static void QuitPlatform(void) {
+         device = NULL;
+     }
+     if (sdl3_window) {
++        if (SDL_GetWindowFlags(sdl3_window) & SDL_WINDOW_FULLSCREEN) {
++            SDL_SetWindowFullscreen(sdl3_window, false);
++            SDL_SyncWindow(sdl3_window);
++        }
+         SDL_DestroyWindow(sdl3_window);
+         sdl3_window = NULL;
+         is_window_visible = false;
+@@ -1318,10 +1357,14 @@ unsigned char* Psyz_VideoAllocCapturedFrame(int* w, int* h) {
+                        ? FindFbByOrigin(display_area.x, display_area.y)
+                        : -1;
+     if (fb_index >= 0 && PrepareCanvas(&layout, fb_index)) {
+-        *w = layout.canvas.w * (int)canvas_res;
+-        *h = layout.canvas.h * (int)canvas_res;
++        SDL_Rect source = ScaleRect(GetCanvasSourceRect(&layout),
++                                    (int)canvas_res);
++        *w = source.w;
++        *h = source.h;
+         Draw_FlushBuffer();
+-        return AllocRgb888Region(canvas_tex[fb_index], 0, 0, *w, *h);
++        return source.h > 0 ? AllocRgb888Region(canvas_tex[fb_index],
++                                               source.x, source.y, *w, *h)
++                            : NULL;
+     }
+     SyncCanvasesForRead();
+     *w = display_size.x;
+diff --git a/psyz/src/psyz/psyz_spu.c b/psyz/src/psyz/psyz_spu.c
+index b75e9fd..a5d454f 100644
+--- a/psyz/src/psyz/psyz_spu.c
++++ b/psyz/src/psyz/psyz_spu.c
+@@ -307,6 +307,14 @@ static void reverb_tick(int in_left, int in_right, int out[2]) {
+ }
+ 
+ // generate one frame at 44100hz with voices mix, cd playback and volume control
++static int effects_volume = 100, cd_volume = 100;
++void Psyz_SpuSetMixVolume(int effects, int cd) {
++    Psyz_AudioLock();
++    effects_volume = effects < 0 ? 0 : effects > 100 ? 100 : effects;
++    cd_volume = cd < 0 ? 0 : cd > 100 ? 100 : cd;
++    Psyz_AudioUnlock();
++}
++
+ static void spu_tick(short* out) {
+     SPU_RXX* rxx = (SPU_RXX*)&_spu_RXX->rxx;
+     unsigned short spucnt = rxx->spucnt;
+@@ -381,10 +389,13 @@ static void spu_tick(short* out) {
+     left_sum += (reverb_output[0] * spu_s16(rxx->rev_vol.left)) >> 14;
+     right_sum += (reverb_output[1] * spu_s16(rxx->rev_vol.right)) >> 14;
+ 
++    left_sum = left_sum * effects_volume / 100;
++    right_sum = right_sum * effects_volume / 100;
++
+     // Mix CD audio per SPUCNT and cd_vol registers.
+     if (spucnt & SPU_CTRL_MASK_CD_AUDIO_ENABLE) {
+-        left_sum += (cd_left * rxx->cd_vol.left) >> 14;
+-        right_sum += (cd_right * rxx->cd_vol.right) >> 14;
++        left_sum += (cd_left * cd_volume / 100 * rxx->cd_vol.left) >> 14;
++        right_sum += (cd_right * cd_volume / 100 * rxx->cd_vol.right) >> 14;
+     }
+ 
+     out[0] = clamp16(
+diff --git a/psyz/src/video_layout.h b/psyz/src/video_layout.h
+index eeca899..3a99aa4 100644
+--- a/psyz/src/video_layout.h
++++ b/psyz/src/video_layout.h
+@@ -100,6 +100,17 @@ static inline PsyzRect VideoLayout_Present(
+         w = w * display.h / area.h;
+         h = h * display.h / area.h;
+     }
++    // Canvas alignment can round fit beyond area; blit destinations cannot
++    // have negative coordinates, so fit that final rounded size as well.
++    if (w > display.w || h > display.h) {
++        if (display.w * h <= display.h * w) {
++            h = h * display.w / w;
++            w = display.w;
++        } else {
++            w = w * display.h / h;
++            h = display.h;
++        }
++    }
+     return Psyz_RectFromSize((display.w - w) >> 1, (display.h - h) >> 1, w, h);
+ }
+ 

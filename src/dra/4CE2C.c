@@ -4,6 +4,10 @@
 #include "dra_bss.h"
 #include <scratchpad.h>
 
+#ifdef VERSION_PC
+static int s_PcArtworkLayer;
+#endif
+
 void HideAllBackgroundLayers(void) {
     s32 i;
 
@@ -60,6 +64,18 @@ void RenderTilemap(void) {
     TilemapRenderer* r = ((TilemapRenderer*)SP(sizeof(SPRT_16)));
 #endif
 
+#ifdef VERSION_PC
+    PcArtworkBegin(s_PcArtworkLayer);
+    int firstX = (PcViewLeft() - 15) / 16;
+    int firstY = (PcViewTop() - 15) / 16;
+    int columns = N_HORIZ_TILES - firstX * 2;
+    int rows = N_VERTI_TILES - firstY * 2;
+#else
+#define firstX 0
+#define firstY 0
+#define columns N_HORIZ_TILES
+#define rows N_VERTI_TILES
+#endif
     Tilemap* t = &g_Tilemap;
     r->ot = g_CurrentBuffer->ot;
     r->sp16 = &g_CurrentBuffer->sprite16[g_GpuUsage.sp16];
@@ -84,18 +100,18 @@ void RenderTilemap(void) {
             r->roomTileWidth = t->hSize * 16;
             r->roomTileHeight = t->vSize * 16;
             subX = t->scrollX.i.hi & 0xF;
-            startTx = t->scrollX.i.hi >> 4;
+            startTx = (t->scrollX.i.hi >> 4) + firstX;
             subY = t->scrollY.i.hi & 0xF;
-            startTy = t->scrollY.i.hi >> 4;
+            startTy = (t->scrollY.i.hi >> 4) + firstY;
             r->tpage = 0;
             r->isSemiTrans = false;
             if (r->flags & LAYER_SEMI_TRANS) {
                 r->isSemiTrans = true;
                 r->tpage = r->flags & LAYER_TPAGE_ID;
             }
-            y0 = r->y - subY;
-            for (i = 0; i < N_VERTI_TILES; i++, y0 += TILE_SIZE) {
-                x0 = r->x - subX;
+            y0 = r->y - subY + firstY * 16;
+            for (i = 0; i < rows; i++, y0 += TILE_SIZE) {
+                x0 = r->x - subX + firstX * 16;
                 ty = startTy + i;
                 if (ty < 0) {
                     continue;
@@ -104,9 +120,13 @@ void RenderTilemap(void) {
                     break;
                 }
                 row = ty * r->roomTileWidth;
+#ifdef VERSION_PC
+                r->tiles = &t->fg[MAX(startTx, 0) + row];
+#else
                 r->tiles = &t->fg[startTx + row];
-                for (j = 0, tx = startTx; j < N_HORIZ_TILES; j++,
-                    x0 += TILE_SIZE, tx++) {
+#endif
+                for (j = 0, tx = startTx; j < columns; j++, x0 += TILE_SIZE,
+                    tx++) {
                     if (tx < 0) {
                         continue;
                     }
@@ -114,7 +134,11 @@ void RenderTilemap(void) {
                         break;
                     }
 
+#ifdef VERSION_PC
+                    tile = t->fg[row + tx];
+#else
                     tile = *r->tiles++;
+#endif
                     if (tile == 0) {
                         continue;
                     }
@@ -155,6 +179,13 @@ void RenderTilemap(void) {
                 r->dr++;
                 g_GpuUsage.drawModes++;
             }
+#ifdef VERSION_PC
+            PcArtworkDrawLayer(
+                0, t->hSize * 256, t->vSize * 256, t->scrollX.i.hi,
+                t->scrollY.i.hi, t->order, t->flags);
+            // Artwork also consumes entries from the shared draw-mode pool.
+            r->dr = &g_CurrentBuffer->drawModes[g_GpuUsage.drawModes];
+#endif
         }
     }
 
@@ -175,9 +206,9 @@ void RenderTilemap(void) {
         r->roomTileWidth = bg->w * 16;
         r->roomTileHeight = bg->h * 16;
         subX = bg->scrollX.i.hi & 0xF;
-        startTx = bg->scrollX.i.hi >> 4;
+        startTx = (bg->scrollX.i.hi >> 4) + firstX;
         subY = bg->scrollY.i.hi & 0xF;
-        startTy = bg->scrollY.i.hi >> 4;
+        startTy = (bg->scrollY.i.hi >> 4) + firstY;
         if (r->flags & LAYER_WRAP_BG) {
             startTx &= TILE_SIZE - 1;
             startTy &= TILE_SIZE - 1;
@@ -188,9 +219,9 @@ void RenderTilemap(void) {
             r->isSemiTrans = true;
             r->tpage = r->flags & LAYER_TPAGE_ID;
         }
-        y0 = r->y - subY;
-        for (i = 0; i < N_VERTI_TILES; i++, y0 += TILE_SIZE) {
-            x0 = r->x - subX;
+        y0 = r->y - subY + firstY * 16;
+        for (i = 0; i < rows; i++, y0 += TILE_SIZE) {
+            x0 = r->x - subX + firstX * 16;
             ty = startTy + i;
             if (r->flags & LAYER_WRAP_BG) {
                 ty &= TILE_SIZE - 1;
@@ -202,9 +233,12 @@ void RenderTilemap(void) {
                 break;
             }
             row = ty * r->roomTileWidth;
+#ifdef VERSION_PC
+            r->tiles = &bg->layout[MAX(startTx, 0) + row];
+#else
             r->tiles = &bg->layout[startTx + row];
-            for (j = 0, tx = startTx; j < N_HORIZ_TILES; j++, x0 += TILE_SIZE,
-                tx++) {
+#endif
+            for (j = 0, tx = startTx; j < columns; j++, x0 += TILE_SIZE, tx++) {
                 if (r->flags & LAYER_WRAP_BG) {
                     tx &= 0xF;
                     r->tiles = &bg->layout[tx + row];
@@ -216,7 +250,11 @@ void RenderTilemap(void) {
                     break;
                 }
 
+#ifdef VERSION_PC
+                tile = bg->layout[row + tx];
+#else
                 tile = *r->tiles++;
+#endif
                 if (tile == 0) {
                     continue;
                 }
@@ -256,6 +294,13 @@ void RenderTilemap(void) {
             r->dr++;
             g_GpuUsage.drawModes++;
         }
+#ifdef VERSION_PC
+        if (l == 0) {
+            PcArtworkDrawLayer(1, bg->w * 256, bg->h * 256, bg->scrollX.i.hi,
+                               bg->scrollY.i.hi, bg->order, bg->flags);
+            r->dr = &g_CurrentBuffer->drawModes[g_GpuUsage.drawModes];
+        }
+#endif
     }
 }
 
@@ -318,6 +363,10 @@ static void SetRoomBackgroundLayer(s32 index, LayerDef* layerDef) {
 
 void LoadRoomLayer(s32 layerIndex) {
     s32 i;
+
+#ifdef VERSION_PC
+    s_PcArtworkLayer = layerIndex;
+#endif
 
     SetRoomForegroundLayer(g_api.o.tileLayers[layerIndex].fg);
     SetRoomBackgroundLayer(0, g_api.o.tileLayers[layerIndex].bg);

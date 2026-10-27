@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include <game.h>
 #include "pc.h"
+#include "upgrades.h"
 #include "spawn_point.h"
 #include "stages/overlay.h"
 #include <assert.h>
@@ -26,7 +27,8 @@ static const char* allowed_stages[] = {
     "te3",      "te4",      "te5",       "top_alt"};
 static const char* allowed_players[] = {"alu", "ric", "mar"};
 static const char* allowed_tests[] = {
-    "sndlib", "overlays", "movie0", "movie1", "movie2", "movie3", "save"};
+    "sndlib", "overlays", "movie0", "movie1",
+    "movie2", "movie3",   "save",   "upgrades"};
 #define PARSE_PARAM(param, allowed) parseStrParam(param, allowed, LEN(allowed))
 static int parseIntParam(const char* param) {
     long i = strtol(param, NULL, 10);
@@ -67,14 +69,16 @@ static void printHelp(void) {
     printf("  --test <mode>      run automated tests\n");
     printf("         sndlib      test sound library\n");
     printf("         overlays    load every compiled game module\n");
-    printf("         movie0..movie3  play a decoded original movie\n");
+    printf("         movie0..movie3  stream an original STR movie\n");
     printf("         save       test an isolated save/load round trip\n");
+    printf("         upgrades   test PC settings integration and packs\n");
     printf("  --record <path>    record controller input to a file\n");
     printf("  --replay <path>    replay controller input from a file\n");
     printf("  --spawn-point <name>  start at a named spawn point\n");
     printf("  --replay-and-exit  quit automatically once the replay or demo "
            "ends\n");
     printf("  --replay-fast      disable frame limit during replay or demo\n");
+    printf("  --config <path>   PC settings file (F1 opens settings)\n");
     printf("  --help             show this help message\n");
 }
 static void printAllowedParams(const char* allowedValues[], int n) {
@@ -110,6 +114,8 @@ static bool parseArgs(
         }
         if (strcmp(argv[i], "--disk") == 0 && i + 1 < argc) {
             outParams->diskPath = argv[++i];
+        } else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
+            g_PcSettingsPath = argv[++i];
         } else if (strcmp(argv[i], "--stage") == 0 && i + 1 < argc) {
             outParams->stage = PARSE_PARAM(argv[++i], allowed_stages);
             if (outParams->stage < 0) {
@@ -139,7 +145,7 @@ static bool parseArgs(
         } else if (strcmp(argv[i], "--test") == 0 && i + 1 < argc) {
             outParams->testMode = PARSE_PARAM(argv[++i], allowed_tests) + 1;
             if (outParams->testMode <= NO_TEST ||
-                outParams->testMode > TEST_SAVE) {
+                outParams->testMode > TEST_UPGRADES) {
                 printf("test '%s' is invalid or not recognized\n", argv[i]);
                 printAllowedParams(allowed_tests, LEN(allowed_tests));
                 return false;
@@ -173,6 +179,11 @@ int Main(int argc, char* argv[]) {
         printHelp();
         return -1;
     }
+    PcSettingsDefaults(&g_PcSettings);
+    if (!PcSettingsLoad(&g_PcSettings, g_PcSettingsPath)) {
+        ERRORF("Invalid PC settings file: %s", g_PcSettingsPath);
+        return 1;
+    }
     if (params.stage < 0 && params.spawnPoint != NULL) {
         params.stage = SpawnPoint_StageForName(params.spawnPoint);
     }
@@ -186,7 +197,17 @@ int Main(int argc, char* argv[]) {
     if (params.testMode >= TEST_MOVIE0 && params.testMode <= TEST_MOVIE3) {
         ResetGraph(0);
         PadInit(0);
+        bool paused = Psyz_AudioIsPaused();
         bool ok = PcPlayMovie(params.testMode - TEST_MOVIE0);
+        if (Psyz_AudioIsPaused() != paused) {
+            ERRORF("Movie changed the game audio pause state");
+            ok = false;
+        }
+        ResetGame();
+        return ok ? 0 : 1;
+    }
+    if (params.testMode == TEST_UPGRADES) {
+        bool ok = PcTestUpgrades();
         ResetGame();
         return ok ? 0 : 1;
     }

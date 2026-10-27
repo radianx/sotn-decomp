@@ -9,6 +9,12 @@
 //
 
 #include <stage.h>
+#if defined(VERSION_PC) && defined(STAGE_IS_NZ1)
+#include <stdlib.h>
+static int CompareLayoutX(const void* a, const void* b) {
+    return ((const LayoutEntity*)a)->posX - ((const LayoutEntity*)b)->posX;
+}
+#endif
 
 static u16* g_LayoutObjHorizontal;
 static u16* g_LayoutObjVertical;
@@ -92,7 +98,13 @@ void CreateEntityWhenInHorizontalRange(LayoutEntity* obj) {
     tilemap = &g_Tilemap;
     posX = tilemap->scrollX.i.hi;
     xClose = posX - 0x40;
+#ifdef VERSION_PC
+    xClose -= PcViewMargin();
+#endif
     xFar = posX + 0x140;
+#ifdef VERSION_PC
+    xFar += PcViewMargin();
+#endif
     if (xClose < 0) {
         xClose = 0;
     }
@@ -434,9 +446,27 @@ void InitRoomEntities(s32 objLayoutId) {
             (u16*)((g_LayoutObjVertical[LAYOUT_OBJ_POS_Y] << 0x10) +
                    g_LayoutObjVertical[LAYOUT_OBJ_POS_X]);
     }
+#if defined(VERSION_PC) && defined(STAGE_IS_NZ1)
+    // Move the spawn point before scanning; the door restores its own position.
+    u16* layouts[] = {g_LayoutObjHorizontal, g_LayoutObjVertical};
+    for (int list = 0; list < 2; list++) {
+        u16* obj = layouts[list] + 5;
+        for (; obj[0] != LAYOUT_OBJ_END; obj += 5) {
+            if ((obj[LAYOUT_OBJ_ID] & 0x3FF) == E_SECRET_AREA_DOOR)
+                obj[LAYOUT_OBJ_POS_X] = g_PcSettings.bugFixes ? 0x80 : 0x10;
+        }
+        if (!list)
+            qsort(layouts[list] + 5, (obj - layouts[list]) / 5 - 1,
+                  sizeof(LayoutEntity), CompareLayoutX);
+    }
+#endif
     temp = tilemap->scrollX.i.hi;
     i = temp - 64;
     rightEdge = temp + 320;
+#ifdef VERSION_PC
+    i -= PcViewMargin();
+    rightEdge += PcViewMargin();
+#endif
 
     if (i < 0) {
         i = 0;
@@ -463,9 +493,15 @@ void UpdateRoomPosition(void) {
         tmp = tilemap->scrollX.i.hi;
         if (g_ScrollDeltaX > 0) {
             tmp += 320;
+#ifdef VERSION_PC
+            tmp += PcViewMargin();
+#endif
             CreateEntitiesToTheRight(tmp);
         } else {
             tmp -= 64;
+#ifdef VERSION_PC
+            tmp -= PcViewMargin();
+#endif
             CreateEntitiesToTheLeft(tmp);
         }
     }

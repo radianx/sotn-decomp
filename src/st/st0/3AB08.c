@@ -202,7 +202,7 @@ void EntityBackgroundClouds(Entity* self) {
                     prim->drawMode = DRAW_HIDE;
                     break;
                 }
-                if (primTwo->x3 < 0) {
+                if (primTwo->x3 < PC_LEFT(0)) {
                     prim->drawMode = DRAW_HIDE;
                     if (sp58 < 0) {
                         sp58 += 2;
@@ -220,7 +220,7 @@ void EntityBackgroundClouds(Entity* self) {
                 LOH(prim->u2) = cloudStruct->unk8;
                 gte_stsxy3_gt3(primTwo);
 
-                if (primTwo->x2 > 0x100) {
+                if (primTwo->x2 > PC_RIGHT(0x100)) {
                     prim->drawMode = DRAW_HIDE;
                     if (sp58 > 0) {
                         break;

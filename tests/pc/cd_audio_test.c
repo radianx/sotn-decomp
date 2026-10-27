@@ -30,7 +30,8 @@ static void WriteDisc(void) {
     FILE* cue = fopen("pc_cd_audio_test.cue", "wx");
     assert(cue);
     assert(fputs("FILE \"pc_cd_audio_test.bin\" BINARY\n"
-                 " TRACK 01 MODE2/2352\n INDEX 01 00:00:00\n", cue) >= 0);
+                 " TRACK 01 MODE2/2352\n INDEX 01 00:00:00\n",
+                 cue) >= 0);
     assert(fclose(cue) == 0);
 }
 
@@ -67,6 +68,34 @@ static void CheckGap(int doubleSpeed) {
     assert(Psyz_CdPullSamples(samples, 8192) == 0);
 }
 
+static void CheckMixVolume(void) {
+    short samples[512 * 2];
+    unsigned char mode = CdlModeRT | CdlModeSF;
+    unsigned char filter[] = {1, 0};
+    CdlLOC start;
+    Psyz_SpuInit();
+    Psyz_SpuWrite(0x1AA, 0xC001);
+    Psyz_SpuWrite(0x180, 0x3FFF);
+    Psyz_SpuWrite(0x182, 0x3FFF);
+    Psyz_SpuWrite(0x1B0, 0x3FFF);
+    Psyz_SpuWrite(0x1B2, 0x3FFF);
+    CdControlB(CdlSetmode, &mode, NULL);
+    CdControlB(CdlSetfilter, filter, NULL);
+    CdIntToPos(0, &start);
+    CdControlB(CdlSetloc, (unsigned char*)&start, NULL);
+    CdControlB(CdlReadN, NULL, NULL);
+    Psyz_SpuSetMixVolume(100, 0);
+    Psyz_SpuPullSamples(samples, 512);
+    for (int i = 0; i < 1024; i++)
+        assert(samples[i] == 0);
+    Psyz_SpuSetMixVolume(0, 100);
+    Psyz_SpuPullSamples(samples, 512);
+    int audible = 0;
+    for (int i = 0; i < 1024; i++)
+        audible |= samples[i] != 0;
+    assert(audible);
+}
+
 int main(void) {
     WriteDisc();
     assert(Psyz_CdSetDiskPath("pc_cd_audio_test.cue") == 0);
@@ -74,6 +103,7 @@ int main(void) {
     CdReset(1);
     CheckGap(1);
     CheckGap(0);
+    CheckMixVolume();
     CdControlB(CdlStop, NULL, NULL);
     Psyz_AudioDestroy();
     assert(remove("pc_cd_audio_test.bin") == 0);

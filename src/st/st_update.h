@@ -70,12 +70,14 @@ void Update(void) {
                 x = e->posX.i.hi;
                 y = e->posY.i.hi;
                 if (UPDATE_FLAGS & FLAG_DESTROY_IF_BARELY_OUT_OF_CAMERA) {
-                    if (x < -64 || x > 320 || y < -64 || y > 288) {
+                    if (x < PC_LEFT(-64) || x > PC_RIGHT(320) || y < -64 ||
+                        y > 288) {
                         DestroyEntity(e);
                         continue;
                     }
                 } else {
-                    if (x < -128 || x > 384 || y < -128 || y > 352) {
+                    if (x < PC_LEFT(-128) || x > PC_RIGHT(384) || y < -128 ||
+                        y > 352) {
                         DestroyEntity(e);
                         continue;
                     }

@@ -59,12 +59,12 @@ void EntityBackgroundBookcase(Entity* self) {
         RotTransPers(&D_us_80180DC0, &sxy, &p, &flag);
 
         x = sxy & 0xFFFF;
-        if (x > 0) {
+        if (x > PC_LEFT(0)) {
             while (x > -64) {
                 x -= 124;
             }
         } else {
-            while (x < -128) {
+            while (x < PC_LEFT(-128)) {
                 x += 124;
             }
         }
@@ -79,7 +79,7 @@ void EntityBackgroundBookcase(Entity* self) {
             prim->drawMode = DRAW_UNK02;
 
             prim = prim->next;
-            if (x > 256) {
+            if (x > PC_RIGHT(256)) {
                 break;
             }
         }
@@ -144,12 +144,12 @@ void EntityBackgroundFurniture(Entity* self) {
         RotTransPers(&D_us_80180DD0, &sxy, &p, &flag);
 
         x = sxy & 0xFFFF;
-        if (x > 0) {
+        if (x > PC_LEFT(0)) {
             while (x > -64) {
                 x -= 120;
             }
         } else {
-            while (x < -128) {
+            while (x < PC_LEFT(-128)) {
                 x += 120;
             }
         }
@@ -164,7 +164,7 @@ void EntityBackgroundFurniture(Entity* self) {
             prim->drawMode = DRAW_UNK02;
 
             prim = prim->next;
-            if (x > 256) {
+            if (x > PC_RIGHT(256)) {
                 break;
             }
         }
@@ -236,12 +236,12 @@ void EntityBackgroundShadow(Entity* self) {
         RotTransPers(&D_us_80180DE0, &sxy, &p, &flag);
 
         x = sxy & 0xFFFF;
-        if (x > 0) {
+        if (x > PC_LEFT(0)) {
             while (x > -64) {
                 x -= 56;
             }
         } else {
-            while (x < -128) {
+            while (x < PC_LEFT(-128)) {
                 x += 56;
             }
         }
@@ -254,7 +254,7 @@ void EntityBackgroundShadow(Entity* self) {
             prim->drawMode = DRAW_TPAGE | DRAW_UNK02 | DRAW_TRANSP;
 
             prim = prim->next;
-            if (x > 256) {
+            if (x > PC_RIGHT(256)) {
                 break;
             }
         }
@@ -272,6 +272,20 @@ void EntityBackgroundShadow(Entity* self) {
         prim->r0 = prim->g0 = prim->b0 = 0;
         prim->priority = 0x60;
         prim->drawMode = DRAW_TPAGE | DRAW_UNK02 | DRAW_TRANSP;
+#ifdef VERSION_PC
+        // TILE width is one byte; use a flat quad for the wide shadow band.
+        if (PcViewMargin()) {
+            prim->type = PRIM_G4_ALT;
+            prim->x0 = prim->x2 = PcViewLeft();
+            prim->x1 = prim->x3 = PcViewRight();
+            prim->y1 = prim->y0;
+            prim->y2 = prim->y3 = prim->y0 + 48;
+            PCOL(prim) = 0;
+            prim->drawMode |= DRAW_COLORS;
+        } else {
+            prim->type = PRIM_TILE_ALT;
+        }
+#endif
         break;
     }
 }
@@ -380,11 +394,11 @@ void EntityDistantBookshelves(Entity* self) {
             for (j = 0; j < 4; j++) {
                 prim->drawMode = DRAW_DITHERING | DRAW_COLORS;
                 prim->x0 = prim->x2 = posX + (j * 0x78) - 0xF0;
-                if (prim->x0 > 0x100) {
+                if (prim->x0 > PC_RIGHT(0x100)) {
                     prim->drawMode = DRAW_HIDE;
                 }
                 prim->x1 = prim->x3 = posX + (j * 0x78) - 0x78;
-                if (prim->x1 < 0) {
+                if (prim->x1 < PC_LEFT(0)) {
                     prim->drawMode = DRAW_HIDE;
                 }
                 prim->y0 = prim->y1 = posY + (i * 0x80) - 0x100;

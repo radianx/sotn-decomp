@@ -56,6 +56,7 @@ jobs:
           cd tools/psyz
           git submodule update --init --recursive external/SDL
           git apply ../patches/psyz-audio-stream-voices.patch
+          git apply ../patches/psyz-pc-upgrades.patch
       - name: Get dependencies
         uses: ./.github/actions/get-dependencies
         with:
@@ -104,6 +105,7 @@ jobs:
           cd tools/psyz
           git submodule update --init --recursive external/SDL
           git apply ../patches/psyz-audio-stream-voices.patch
+          git apply ../patches/psyz-pc-upgrades.patch
       - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.work'
@@ -153,6 +155,7 @@ jobs:
         cd tools/psyz
         git submodule update --init --recursive external/SDL
         git apply ../patches/psyz-audio-stream-voices.patch
+        git apply ../patches/psyz-pc-upgrades.patch
     - name: Get dependencies
       uses: ./.github/actions/get-dependencies
       with:

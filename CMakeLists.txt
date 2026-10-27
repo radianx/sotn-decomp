@@ -149,6 +149,14 @@ endfunction()
 set(SOURCE_FILES_PC
     src/pc/gte.c
     src/pc/rand.c
+    src/pc/widescreen.c
+    src/pc/artwork.c
+    src/pc/accessibility.c
+    src/pc/content.c
+    src/pc/disc.c
+    src/pc/settings.c
+    src/pc/upgrades.c
+    src/pc/upgrades_test.c
     src/pc/movie.c
     src/pc/save_test.c
     src/pc/main.c
@@ -2353,6 +2361,28 @@ add_overlay(rnz1 ${SOURCE_FILES_STAGE_RNZ1})
 
 include(CTest)
 if(BUILD_TESTING)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME pc_disc_cache COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/pc/prepare_disc_test.py)
+    add_executable(pc_video_layout_test tests/pc/video_layout_test.c)
+    target_include_directories(pc_video_layout_test PRIVATE tools/psyz/psyz/src)
+    target_link_libraries(pc_video_layout_test PRIVATE psyz)
+    add_test(NAME pc_video_layout COMMAND pc_video_layout_test)
+    add_executable(pc_accessibility_test tests/pc/accessibility_test.c
+        src/pc/accessibility.c src/pc/settings.c)
+    target_include_directories(pc_accessibility_test PRIVATE include src/pc)
+    target_compile_definitions(pc_accessibility_test PRIVATE
+        VERSION_PC PERMUTER NON_MATCHING HARD_LINK _internal_version_us __psyz)
+    target_link_libraries(pc_accessibility_test PRIVATE psyz)
+    add_test(NAME pc_accessibility COMMAND pc_accessibility_test)
+    add_executable(pc_disc_test tests/pc/disc_test.c src/pc/disc.c)
+    target_include_directories(pc_disc_test PRIVATE include src/pc)
+    target_link_libraries(pc_disc_test PRIVATE psyz)
+    add_test(NAME pc_disc COMMAND pc_disc_test)
+    add_executable(pc_settings_test tests/pc/settings_test.c src/pc/settings.c)
+    target_include_directories(pc_settings_test PRIVATE src/pc)
+    target_link_libraries(pc_settings_test PRIVATE psyz)
+    add_test(NAME pc_settings COMMAND pc_settings_test)
     add_executable(pc_gte_test tests/pc/gte_test.c src/pc/gte.c)
     target_include_directories(pc_gte_test PRIVATE src/pc)
     target_link_libraries(pc_gte_test PRIVATE psyz)
@@ -2375,6 +2405,10 @@ if(BUILD_TESTING)
     target_link_libraries(pc_cd_audio_test PRIVATE psyz)
     add_test(NAME pc_cd_audio COMMAND pc_cd_audio_test)
     set_tests_properties(pc_cd_audio PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=offscreen;SDL_AUDIODRIVER=dummy")
+    add_test(NAME pc_upgrades COMMAND sotn --test upgrades)
+    set_tests_properties(pc_upgrades PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         ENVIRONMENT "SDL_VIDEODRIVER=offscreen;SDL_AUDIODRIVER=dummy")
     add_test(NAME pc_save COMMAND sotn --test save)
     set_tests_properties(pc_save PROPERTIES

@@ -14,6 +14,7 @@ struct SpawnPoint {
 };
 
 static const struct SpawnPoint s_SpawnPoints[] = {
+    {STAGE_ST0, 0, 600, 168, "prologue-dracula-dialogue"},
     {STAGE_NP3, 1, 192, 870, "np3-stage15-door"},
     {STAGE_RNO3, 1, 96, 104, "reverse-trapdoor-underground"},
     {STAGE_NO0, 0, 1440, 688, "marble-soul"},
