@@ -329,7 +329,7 @@ void Entity3DBackgroundHouse(Entity* self) {
         break;
 
     case 1:
-        if (self->posX.i.hi > 0x200 || self->posX.i.hi < -0x200) {
+        if (self->posX.i.hi > PC_RIGHT(0x200) || self->posX.i.hi < -0x200) {
             prim = self->ext.bghouse.prim;
             while (prim != NULL) {
                 prim->drawMode = DRAW_HIDE;

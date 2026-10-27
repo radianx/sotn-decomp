@@ -823,6 +823,65 @@ static void CheckBackgroundSkyLand(void) {
     puts("Chapel and Richter arena sky-land tiles cover both aspects: PASS");
 }
 
+static void CheckHouseCulling(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"no2", "rno2", "dre", "bo0"};
+    const int ids[] = {STAGE_NO2, STAGE_RNO2, STAGE_DRE, STAGE_BO0};
+    int oldStage = g_StageId;
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        void (*update)(Entity*) =
+            (void*)SDL_LoadFunction(module, "Entity3DBackgroundHouse");
+        assert(update);
+        g_StageId = ids[stage];
+        DestroyAllPrimitives();
+        Entity* self = g_CurrentEntity = &g_Entities[64];
+        memset(self, 0, sizeof(*self));
+        self->params = 1;
+        self->posY.i.hi = stage == 1 ? 48 : 192;
+        update(self);
+        assert(self->step && (self->flags & FLAG_HAS_PRIMS));
+        for (int mode = 0; mode < 4; mode++) {
+            g_PcSettings.widescreen = mode & 1;
+            PcUpdateViewport();
+            for (int x = 513; x <= 533; x++) {
+                self->posX.i.hi = x;
+                update(self);
+                int nodes = 0, visible = 0;
+                for (Primitive* prim = self->ext.bghouse.prim; prim;
+                     prim = prim->next) {
+                    assert(++nodes <= 16);
+                    if (prim->drawMode & DRAW_HIDE)
+                        continue;
+                    assert((mode & 1) && x <= 532);
+                    int left =
+                        MIN(MIN(prim->x0, prim->x1), MIN(prim->x2, prim->x3));
+                    int right =
+                        MAX(MAX(prim->x0, prim->x1), MAX(prim->x2, prim->x3));
+                    int top =
+                        MIN(MIN(prim->y0, prim->y1), MIN(prim->y2, prim->y3));
+                    int bottom =
+                        MAX(MAX(prim->y0, prim->y1), MAX(prim->y2, prim->y3));
+                    assert(left >= 256);
+                    visible += left < PcViewRight() && right > PcViewLeft() &&
+                               top < 227 && bottom > 20;
+                }
+                assert(nodes == 16);
+                if ((mode & 1) && x == 513)
+                    assert(visible > 0);
+            }
+        }
+        DestroyAllPrimitives();
+        SDL_UnloadObject(module);
+    }
+    g_StageId = oldStage;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("All four house overlays retain far-house faces in the wide margin "
+         "without changing original-aspect culling: PASS");
+}
+
 static void CheckDreamClouds(void) {
     extern GameApi g_ApiInit;
     g_api = g_ApiInit;
@@ -2004,6 +2063,7 @@ bool PcTestUpgrades(void) {
     CheckCavernShimmer();
     CheckBackgroundGears();
     CheckBackgroundSkyLand();
+    CheckHouseCulling();
     CheckDreamClouds();
     CheckStainedGlassEdges();
     CheckDistantBookshelves();

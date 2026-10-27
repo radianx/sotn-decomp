@@ -426,6 +426,94 @@ destination transitions remain unchecked.
   the upper arena. No new source/art changes were needed after the water repair.
   Evidence: `build/local-pc/scylla-flood-route-evidence.json`.
 
+- [x] Complete extracted tile-layer inventory and native loader audit: all 984
+  layers across 52 overlays match the compiled layouts, tile definitions,
+  dimensions, flags and priorities. All 825 room records agree with the native
+  overlays: 691 actual rooms and 134 transition records. Every actual room has
+  exported references. The 1,339 layer templates have completed jobs; the extra
+  1,340th job output is a composite Dracula preview. The 18 wrapping layers
+  require no static edge extension. All 1,790 installed RGB/indexed edge pairs
+  preserve dimensions and alpha, and the native loader selects the expected
+  indexed span counts through 1,038 layer selections across 70 stage IDs,
+  including aliases. Original pixels and intentional transparent rows remain
+  protected; 122 templates correctly remain entirely unextended. This verifies
+  inventory and loading, not every scene's rendered appearance or moving route.
+  Evidence: `build/local-pc/artwork-inventory-audit.json` and
+  `build/local-pc/runtime-artwork-inventory-audit.json`.
+
+- [x] ST0 layer `00` background right: diagnostic upper/lower boundary renders
+  confirm a two-column transparent fade exposes sky beside the solid wall.
+  A built-in imagegen edit supplies replacement opacity only for those 800
+  generated pixels. Both output files remain 296×512; every RGB value, original
+  pixel and intentional transparent area is unchanged. Two before/after pairs
+  preserve the original central image exactly and change only screen columns
+  1907–1919 at 1920×1080. All seven pack tests and the full inventory/native
+  loader audit pass after rebuilding the pack. This is a forced-boundary render
+  check, not a normal traversal claim. Evidence:
+  `build/local-pc/st0-alpha-repair-evidence.json`.
+
+- [x] Review the other four ST0 extension-alpha candidates. Native boundary
+  renders confirm solid-wall fades in layer `01` foreground right and layer
+  `03` foreground left/right. Three built-in imagegen edits provide wall
+  opacity for only those 448/224/448 generated pixels; all existing RGB and
+  protected RGBA remain identical. Three paired 1920×1080 captures preserve the
+  original center exactly, with changes confined to the outer 6 or 13 screen
+  columns. All seven pack tests, the complete asset audit and native loading
+  across 70 stage IDs pass. Direct layer selection and the existing debug
+  freeze isolate these renders; they do not verify normal travel or collision.
+  The single partially transparent layer `00` foreground pixel remains within
+  the user's accepted minor contour differences. An allowed painting strip
+  does not require every pixel to be opaque; no general alpha fill is applied.
+  Evidence: `build/local-pc/st0-alpha-v2-repair-evidence.json`. The remaining
+  pixel is still reported by `artwork-inventory-audit.json` under `partial_alpha`.
+
+- [x] Full installed-edge GPU sweep: render all 1,790 indexed edge files through
+  every vertical section at native 1x. The 4,551 frames match independent
+  original 4-bit indexed-sprite references exactly: 18,841,140 edge pixels,
+  including transparent rows and padding, with 241,166,592 original-width
+  center pixels unchanged. Custom opaque CLUTs isolate artist alpha, palette
+  indexing and alternate-bank selection; natural palette transparency and
+  blending remain covered separately by `pc_upgrades`. A deliberately wrong
+  expected pixel is rejected. This covers installed edge rasterization, not
+  script-mutated boundaries, animated scenery or room travel. Source review
+  also confirms only background slot zero receives the room's edge artwork.
+  Evidence: `build/local-pc/artwork-gpu-sweep-evidence.json`.
+
+- [x] Keep cloud integration in `TOP` and `RTOP`: check individual horizontal
+  and depth phases at 17 camera heights, then the complete natural 65,536-tick
+  counter cycle at the maximum-visible-row camera position. Across 1,046,528
+  updates and original/wide/original/wide logical bounds, the original central
+  geometry and counter increments remain identical, including integer wrap.
+  The peak is 88 of 112 primitives. This is phase sampling plus a full natural
+  cycle, not every Cartesian combination of independently assigned counters.
+  Ten disc-backed child runs yield 21 paired 1920×1080 captures with identical
+  original centers and recorded gameplay/cloud state. Nineteen pairs reveal
+  added clouds in the margins; two occluded TOP views are unchanged controls.
+  Both narrow room `05` scenes combine clouds with generated artwork (2,682 TOP
+  and 3,004 RTOP spans). A natural RTOP room `02` fall changes camera Y from 493
+  to 607 between captures. Initial spawns and one health increase are assisted;
+  movement and camera positions are not injected. Existing cloud textures and
+  clipping cover these cases; no new art or game-source changes are needed.
+  Room approaches, exits, outside stairs and warp travel remain open.
+  Evidence: `build/local-pc/keep-cloud-integration-evidence.json`.
+
+- [x] Shared 3D-house culling: the fixed entity-X cutoff at 512 hides far-house
+  faces that still project into the wide view at X=274. Use `PC_RIGHT(0x200)`
+  in the shared helper, preserving original-aspect and console behavior. The
+  new regression fails before the fix, then passes in `NO2`, `RNO2`, `DRE`
+  and `BO0`, including aspect reversal and the unchanged 16-node allocation.
+  All 13 native tests and the US checksum gate pass. Four disc-backed NO2
+  Courtyard runs produce 28 paired captures with identical original centers
+  and recorded gameplay fields. Ground-level houses are occluded controls;
+  an assisted bat route exposes the roof fringe higher up. Three pairs restore
+  216–252 pixels in the last six screen columns; the other 25 are unchanged.
+  Existing model/textures supply the detail, with no bitmap edits. Movement and
+  camera remain normal after the initial spawn; health/MP/relics are assisted
+  and enemy collisions remain active. DRE/BO0 activation at this cutoff is not
+  established by their function-level checks. The reverse-room feedback shader,
+  full routes and room transitions remain open. Evidence:
+  `build/local-pc/house-cull-repair-evidence.json`.
+
 Quick routes (enable widescreen in F1; F4 enters fullscreen):
 
 ```sh
@@ -471,7 +559,7 @@ omit water or parallax that a normal approach would have initialized.
 | [ ] | Scylla `BO3` | Live lower flood, main encounter/death, natural drain and shaft return checked; Wyrm approach, side gates and lower-room intermediate drainage views remain open | `boss/bo3/water_effects.c`, `boss/bo3/cavern_bg_effects.c` |
 | [ ] | Clock Tower `NZ1` / `RNZ1` | Outdoor clouds, gears, foreground water and narrow vertical shafts | `st/nz1/e_bg_gears.c`, `st/nz1/e_water_fg.c` |
 | [ ] | Clock Tower `NZ1` | Four-gear secret door: enter/leave through each exit | `st/nz1/e_gear_puzzle.c` |
-| [ ] | Keep `TOP` / `RTOP` | Tall cloud layers, outside stairs and warp approach | `st/e_clouds_keep.h`, `st/top/e_warp_trigger.c` |
+| [ ] | Keep `TOP` / `RTOP` | Cloud geometry/counter cycle and narrow-room artwork overlap verified in both castles; outside stairs, room approaches and warp travel remain open | `st/e_clouds_keep.h`, `st/top/e_warp_trigger.c` |
 | [ ] | Keep `TOP` / `RTOP` | Elevator-room doors and approaches; TOP room `06` ride, all four lamp pairs and `06`↔`0A` doorway verified, remaining routes open | `st/top/e_lion_lamp.c`, `st/top/e_elevator.c` |
 | [ ] | Chapel `DAI` / `RDAI` | Clouds through windows, stained glass, broken glass and foreground pillars | `st/e_clouds.h`, `st/e_stained_glass.h` |
 | [ ] | Richter arena `BO5` | Stained glass, camera framing, dialogue and battle effects | `boss/bo5/e_stained_glass.c`, `boss/bo5/e_clouds.c` |
@@ -479,7 +567,7 @@ omit water or parallax that a normal approach would have initialized.
 | [ ] | Marble Gallery `NO0` / `RNO0` | Clock room doors/statues, room limits and camera locks in long rooms | `st/no0/clock_room.c`, `st/rno0/e_clock_room.c` |
 | [ ] | Library `LIB` / `RLIB` | Foreground furniture, bookshelf depth layers, shadows and background endpoints | `st/lib/e_library_bg.c` |
 | [ ] | Library `LIB` | Librarian interaction and Lesser Demon approach/arena | `st/lib/e_lesser_demon.c`, `st/lib/` |
-| [ ] | `NO1` / `RNO1`, `NO2` / `RNO2` | Exterior ledges, distant houses, sky/land layers and camera endpoints | `st/e_background_house.h`, `st/e_background_sky_land.h` |
+| [ ] | `NO1` / `RNO1`, `NO2` / `RNO2` | House right cutoff repaired and NO2 courtyard boundary checked; reverse feedback shader, ledges and remaining endpoints remain open | `st/e_background_house.h`, `st/e_background_sky_land.h` |
 | [ ] | Colosseum `ARE` / `RARE` | Fountain, foreground/background separation and arena entrances | `st/are/e_fountain_water.h`, `st/rare/e_background_door_rubble.c` |
 | [ ] | Mine `CHI` / `RCHI` | Narrow shafts, walls ending at room boundaries and foreground layers | `st/chi/background_block_init.c`, `st/rchi/` |
 | [ ] | Dream `DRE` | House/cloud backdrop, Lisa/Succubus dialogue pans, clones and boss defeat | `st/dre/e_background_clouds.c`, `st/dre/e_cutscene_actors.c` |

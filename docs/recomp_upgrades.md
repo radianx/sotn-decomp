@@ -99,6 +99,12 @@ in the outer 20-pixel strip(s); the rest must remain transparent. Pack updates
 replace each validated file atomically so a running game cannot load a partly
 copied PNG.
 
+The local pack contains 1,790 edges for all 984 exported tile layers across
+52 overlays. Original-size and protected-RGBA checks pass, and every installed
+edge section has an exact native GPU comparison against indexed-sprite
+references. These checks cover the prepared artwork pipeline; scripted scenery
+and moving room contexts still follow the visual checklist above.
+
 ## Disc input and movies
 
 `./run-linux.sh --disk /path/to/game.chd` uses `chdman` from MAME tools to extract
