@@ -84,14 +84,14 @@ void func_us_801C12B0(Entity* self) {
     ptr = &water_surface_lines[(self->params & 0xFF) * 5];
     scrollX = g_Tilemap.scrollX.i.hi - 0x10;
     scrollY = g_Tilemap.scrollY.i.hi;
-    xOffset = scrollX + 0x120;
+    xOffset = PC_RIGHT(scrollX + 0x120);
     var_s5 = &D_us_8018112C[self->animCurFrame * 4];
     var_s8 = var_s5[1];
 
     for (; i > 0; i--) {
         var_s3 = *ptr++;
         var_s2 = var_s3 + *ptr++;
-        if (scrollX >= var_s2 || xOffset < var_s3) {
+        if (PC_LEFT(scrollX) >= var_s2 || xOffset < var_s3) {
             ptr += 3;
             continue;
         }
@@ -107,18 +107,29 @@ void func_us_801C12B0(Entity* self) {
             ptr++;
             sp38 = *ptr++;
             var_s6 -= scrollY;
-            if (var_s3 < scrollX) {
-                var_s3 = scrollX;
+            if (var_s3 < PC_LEFT(scrollX)) {
+                var_s3 = PC_LEFT(scrollX);
             }
             if (xOffset < var_s2) {
                 var_s2 = xOffset;
             }
             if (sp38 != 0) {
-                self->ext.et_801C12B0.unk82 += sp38;
+#ifdef VERSION_PC
+                if (scrollX < var_s2 && scrollX + 0x120 >= var_s3)
+#endif
+                    self->ext.et_801C12B0.unk82 += sp38;
                 var_s4 = (u32)(var_s3 - self->ext.et_801C12B0.unk82) % 126;
             } else {
                 var_s4 = (u32)var_s3 % 126;
             }
+#ifdef VERSION_PC
+            // Keep the original unsigned phase across an extended left clip.
+            s32 originalLeft = MAX(var_s3, scrollX);
+            var_s4 =
+                (u32)(originalLeft - (sp38 ? self->ext.et_801C12B0.unk82 : 0)) %
+                126;
+            var_s4 = (var_s4 + var_s3 - originalLeft + 126) % 126;
+#endif
             var_s2 -= var_s3;
             var_s3 -= scrollX + 0x10;
             var_s4 += var_s5[0];
@@ -213,13 +224,13 @@ void func_us_801C15F8(Entity* self) {
     i = (self->params >> 8) & 0xFF;
     scrollX = g_Tilemap.scrollX.i.hi - 0x10;
     scrollY = g_Tilemap.scrollY.i.hi - 0x10;
-    xOffset = scrollX + 0x120;
+    xOffset = PC_RIGHT(scrollX + 0x120);
     yOffset = scrollY + 0x100;
 
     for (; i > 0; i--) {
         var_s3 = *ptr++;
         var_s2 = var_s3 + *ptr++;
-        if (scrollX >= var_s2 || xOffset < var_s3) {
+        if (PC_LEFT(scrollX) >= var_s2 || xOffset < var_s3) {
             ptr += 2;
             continue;
         }
@@ -227,8 +238,8 @@ void func_us_801C15F8(Entity* self) {
         var_s5 = *ptr++;
         var_s4 = *ptr++;
         if (var_s4 > scrollY && yOffset >= var_s5) {
-            if (var_s3 < scrollX) {
-                var_s3 = scrollX;
+            if (var_s3 < PC_LEFT(scrollX)) {
+                var_s3 = PC_LEFT(scrollX);
             }
             if (xOffset < var_s2) {
                 var_s2 = xOffset;
@@ -350,7 +361,7 @@ void func_us_801C1844(Entity* self) {
     ptr = &D_us_8018133C[(self->params & 0xFF) * 4];
     scrollX = g_Tilemap.scrollX.i.hi - 0x10;
     scrollY = g_Tilemap.scrollY.i.hi;
-    xOffset = scrollX + 0x120;
+    xOffset = PC_RIGHT(scrollX + 0x120);
     yOffset = scrollY + 0xE0;
     var_s5 = &D_us_8018112C[20];
     var_s4 = var_s5[1];
@@ -358,7 +369,7 @@ void func_us_801C1844(Entity* self) {
     for (; sp38 > 0; sp38--) {
         var_s3 = *ptr++;
         var_s2 = *ptr++;
-        if (scrollX >= var_s2 || xOffset < var_s3) {
+        if (PC_LEFT(scrollX) >= var_s2 || xOffset < var_s3) {
             ptr += 2;
             // This fixes a bunch of registers on PSP
             // It should mean the else below is not necessary but
@@ -371,8 +382,8 @@ void func_us_801C1844(Entity* self) {
                 continue;
             }
 
-            if (var_s3 < scrollX) {
-                var_s3 = scrollX;
+            if (var_s3 < PC_LEFT(scrollX)) {
+                var_s3 = PC_LEFT(scrollX);
             }
             if (xOffset < var_s2) {
                 var_s2 = xOffset;
@@ -380,6 +391,10 @@ void func_us_801C1844(Entity* self) {
             var_s2 -= var_s3;
             var_s3 -= scrollX + 0x10;
             var_s6 = ((scrollX / 4) + var_s3) % 0x7E;
+#ifdef VERSION_PC
+            if (var_s6 < 0)
+                var_s6 += 0x7E;
+#endif
             if (var_s7 < scrollY) {
                 var_s7 = scrollY;
             }

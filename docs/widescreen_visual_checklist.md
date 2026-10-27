@@ -357,6 +357,75 @@ destination transitions remain unchecked.
   The F1 pending label uses the tested query; its window was not visually tested.
   Evidence: `build/local-pc/capture-aspect-repair-evidence.json`.
 
+- [x] Indexed-edge palette remapping: sample the actual GPU palette selected by
+  `g_ClutIds`, including per-color blending and custom VRAM palettes. Native
+  comparisons cover all three standard banks, four blend modes and four
+  accessibility palettes. A disc-backed `NO3` room `0D` lightning cycle has
+  matching simulation states and unchanged renderer flush counts. Across 12
+  consecutive-frame comparisons the central image is pixel-identical; four
+  bright frames correct 30,290 pixels in the left extension. Diagnostic spawn
+  only; other Entrance routes remain unchecked.
+  Evidence: `build/local-pc/live-lightning-repair-evidence.json`.
+
+- [x] Keep `TOP` room `06` elevator and lion lighting: board the elevator from
+  a diagnostic spawn at `(128,380)`, then let the original entities run without
+  injected input, health, camera or castle flags. The platform ascends, all four
+  lion pairs ignite, their palettes flicker and the platform descends. Both
+  runs reach frame 800 with identical simulation records. Ten matching captures
+  preserve the original central image exactly while correcting both outer
+  strips. A compositor delay resolves one earlier adjacent-frame capture;
+  comparison assertions remain exact. A normal full jump reaches the raised
+  right doorway, enters adjoining room `0A` and returns. Three more captures
+  cover the adjoining room, closing door and settled return; the door reaches
+  idle at frame 956 with HP 70, all lamp flags and the wide viewport preserved.
+  Other Keep and reverse-Keep routes remain separate checks. Evidence:
+  `build/local-pc/keep-lighting-repair-evidence.json`.
+
+- [x] Entrance transparent-water integration: exercise `NO3`, `NP3` and `RNO3`
+  full/partial pools across scroll positions 0–1024 and both aspects. The former
+  regression only tested two normal-castle overlays despite claiming inverted
+  coverage. Its replacement checks contiguous coverage, original central
+  primitive data, texture phase, partial endpoints and the 16-node pool bound.
+  Twelve disc-backed runs provide 52 image pairs: original central pixels stay
+  identical, normal edges follow water palette cycling and inverted ceiling
+  pools retain their endpoints. All water remains visible in these captures.
+  A `NO3` room `07` direction/jump route covers camera X=20→492→20 and returns
+  at frame 3553, with nine captures. This route uses Holy Symbol/high-health
+  assistance; enemy collision remains active. It stays inside the room and
+  does not verify entrances/exits or other areas' water effects. All 13 native
+  tests pass. Evidence: `build/local-pc/entrance-water-integration-evidence.json`.
+  Bright Merman sprite colors during collisions also occur in the earlier
+  renderer: three complete-image comparisons are exact. Their original-console
+  correctness remains open; see `build/local-pc/entrance-water-sprite-triage.json`.
+
+- [x] Caverns/Scylla water clipping: extend water surfaces, body tint and
+  underwater shimmer from the old `[-16,272]` clip to cover the native margins.
+  Preserve the original coordinate origin, unsigned texture phase, flow timing
+  and actual wet/dry endpoints. Regression checks cover `NO4`, `BO3` and `RNO4`,
+  both aspects, partial pools and flowing regions visible only in a new margin.
+  The clipping-only attempt failed central-phase comparison; the repaired
+  version passes all 13 native checks and the US binary-matching gate.
+  Four before/after scenes yield 20 paired images with identical original
+  central pixels. Fifteen pairs show water/shimmer; the reverse waterfall view
+  has water offscreen and counts only as a negative control. The 46 static
+  Caverns water groups need at most 7 of 16 nodes under conservative counting;
+  later script-mutated tables and full routes still require checks.
+  Evidence: `build/local-pc/cavern-water-repair-evidence.json`.
+
+- [x] Scylla live flood and shaft return: a diagnostic start in lower room `02`
+  lets the original controller raise water from 0 to 208. Actual jump/bat inputs
+  reach upper room `00`, sustain the main encounter, then return below after an
+  assisted defeat, all death-flame phases and natural drainage. Both old/current
+  runs finish at frame 3052 with identical phase/gameplay records. Eighteen image
+  pairs preserve the original center exactly; the repaired margins fill the old
+  water gutters. Returned water level is 0, gate flags are clear and the wide
+  viewport persists. Health/MP and three relics are enabled in the child, with
+  one injected main-boss death flag. No forced camera, room or water level.
+  This does not verify the preceding Wyrm miniboss, side-gate traversal or
+  intermediate drainage views in the lower room; drain-phase captures are in
+  the upper arena. No new source/art changes were needed after the water repair.
+  Evidence: `build/local-pc/scylla-flood-route-evidence.json`.
+
 Quick routes (enable widescreen in F1; F4 enters fullscreen):
 
 ```sh
@@ -382,6 +451,10 @@ dialogue was active, screenshot/video, and settings. Classify the problem as
 **missing artwork**, **layer seam**, **mask/gradient**, **camera**, or
 **framebuffer effect**. Keep the checkbox open until those checks are complete.
 
+For diagnostic spawns in long rooms, confirm environmental controllers and
+their visible primitives are present. Starting beyond their entry positions can
+omit water or parallax that a normal approach would have initialized.
+
 ## Prioritized landmarks
 
 | Checked | Area / stage | Places and effects to inspect | Source starting point |
@@ -391,14 +464,15 @@ dialogue was active, screenshot/video, and settings. Classify the problem as
 | [ ] | Prologue `ST0` | Exterior stairs, clouds, moon, rotating 3D Clock Tower; reveal extra geometry without gaps | `st/st0/3AB08.c` |
 | [ ] | Prologue `ST0` | First-form defeat, dissolving room background, vortex and second-form arena | `st/st0/3D8F0.c`, `st/st0/e_bg_vortex.c` |
 | [ ] | Prologue `ST0` | Photograph shrink/rotation and fire transition after the battle | `st/st0/3AB08.c`, `EntityCutscenePhotograph` |
-| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Outdoor parallax, trees/bushes, lightning and far ends of backgrounds; indexed-edge GPU palette remaps have regression coverage, live lightning cycle still needs inspection | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
-| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Merman-room transparent water; left/right water edges and camera scrolling | `st/e_transparent_water.h` |
+| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Outdoor parallax, trees/bushes, lightning and far ends of backgrounds; indexed-edge remaps verified during NO3 room `0D` lightning, other routes remain open | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
+| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Full/partial transparent pools checked in all three overlays; NO3 `07` camera sweep/return checked. Other routes, vertical views and entrances/exits remain open | `st/e_transparent_water.h` |
 | [ ] | Entrance / reverse entrance | Story camera pans, entrance gates and transition into interior rooms | `st/no3/cutscene.c`, `st/rno3/` |
-| [ ] | Caverns `NO4` / `RNO4` | Water surface/body, waterfalls, surfacing bubbles, submerged views | `st/water_effects.h`, `st/water_effects_rev.h` |
-| [ ] | Scylla `BO3` | Flood rise, water edges, doors and post-boss room transition | `boss/bo3/water_effects.c` |
+| [ ] | Caverns `NO4` / `RNO4` | Water/shimmer edge clipping repaired; normal waterfall and both pool views checked. Reverse ceiling-water, ferryman/crate scripts, bubbles and routes remain open | `st/cavern_bg_effects.h`, `st/rno4/e_cavern_bg.c`, `st/water_effects.h` |
+| [ ] | Scylla `BO3` | Live lower flood, main encounter/death, natural drain and shaft return checked; Wyrm approach, side gates and lower-room intermediate drainage views remain open | `boss/bo3/water_effects.c`, `boss/bo3/cavern_bg_effects.c` |
 | [ ] | Clock Tower `NZ1` / `RNZ1` | Outdoor clouds, gears, foreground water and narrow vertical shafts | `st/nz1/e_bg_gears.c`, `st/nz1/e_water_fg.c` |
 | [ ] | Clock Tower `NZ1` | Four-gear secret door: enter/leave through each exit | `st/nz1/e_gear_puzzle.c` |
 | [ ] | Keep `TOP` / `RTOP` | Tall cloud layers, outside stairs and warp approach | `st/e_clouds_keep.h`, `st/top/e_warp_trigger.c` |
+| [ ] | Keep `TOP` / `RTOP` | Elevator-room doors and approaches; TOP room `06` ride, all four lamp pairs and `06`↔`0A` doorway verified, remaining routes open | `st/top/e_lion_lamp.c`, `st/top/e_elevator.c` |
 | [ ] | Chapel `DAI` / `RDAI` | Clouds through windows, stained glass, broken glass and foreground pillars | `st/e_clouds.h`, `st/e_stained_glass.h` |
 | [ ] | Richter arena `BO5` | Stained glass, camera framing, dialogue and battle effects | `boss/bo5/e_stained_glass.c`, `boss/bo5/e_clouds.c` |
 | [ ] | Catacombs `CAT` / `RCAT` | Lava glow, lava geometry, particles and cavern background edges | `st/cat/e_lava_glow.c`, `st/cat/e_lava.c`, `st/rcat/e_cavern_background.c` |

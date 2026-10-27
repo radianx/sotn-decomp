@@ -460,29 +460,85 @@ static void CheckWaterCoverage(void) {
     g_Tilemap.x = 0;
     PcUpdateViewport();
     assert(PcViewMargin() > 0);
-    const char* stages[] = {"no3", "np3"};
-    for (int i = 0; i < 2; i++) {
-        SDL_SharedObject* module = OpenOverlay(stages[i]);
+    u16 originalIds[768];
+    memcpy(originalIds, g_ClutIds, sizeof(originalIds));
+    const char* stages[] = {"no3", "np3", "rno3"};
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        bool inverted = stage == 2;
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
         void (*update)(Entity*) =
             (void*)SDL_LoadFunction(module, "EntityTransparentWater");
         assert(update);
-        DestroyAllPrimitives();
-        Entity* self = g_CurrentEntity = &g_Entities[64];
-        memset(self, 0, sizeof(*self));
-        g_Tilemap.scrollX.val = 0;
-        update(self);
-        assert(self->ext.transparentWater.prim);
-        int left = 1000, right = -1000;
-        for (Primitive* p = self->ext.transparentWater.prim; p; p = p->next) {
-            if (p->drawMode & DRAW_HIDE)
-                continue;
-            left = MIN(left, MIN(p->x0, p->x1));
-            right = MAX(right, MAX(p->x0, p->x1));
+        for (int partial = 0; partial < 2; partial++) {
+            DestroyAllPrimitives();
+            Entity* self = g_CurrentEntity = &g_Entities[64];
+            memset(self, 0, sizeof(*self));
+            self->params = partial;
+            self->posY.i.hi = inverted ? 72 : 184;
+            update(self);
+            assert(self->ext.transparentWater.prim);
+            for (int scroll = 0; scroll <= 1024; scroll++) {
+                g_Tilemap.scrollX.val = FIX(scroll);
+                Entity before = *self;
+                Primitive snapshots[2][16] = {0};
+                int central[2] = {0};
+                for (int wide = 0; wide < 2; wide++) {
+                    g_PcSettings.widescreen = wide;
+                    PcUpdateViewport();
+                    *self = before;
+                    update(self);
+                    int nodes = 0, live = 0, left = 1000, right = -1000;
+                    int previousLeft = 0, previousRight = 0;
+                    for (Primitive* prim = self->ext.transparentWater.prim;
+                         prim; prim = prim->next) {
+                        assert(++nodes <= 16);
+                        if (prim->drawMode & DRAW_HIDE)
+                            continue;
+                        int l = MIN(prim->x0, prim->x1);
+                        int r = MAX(prim->x0, prim->x1);
+                        assert(r - l == (inverted ? 37 : 38));
+                        assert(abs(prim->y2 - prim->y0) == 62);
+                        assert(prim->u1 - prim->u0 == r - l);
+                        assert(prim->v2 - prim->v0 == 62);
+                        assert(prim->tpage == 15 && prim->clut == 24);
+                        assert(prim->priority == 176);
+                        assert(prim->drawMode == (DRAW_TPAGE2 | DRAW_TPAGE |
+                                                  DRAW_UNK02 | DRAW_TRANSP));
+                        if (live++)
+                            assert(inverted ? l == previousRight
+                                            : r == previousLeft);
+                        previousLeft = l;
+                        previousRight = r;
+                        left = MIN(left, l);
+                        right = MAX(right, r);
+                        if (r > 0 && l < 256) {
+                            Primitive* copy = &snapshots[wide][central[wide]++];
+                            memcpy(&copy->r0, &prim->r0,
+                                   offsetof(Primitive, drawMode) +
+                                       sizeof(prim->drawMode) -
+                                       offsetof(Primitive, r0));
+                            copy->p1 = copy->p2 = copy->p3 = 0;
+                        }
+                    }
+                    assert(nodes == 16 && live);
+                    if (partial && inverted)
+                        assert(left == 160);
+                    else
+                        assert(left <= PcViewLeft());
+                    if (partial && !inverted)
+                        assert(right == 96);
+                    else
+                        assert(right >= PcViewRight());
+                }
+                assert(central[0] == central[1]);
+                assert(!memcmp(snapshots[0], snapshots[1],
+                               central[0] * sizeof(Primitive)));
+            }
+            DestroyAllPrimitives();
         }
-        assert(left <= PcViewLeft() && right >= PcViewRight());
-        DestroyAllPrimitives();
         SDL_UnloadObject(module);
     }
+    memcpy(g_ClutIds, originalIds, sizeof(originalIds));
     g_PcSettings.widescreen = 0;
     g_Tilemap.width = 1280;
     g_Tilemap.scrollX.i.hi = 1024;
@@ -492,7 +548,175 @@ static void CheckWaterCoverage(void) {
     PcClampCamera();
     assert(PLAYER.posX.i.hi == 119);
     PcUpdateViewport();
-    puts("Normal and inverted water cover the widened viewport: PASS");
+    puts("All Entrance water overlays preserve center phase, partial-pool "
+         "endpoints and gap-free coverage through scrolling/aspect toggles: "
+         "PASS");
+}
+
+static void CheckCavernWaterCoverage(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"no4", "bo3", "rno4"};
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        for (int body = 0; body < 2; body++) {
+            const char* function =
+                stage == 2 ? (body ? "func_us_801C15F8_from_no4"
+                                   : "func_us_801C12B0_from_no4")
+                           : (body ? "func_us_801C15F8" : "func_us_801C12B0");
+            const char* symbol =
+                stage == 2
+                    ? (body ? "D_us_80181190" : "D_us_80181094")
+                    : (body ? "water_tile_rects" : "water_surface_lines");
+            void (*update)(Entity*) = (void*)SDL_LoadFunction(module, function);
+            s16* table = (void*)SDL_LoadFunction(module, symbol);
+            assert(update && table);
+            int stride = body ? 4 : 5;
+            s16 original[10];
+            memcpy(original, table, sizeof(original));
+            for (int region = 0; region < 4; region++) {
+                DestroyAllPrimitives();
+                Entity* self = g_CurrentEntity = &g_Entities[64];
+                memset(self, 0, sizeof(*self));
+                self->params = (region < 2 ? 1 : 2) << 8;
+                g_Tilemap.scrollX.val = g_Tilemap.scrollY.val = 0;
+                update(self);
+                for (int scroll = 0; scroll <= 512; scroll++) {
+                    int starts[] = {region == 0 ? -1024 : -4, scroll + 32};
+                    int widths[] = {region == 0 ? 4096 : 258, 200};
+                    if (region >= 2) {
+                        starts[0] = scroll + (region == 2 ? -35 : 273);
+                        widths[0] = region == 2 ? 18 : 6;
+                    }
+                    int pools = region < 2 ? 1 : 2;
+                    for (int i = 0; i < pools; i++) {
+                        table[i * stride] = starts[i];
+                        table[i * stride + 1] = widths[i];
+                        table[i * stride + 2] = body && stage == 2 ? 220 : 180;
+                        table[i * stride + 3] = body && stage == 2 ? 180 : 220;
+                        if (!body)
+                            table[i * stride + 4] = i ? 1 : -2;
+                    }
+                    g_Tilemap.scrollX.val = FIX(scroll);
+                    g_Tilemap.scrollY.val = 0;
+                    Entity before = *self;
+                    int samples[2][256] = {0}, phases[2];
+                    for (int wide = 0; wide < 2; wide++) {
+                        g_PcSettings.widescreen = wide;
+                        PcUpdateViewport();
+                        *self = before;
+                        update(self);
+                        assert(self->flags & FLAG_HAS_PRIMS);
+                        bool covered[296] = {0};
+                        int nodes = 0;
+                        for (Primitive* prim = self->ext.et_801C12B0.prim; prim;
+                             prim = prim->next) {
+                            assert(++nodes <= 16);
+                            if (prim->drawMode & DRAW_HIDE)
+                                continue;
+                            int left = prim->x0;
+                            int right = body ? left + prim->u0 : prim->x1;
+                            assert(right >= left);
+                            assert(prim->drawMode ==
+                                   (DRAW_TPAGE | DRAW_UNK02 | DRAW_TRANSP));
+                            for (int x = MAX(left, -20); x < MIN(right, 276);
+                                 x++) {
+                                covered[x + 20] = true;
+                                if (x >= 0 && x < 256) {
+                                    samples[wide][x] =
+                                        body ? 1 + prim->r0 + (prim->g0 << 8) +
+                                                   (prim->b0 << 16)
+                                             : 1 + prim->u0 + x - left +
+                                                   (prim->v0 << 8);
+                                }
+                            }
+                        }
+                        assert(nodes == 16);
+                        for (int x = PcViewLeft(); x < PcViewRight(); x++) {
+                            bool expected = false;
+                            for (int i = 0; i < pools; i++)
+                                expected |= x + scroll >= starts[i] &&
+                                            x + scroll < starts[i] + widths[i];
+                            assert(covered[x + 20] == expected);
+                        }
+                        phases[wide] = self->ext.et_801C12B0.unk82;
+                    }
+                    assert(phases[0] == phases[1]);
+                    assert(!memcmp(samples[0], samples[1], sizeof(samples[0])));
+                }
+                DestroyAllPrimitives();
+            }
+            memcpy(table, original, sizeof(original));
+        }
+        SDL_UnloadObject(module);
+    }
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Caverns/Scylla water covers both margins, preserves dry endpoints "
+         "and original central texture/flow phase: PASS");
+}
+
+static void CheckCavernShimmer(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"no4", "bo3", "rno4"};
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        void (*update)(Entity*) = (void*)SDL_LoadFunction(
+            module, stage == 2 ? "func_us_801C5364" : "func_us_801C1844");
+        assert(update);
+        for (int region = 0; region < 2; region++) {
+            int left =
+                stage == 2 ? (region ? 360 : 2984) : (region ? 104 : 296);
+            int right = left + 48;
+            DestroyAllPrimitives();
+            Entity* self = g_CurrentEntity = &g_Entities[64];
+            memset(self, 0, sizeof(*self));
+            self->params = 0x100 | (region ? 10 : 0);
+            g_Tilemap.height = stage == 2 && region ? 1536 : 512;
+            g_Tilemap.scrollY.val = FIX(stage == 2 ? (region ? 1280 : 256) : 0);
+            g_Tilemap.scrollX.val = 0;
+            update(self);
+            for (int scroll = 0; scroll <= right + 32; scroll++) {
+                g_Tilemap.scrollX.val = FIX(scroll);
+                Entity before = *self;
+                int samples[2][256] = {0};
+                for (int wide = 0; wide < 2; wide++) {
+                    g_PcSettings.widescreen = wide;
+                    PcUpdateViewport();
+                    *self = before;
+                    update(self);
+                    bool covered[296] = {0};
+                    int nodes = 0;
+                    for (Primitive* prim = &g_PrimBuf[self->primIndex]; prim;
+                         prim = prim->next) {
+                        assert(++nodes <= 16);
+                        if (prim->drawMode & DRAW_HIDE)
+                            continue;
+                        assert(prim->x1 >= prim->x0);
+                        for (int x = MAX(-20, prim->x0); x < MIN(276, prim->x1);
+                             x++) {
+                            covered[x + 20] = true;
+                            if (x >= 0 && x < 256)
+                                samples[wide][x] = 1 + prim->u0 + x - prim->x0 +
+                                                   (prim->v0 << 8);
+                        }
+                    }
+                    assert(nodes == 16);
+                    for (int x = PcViewLeft(); x < PcViewRight(); x++)
+                        assert(covered[x + 20] ==
+                               (x + scroll >= left && x + scroll < right));
+                }
+                assert(!memcmp(samples[0], samples[1], sizeof(samples[0])));
+            }
+            DestroyAllPrimitives();
+        }
+        SDL_UnloadObject(module);
+    }
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Caverns/Scylla shimmer covers visible edge fragments without "
+         "changing original central texture phase: PASS");
 }
 
 static void CheckBackgroundGears(void) {
@@ -1776,6 +2000,8 @@ bool PcTestUpgrades(void) {
 #ifndef _WIN32
     CheckBugFixes();
     CheckWaterCoverage();
+    CheckCavernWaterCoverage();
+    CheckCavernShimmer();
     CheckBackgroundGears();
     CheckBackgroundSkyLand();
     CheckDreamClouds();
