@@ -232,7 +232,7 @@ void EntityClouds(Entity* self) {
                     primTwo->drawMode = DRAW_HIDE;
                     break;
                 }
-                if (primTwo->x3 < 0) {
+                if (primTwo->x3 < PC_LEFT(0)) {
                     primTwo->drawMode = DRAW_HIDE;
                     if (sp58 < 0) {
                         sp58 += 2;
@@ -247,7 +247,7 @@ void EntityClouds(Entity* self) {
                 primTwo->priority = priority;
                 gte_stsxy3_gt3(primTwo);
 
-                if (primTwo->x2 > 0x100) {
+                if (primTwo->x2 > PC_RIGHT(0x100)) {
                     primTwo->drawMode = DRAW_HIDE;
                     if (sp58 > 0) {
                         break;

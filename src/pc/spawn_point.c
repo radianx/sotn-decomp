@@ -14,6 +14,7 @@ struct SpawnPoint {
 };
 
 static const struct SpawnPoint s_SpawnPoints[] = {
+    {STAGE_ST0, 0, 600, 168, "prologue-dracula-dialogue"},
     {STAGE_NP3, 1, 192, 870, "np3-stage15-door"},
     {STAGE_RNO3, 1, 96, 104, "reverse-trapdoor-underground"},
     {STAGE_NO0, 0, 1440, 688, "marble-soul"},
@@ -31,6 +32,14 @@ enum SpawnPointStep {
 static enum SpawnPointStep s_Step = SpawnPoint_Off;
 static const struct SpawnPoint* s_Spawn = NULL;
 static void (*s_InitRoomEntities)(s32 layoutId) = NULL;
+static s32 s_PreviousLoadMode;
+static struct SpawnPoint s_Requested;
+
+void SpawnPoint_Request(int stage, int room, int x, int y) {
+    s_Requested = (struct SpawnPoint){stage, room, x, y, "suspend"};
+    s_Spawn = &s_Requested;
+    s_Step = SpawnPoint_PickRoom;
+}
 
 static const struct SpawnPoint* FindSpawnPoint(const char* name) {
     s32 i;
@@ -68,6 +77,10 @@ void SpawnPoint_OnFrame(void) {
     if (g_GameState != Game_Play || g_GameStep < Play_Init) {
         return;
     }
+    if (s_Spawn == &s_Requested &&
+        (g_GameStep != Play_Default || g_GameEngineStep != Engine_Init)) {
+        return;
+    }
     if (g_StageId != s_Spawn->stageId || g_api.o.rooms == NULL) {
         ERRORF("spawn point does not match the loaded stage %02X", g_StageId);
         s_Step = SpawnPoint_Off;
@@ -76,9 +89,18 @@ void SpawnPoint_OnFrame(void) {
     if (g_StageId & STAGE_INVERTEDCASTLE_FLAG) {
         CheckAndDoLevelUp();
     }
+    int roomCount = 0;
+    while (roomCount < 256 && g_api.o.rooms[roomCount].left != 64)
+        roomCount++;
+    if (s_Spawn->roomIndex >= roomCount) {
+        ERRORF("requested room does not exist in the loaded stage");
+        s_Step = SpawnPoint_Off;
+        return;
+    }
     room = &g_api.o.rooms[s_Spawn->roomIndex];
     g_Tilemap.left = room->left;
     g_Tilemap.top = room->top;
+    s_PreviousLoadMode = D_8003C730;
     D_8003C730 = 1;
     s_Step = SpawnPoint_PlacePlayer;
 }
@@ -106,6 +128,7 @@ static void SpawnPoint_PlacePlayerNow(void) {
     g_Tilemap.scrollY.i.hi = (D_8009791C.y - g_Tilemap.top) << 8;
     g_PrevScrollX = g_Tilemap.scrollX.i.hi;
     g_PrevScrollY = g_Tilemap.scrollY.i.hi;
+    D_8003C730 = s_PreviousLoadMode;
 }
 
 static void SpawnPoint_InitRoomEntities(s32 layoutId) {

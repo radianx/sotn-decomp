@@ -10,7 +10,11 @@ void EntityBackgroundSkyLand(Entity* self) {
 
     if (!self->step) {
         InitializeEntity(g_EInitInteractable);
+#ifdef VERSION_PC
+        primIndex = g_api.AllocPrimitives(PRIM_GT4, 6);
+#else
         primIndex = g_api.AllocPrimitives(PRIM_GT4, 5);
+#endif
         if (primIndex == -1) {
             DestroyEntity(self);
             return;
@@ -25,6 +29,12 @@ void EntityBackgroundSkyLand(Entity* self) {
             prim->u1 = prim->u3 = 127;
             prim->v0 = prim->v1 = 169;
             prim->v2 = prim->v3 = 198;
+#ifdef VERSION_PC
+            // Append a left repeat without shifting the original five tiles.
+            if (x == 310) {
+                x = -62;
+            }
+#endif
             prim->x0 = prim->x2 = x;
             x += 62;
             prim->x1 = prim->x3 = x;

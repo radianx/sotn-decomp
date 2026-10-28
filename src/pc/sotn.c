@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "pc.h"
+#include "upgrades.h"
 #include "spawn_point.h"
 #include "dra.h"
 #include "psyz/log.h"
@@ -116,6 +117,7 @@ bool InitDraData(void);
 s32 func_800EDB58(u8 primType, s32 count);
 
 static void GameLoopCallback(void) {
+    PcUpgradesFrame();
     Replay_OnFrame();
     SpawnPoint_OnFrame();
 }
@@ -127,14 +129,16 @@ bool InitGame(struct InitGameParams* params) {
     SpawnPoint_Init(params);
     Psyz_SetVSyncCb(GameLoopCallback);
     if (params->diskPath) {
-        if (Psyz_CdSetDiskPath(params->diskPath) < 0) {
-            WARNF("failed to parse CD layout at '%s'. Music will be disabled",
-                  params->diskPath);
+        if (!PcValidateDisc(params->diskPath) ||
+            Psyz_CdSetDiskPath(params->diskPath) < 0) {
+            return false;
         }
     }
     if (!InitPlatform()) {
         return false;
     }
+
+    PcUpgradesInit();
 
     // These two are necessary to make HandleTitle working
     GameApi api;
@@ -229,6 +233,7 @@ bool InitGame(struct InitGameParams* params) {
 
 void ResetPlatform(void);
 void ResetGame(void) {
+    PcUpgradesShutdown();
     Replay_Reset();
     ResetPlatform();
 }

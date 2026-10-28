@@ -517,6 +517,9 @@ block_25:
         }
     }
 #endif
+#ifdef VERSION_PC
+    PcClampCamera();
+#endif
     return 0;
 }
 

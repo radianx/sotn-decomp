@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "dra.h"
+#ifdef VERSION_PC
+#include "../pc/upgrades.h"
+#include <string.h>
+#endif
 #include "dra_bss.h"
 
 void func_800EA538(s32 arg0) {
@@ -249,6 +253,21 @@ void func_800EA7CC(void) {
         palettes[g_DebugCurPal >> 4] = 1;
     }
 
+#ifdef VERSION_PC
+    static u16 previous[0x3000];
+    static int previousMode = -1;
+    for (i = 0; i < LEN(palettes); i++) {
+        const u16* current = &g_Clut[0][0] + i * 256;
+        if (g_PcSettings.palette != previousMode ||
+            (g_PcSettings.palette &&
+             memcmp(previous + i * 256, current, 512))) {
+            palettes[i] = 1;
+        }
+        memcpy(previous + i * 256, current, 512);
+    }
+    previousMode = g_PcSettings.palette;
+#define LoadClut(data, x, y) PcUploadPalette(data, x, y)
+#endif
     // re-upload updated stage tileset palette
     offset = 0;
     desc = g_Clut[0];
@@ -275,6 +294,10 @@ void func_800EA7CC(void) {
         }
     }
 }
+
+#ifdef VERSION_PC
+#undef LoadClut
+#endif
 
 s32 func_800EAD0C(void) { // the return type is needed for matching
     func_800EA5E4(4);

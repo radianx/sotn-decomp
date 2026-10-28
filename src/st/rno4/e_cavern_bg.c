@@ -59,14 +59,14 @@ void func_us_801C12B0_from_no4(Entity* self) {
     ptr = &D_us_80181094[(self->params & 0xFF) * 5];
     scrollX = g_Tilemap.scrollX.i.hi - 0x10;
     scrollY = g_Tilemap.scrollY.i.hi;
-    xOffset = scrollX + 0x120;
+    xOffset = PC_RIGHT(scrollX + 0x120);
     var_s5 = &D_us_80181070[self->animCurFrame * 4];
     var_s8 = var_s5[1];
 
     for (; i > 0; i--) {
         var_s3 = *ptr++;
         var_s2 = var_s3 + *ptr++;
-        if (scrollX >= var_s2 || xOffset < var_s3) {
+        if (PC_LEFT(scrollX) >= var_s2 || xOffset < var_s3) {
             ptr += 3;
             continue;
         }
@@ -79,18 +79,29 @@ void func_us_801C12B0_from_no4(Entity* self) {
             ptr++;
             sp38 = *ptr++;
             var_s6 -= scrollY;
-            if (var_s3 < scrollX) {
-                var_s3 = scrollX;
+            if (var_s3 < PC_LEFT(scrollX)) {
+                var_s3 = PC_LEFT(scrollX);
             }
             if (xOffset < var_s2) {
                 var_s2 = xOffset;
             }
             if (sp38 != 0) {
-                self->ext.et_801C12B0.unk82 += sp38;
+#ifdef VERSION_PC
+                if (scrollX < var_s2 && scrollX + 0x120 >= var_s3)
+#endif
+                    self->ext.et_801C12B0.unk82 += sp38;
                 var_s4 = (u32)(var_s3 - self->ext.et_801C12B0.unk82) % 126;
             } else {
                 var_s4 = (u32)var_s3 % 126;
             }
+#ifdef VERSION_PC
+            // Keep the original unsigned phase across an extended left clip.
+            s32 originalLeft = MAX(var_s3, scrollX);
+            var_s4 =
+                (u32)(originalLeft - (sp38 ? self->ext.et_801C12B0.unk82 : 0)) %
+                126;
+            var_s4 = (var_s4 + var_s3 - originalLeft + 126) % 126;
+#endif
             var_s2 -= var_s3;
             var_s3 -= scrollX + 0x10;
             var_s4 += var_s5[0];
@@ -165,13 +176,13 @@ void func_us_801C15F8_from_no4(Entity* self) {
     i = (self->params >> 8) & 0xFF;
     scrollX = g_Tilemap.scrollX.i.hi - 0x10;
     scrollY = g_Tilemap.scrollY.i.hi - 0x10;
-    xOffset = scrollX + 0x120;
+    xOffset = PC_RIGHT(scrollX + 0x120);
     yOffset = scrollY + 0x100;
 
     for (; i > 0; i--) {
         var_s3 = *ptr++;
         var_s2 = var_s3 + *ptr++;
-        if (scrollX >= var_s2 || xOffset < var_s3) {
+        if (PC_LEFT(scrollX) >= var_s2 || xOffset < var_s3) {
             ptr += 2;
             continue;
         }
@@ -179,8 +190,8 @@ void func_us_801C15F8_from_no4(Entity* self) {
         var_s4 = *ptr++;
         var_s5 = *ptr++;
         if (var_s4 > scrollY && yOffset >= var_s5) {
-            if (var_s3 < scrollX) {
-                var_s3 = scrollX;
+            if (var_s3 < PC_LEFT(scrollX)) {
+                var_s3 = PC_LEFT(scrollX);
             }
             if (xOffset < var_s2) {
                 var_s2 = xOffset;
@@ -294,22 +305,22 @@ void func_us_801C5364(Entity* self) {
     tileDimensions = D_us_80181280 + ((self->params & 0xff) * 4);
     x0 = g_Tilemap.scrollX.i.hi - 0x10;
     y0 = g_Tilemap.scrollY.i.hi;
-    x1 = x0 + 0x120;
+    x1 = PC_RIGHT(x0 + 0x120);
     y1 = y0 + 0xe0;
     tilePos = D_us_80181084;
     tileY1Wrap = tilePos[1];
     while (i > 0) {
         tileX0 = *(tileDimensions++);
         tileX1 = *(tileDimensions++);
-        if ((x0 >= tileX0) || (x1 < tileX1)) {
+        if ((PC_LEFT(x0) >= tileX0) || (x1 < tileX1)) {
             tileDimensions = tileDimensions + 2;
         } else {
             tileY0 = *(tileDimensions++);
             tileY1 = *(tileDimensions++);
             if ((y0 < tileY0) && (!(y1 < tileY1))) {
                 {
-                    if (x0 > tileX1) {
-                        tileX1 = x0;
+                    if (PC_LEFT(x0) > tileX1) {
+                        tileX1 = PC_LEFT(x0);
                     }
                 }
                 if (tileX0 > x1) {
@@ -318,6 +329,10 @@ void func_us_801C5364(Entity* self) {
                 tileX0 -= tileX1;
                 tileX1 -= (x0 + 0x10);
                 subTileX = ((x0 / 4) + tileX1) % 126;
+#ifdef VERSION_PC
+                if ((s32)subTileX < 0)
+                    subTileX += 126;
+#endif
                 if (tileY1 < y0) {
                     tileY1 = y0;
                 }

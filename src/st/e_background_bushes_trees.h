@@ -98,6 +98,11 @@ void EntityBackgroundBushes(Entity* self) {
         yPos = rotTransXYResult >> 16;
         xPos = xPos % var_s5[3];
         xPos -= var_s5[3];
+#ifdef VERSION_PC
+        if (xPos > PcViewLeft()) {
+            xPos -= var_s5[3];
+        }
+#endif
         yPos = self->posY.i.hi;
         var_s4 = *var_s8;
         while (xPos < 0x140) {
@@ -213,6 +218,11 @@ void EntityBackgroundTrees(Entity* self) {
     posX %= 64;
     posX -= 64;
     posX -= backgroundTreePositions[self->params & 0xF][1];
+#ifdef VERSION_PC
+    if (posX > PcViewLeft()) {
+        posX -= 64;
+    }
+#endif
     prim = self->ext.prim;
     while (posX < 320) {
         prim->x0 = prim->x2 = posX;

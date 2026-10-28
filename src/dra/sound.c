@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "dra.h"
+#ifdef VERSION_PC
+#include "../pc/upgrades.h"
+#endif
 #include "dra_bss.h"
 
 u8 aPbav[] = {
@@ -500,6 +503,11 @@ void CdSoundCommand4(void) {
 
     case 6:
         if (DoCdCommand(CdlReadN, NULL, NULL) == 0) {
+#ifdef VERSION_PC
+            int ticks = PcVoiceStart(g_CurrentXaConfigId + 0x300);
+            if (ticks)
+                D_8013AE90 = ticks;
+#endif
             g_CdSoundCommandStep++;
         }
         break;
@@ -599,6 +607,9 @@ void CdFadeOut1(void) {
 
     case 1:
         SsSetSerialAttr(SS_SERIAL_A, SS_MIX, SS_SOFF);
+#ifdef VERSION_PC
+        PcVoiceStop();
+#endif
         g_CdSoundCommandStep++;
         /* fallthrough */
     case 2:
@@ -641,6 +652,9 @@ void CdFadeOut2(void) {
 
     case 1:
         SsSetSerialAttr(SS_SERIAL_A, SS_MIX, SS_SOFF);
+#ifdef VERSION_PC
+        PcVoiceStop();
+#endif
         g_CdSoundCommandStep++;
         /* fallthrough */
     case 2:

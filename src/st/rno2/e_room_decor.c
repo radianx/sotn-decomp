@@ -22,11 +22,16 @@ void EntityDeepBackgroundArch(Entity* self) {
 
     if (!self->step) {
         self->step += 1;
+#ifdef VERSION_PC
+        self->primIndex =
+            g_api.AllocPrimitives(PRIM_GT4, self->params ? 36 : 9);
+#else
         if (self->params) {
             self->primIndex = g_api.AllocPrimitives(PRIM_GT4, 32);
         } else {
             self->primIndex = g_api.AllocPrimitives(PRIM_GT4, 8);
         }
+#endif
 
         if (self->primIndex == -1) {
             DestroyEntity(self);
@@ -56,6 +61,23 @@ void EntityDeepBackgroundArch(Entity* self) {
             prim->drawMode = DRAW_DEFAULT;
         }
     }
+#ifdef VERSION_PC
+    // Continue the repeating arches into the margin without moving the
+    // originals.
+    for (i = 0, prim = &g_PrimBuf[self->primIndex]; prim != NULL; i++,
+        prim = prim->next) {
+        if (i < (self->params ? 32 : 8)) {
+            continue;
+        }
+        prim->x0 = prim->x2 = PcViewLeft();
+        prim->x1 = prim->x3 = 0;
+        prim->u0 = prim->u2 = 0x88 + PcViewMargin();
+        prim->u1 = prim->u3 = 0x88;
+        prim->y0 = prim->y1 = yOffset + (i - (self->params ? 32 : 8)) * 0x64;
+        prim->y2 = prim->y3 = prim->y0 + 0x6C;
+        prim->drawMode = PcViewMargin() ? DRAW_DEFAULT : DRAW_HIDE;
+    }
+#endif
 }
 
 // All remaining entities in this file only exist in the single

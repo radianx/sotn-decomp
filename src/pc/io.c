@@ -73,7 +73,7 @@ static bool _FileUseContentCb(const struct FileOpenRead* f) {
 bool FileOpenRead(
     bool (*cb)(const struct FileOpenRead*), const char* filename, void* param) {
     INFOF("open '%s'", filename);
-    FILE* f = fopen(filename, "rb");
+    FILE* f = PcOpenAsset(filename);
     if (f == NULL) {
         ERRORF("unable to open '%s'", filename);
         return false;
@@ -97,7 +97,7 @@ bool FileOpenRead(
 // The number of read bytes is returned; a negative value represents a failure.
 int FileReadToBuf(const char* filename, void* dst, int offset, size_t maxlen) {
     INFOF("open '%s'", filename);
-    FILE* f = fopen(filename, "rb");
+    FILE* f = PcOpenAsset(filename);
     if (f == NULL) {
         ERRORF("unable to open '%s'", filename);
         return -1;

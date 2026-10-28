@@ -2,7 +2,7 @@
 
 This patch modifies the upstream PSY-Z source pinned by `tools/psyz` at
 `f8780dcf04c93fa4f41e2c8a838be1a8ee15b6df`. Fork modifications are dated
-2026-10-26. The affected file in `psyz/src/psyz/`
+2026-10-26–28. The affected file in `psyz/src/psyz/`
 remains under **MPL-2.0**; see [LICENSE.MPL-2.0](LICENSE.MPL-2.0) and the
 [upstream repository](https://github.com/Xeeynamo/psyz/tree/f8780dcf04c93fa4f41e2c8a838be1a8ee15b6df).
 
@@ -18,3 +18,38 @@ fixes. Native regression tests cover these behaviors.
 
 The submodule remains pinned to the public upstream commit. The patches carry
 the local modifications without requiring an unpublished submodule revision.
+
+`psyz-pc-upgrades.patch` adds separate effect/CD mixer gain, a pause-aware
+clock, rounded native-canvas fitting, native presentation cropping, and
+synchronized fullscreen teardown. It also exposes ordered native draw-canvas
+copies for widescreen background transitions in both SDL GPU and OpenGL backends.
+Constant-UV palette quads check their actual texel for framebuffer dependencies,
+avoiding unnecessary synchronization when only the texture page overlaps it.
+The default SDL GPU path has rendering/readback checks at 1×/2×/4× resolution;
+the OpenGL addition is compile-checked only.
+Apply it after the XA patch:
+
+```sh
+git -C tools/psyz apply ../patches/psyz-pc-upgrades.patch
+```
+
+The modified SDK/platform implementation files remain MPL-2.0. Public header
+additions declare those interfaces; upstream file licensing is preserved.
+
+`psyz-video-filters.patch` applies after both patches above. It adds final-window
+bilinear, soft CRT and xBR-lv2 filtering to SDL GPU (Vulkan/Metal) and OpenGL.
+The original nearest path and raw captures stay unfiltered. Windows D3D12 falls
+back to nearest; OpenGL provides the filter path there. Linux Vulkan/OpenGL are
+the runtime validation targets; Metal and Windows require platform testing.
+
+The new xBR shader adapter retains Hyllian's MIT notice from
+[xbr-lv2.glsl](https://github.com/libretro/glsl-shaders/blob/master/xbr/shaders/xbr-lv2.glsl).
+New presentation shader sources and their generator are MIT licensed; the
+modified SDK interfaces and renderers remain MPL-2.0. Generated shader headers
+are included, so normal builds need no shader compiler. Rebuilding them requires
+`glslangValidator` and `spirv-cross`:
+
+```sh
+python3 tools/psyz/psyz/src/platform/shaders/build_present_shaders.py
+# Add --check to verify the checked-in headers against their sources.
+```

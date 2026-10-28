@@ -1075,6 +1075,9 @@ block_159:
     g_Player.prev_step = PLAYER.step;
     g_Player.prev_step_s = PLAYER.step_s;
     D_800ACDF8 = g_Player.timers[ALU_T_DARKMETAMORPH];
+#ifdef VERSION_PC
+    PcQolBeforePlayer();
+#endif
     switch (PLAYER.step) {
     case Player_Stand:
         PlayerStepStand();

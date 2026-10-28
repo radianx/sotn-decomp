@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo2.h"
+#ifdef VERSION_PC
+#include "../../pc/upgrades.h"
+#endif
 
 extern s32 D_us_80180AAC;
 extern s32 D_us_80180B74;
@@ -17,6 +20,16 @@ void func_us_801A6EF8(Entity* self) {
     Entity* entity = &PLAYER;
     s16 posX = PLAYER.posX.i.hi + g_Tilemap.scrollX.i.hi;
 
+#ifdef VERSION_PC
+    if (g_PcSettings.bugFixes && self->step < 4 && entity->posX.i.hi > 0x40 &&
+        (g_Player.status & (PLAYER_STATUS_BAT_FORM | PLAYER_STATUS_MIST_FORM |
+                            PLAYER_STATUS_WOLF_FORM))) {
+        entity->step = 0;
+        entity->step_s = 0;
+        entity->animSet = ANIMSET_OVL(0x100);
+        entity->animCurFrame = 0;
+    }
+#endif
     switch (self->step) {
     case 0:
         InitializeEntity(g_EInitSpawner);

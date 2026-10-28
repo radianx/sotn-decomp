@@ -201,6 +201,8 @@ s32 MemcardReadFile(
         close(fd);
         return -1;
     }
+    if (nBlock > 0)
+        PcQolSelectSave(savePath, true);
 #else
     read(fd, data, nBytes);
 #endif
@@ -214,6 +216,11 @@ s32 MemcardWriteFile(s32 nPort, s32 nCard, const char* name, void* data,
     s32 fd;
 
     sprintf(savePath, &"bu%1d%1d:%s", nPort, nCard, name);
+
+#ifdef VERSION_PC
+    if (!PcQolBackup(savePath))
+        return -1;
+#endif
 
     // known PSX bug: when creating a a file with open(), any read or write
     // will immediately fail. The workaround is to close the file and open
@@ -240,6 +247,7 @@ s32 MemcardWriteFile(s32 nPort, s32 nCard, const char* name, void* data,
             close(fd);
             return -1;
         }
+        PcQolSelectSave(savePath, false);
 #else
         write(fd, data, len);
 #endif

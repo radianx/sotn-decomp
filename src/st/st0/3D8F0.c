@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "st0.h"
 #include <scratchpad.h>
+#include "pc_wide_capture.h"
 
 typedef struct {
     Point16 unk0;
@@ -19,7 +20,66 @@ static SVECTOR D_80182698 = {8, -8, 0};
 static SVECTOR D_801826A0 = {-8, 8, 0};
 static SVECTOR D_801826A8 = {8, 8, 0};
 static SVECTOR unused = {0, 0, 0};
-static unkstr_801C06B0 D_801C06B0[15 * 15];
+#ifdef VERSION_PC
+#define BG_PART_CAPACITY (19 * 15)
+static s32 s_WideCapture;
+#define BG_PART_COUNT (s_WideCapture ? BG_PART_CAPACITY : 15 * 15)
+#else
+#define BG_PART_CAPACITY (15 * 15)
+#define BG_PART_COUNT (15 * 15)
+#endif
+static unkstr_801C06B0 D_801C06B0[BG_PART_CAPACITY];
+
+#ifdef VERSION_PC
+static const s16 s_EdgeX[] = {-34, -17, 255, 272};
+
+static Point16 BackgroundPieceOrigin(s32 i) {
+    if (i < 225)
+        return (Point16){(i % 15) * 17, (i / 15) * 16};
+    return (Point16){s_EdgeX[(i - 225) % 4], ((i - 225) / 4) * 16};
+}
+
+static RECT BackgroundPieceRect(s32 i) {
+    Point16 p = BackgroundPieceOrigin(i);
+    s32 left = MAX(p.x, -20), top = MAX(p.y, 20);
+    s32 right = MIN(p.x + 17, 276), bottom = MIN(p.y + 16, 227);
+    return (RECT){left, top, right - left, MAX(bottom - top, 0)};
+}
+
+static void InitializeWideBackground(Primitive* prim) {
+    s32 i, u, v, band;
+    for (i = 0; i < BG_PART_COUNT; i++, prim = prim->next) {
+        RECT r = BackgroundPieceRect(i);
+        prim->type = PRIM_GT4;
+        prim->tpage = 0x10C;
+        if (i < 225) {
+            u = r.x;
+            v = r.y - 20;
+        } else {
+            for (band = 0; band < 4 && r.y >= s_CaptureBands[band + 1];
+                 band++) {
+            }
+            u = band * 41 + (r.x < 0 ? r.x + 20 : 20 + r.x - 255);
+            v = 207 + r.y - s_CaptureBands[band];
+        }
+        prim->u0 = prim->u2 = u;
+        prim->u1 = prim->u3 = u + r.w;
+        prim->v0 = prim->v1 = v;
+        prim->v2 = prim->v3 = v + r.h;
+        prim->x0 = prim->x2 = r.x;
+        prim->x1 = prim->x3 = r.x + r.w;
+        prim->y0 = prim->y1 = r.y;
+        prim->y2 = prim->y3 = r.y + r.h;
+        prim->r0 = 0x40;
+        prim->g0 = prim->b0 = 0x30;
+        LOW(prim->r1) = LOW(prim->r0);
+        LOW(prim->r2) = LOW(prim->r0);
+        LOW(prim->r3) = LOW(prim->r0);
+        prim->priority = 0x6C;
+        prim->drawMode = r.h ? DRAW_DEFAULT : DRAW_HIDE;
+    }
+}
+#endif
 
 void EntityDematerializeStageBg(Entity* self) {
     DRAWENV drawEnv;
@@ -56,13 +116,19 @@ void EntityDematerializeStageBg(Entity* self) {
         self->step++;
         break;
     case 2:
-        primIndex = g_api.func_800EDB58(PRIM_GT4, 15 * 15);
+#ifdef VERSION_PC
+        s_WideCapture = PcViewMargin() != 0;
+#endif
+        primIndex = g_api.func_800EDB58(PRIM_GT4, BG_PART_COUNT);
         if (primIndex == -1) {
             SetStep(7);
             break;
         }
         self->flags |= FLAG_HAS_PRIMS;
         self->primIndex = primIndex;
+#ifdef VERSION_PC
+        PcHoldViewport(self);
+#endif
 
         prim = &g_PrimBuf[primIndex];
         self->ext.prim = prim;
@@ -73,6 +139,12 @@ void EntityDematerializeStageBg(Entity* self) {
         self->step++;
         // fallthrough
     case 3:
+#ifdef VERSION_PC
+        if (s_WideCapture) {
+            self->step = CaptureWideFrame(self->ext.prim, 0x69) ? 4 : 7;
+            break;
+        }
+#endif
 #ifdef VERSION_PSP
         func_psp_0891B0DC(0x300, 0);
 #else
@@ -131,8 +203,18 @@ void EntityDematerializeStageBg(Entity* self) {
     case 4:
         prim = self->ext.prim;
 #ifndef VERSION_PSP
-        prim = prim->next;
-        for (i = 0; i < 2; i++) {
+#ifdef VERSION_PC
+        if (!s_WideCapture)
+#endif
+            prim = prim->next;
+        for (i = 0; i <
+#ifdef VERSION_PC
+                    (s_WideCapture ? 4 : 2)
+#else
+                    2
+#endif
+                 ;
+             i++) {
             dr_env = PRIM_DR_ENV(prim);
             dr_env->tag = 0;
             prim->type = PRIM_GT4;
@@ -173,6 +255,10 @@ void EntityDematerializeStageBg(Entity* self) {
                 prim = prim->next;
             }
         }
+#ifdef VERSION_PC
+        if (s_WideCapture)
+            InitializeWideBackground(self->ext.prim);
+#endif
         self->step++;
         break;
     case 5:
@@ -180,9 +266,16 @@ void EntityDematerializeStageBg(Entity* self) {
         g_BgLayers[0].flags &= 0xFFFE;
         prim = self->ext.prim;
         unkStr = D_801C06B0;
-        for (i = 0; i < 15 * 15; i++, unkStr++) {
+        for (i = 0; i < BG_PART_COUNT; i++, unkStr++) {
             xVar = prim->x0 + 8;
             yVar = prim->y0 + 8;
+#ifdef VERSION_PC
+            if (s_WideCapture) {
+                Point16 origin = BackgroundPieceOrigin(i);
+                xVar = origin.x + 8;
+                yVar = origin.y + 8;
+            }
+#endif
             xVar -= 0x80;
             yVar -= 0x80;
             unkStr->unkA = xVar;
@@ -200,7 +293,15 @@ void EntityDematerializeStageBg(Entity* self) {
             yVar >>= 0xC;
             unkStr->unk0.x = xVar;
             unkStr->unk0.y = yVar;
-            unkStr->unk14 = ((var_s7 * 3) / 2) - (Random() & 0x1F);
+#ifdef VERSION_PC
+            if (i >= 225) {
+                // Extra edge pieces must not consume gameplay randomness.
+                unkStr->unk14 = D_801C06B0[((i - 225) / 4) * 15 +
+                                           ((i - 225) % 4 < 2 ? 0 : 14)]
+                                    .unk14;
+            } else
+#endif
+                unkStr->unk14 = ((var_s7 * 3) / 2) - (Random() & 0x1F);
             if (unkStr->unk14 < 0) {
                 unkStr->unk14 = 0;
             }
@@ -224,11 +325,26 @@ void EntityDematerializeStageBg(Entity* self) {
         sp34[3] = D_801826A8;
         unkStr = D_801C06B0;
         prim = self->ext.prim;
-        for (i = 0; i < 15 * 15; i++, unkStr++) {
+        for (i = 0; i < BG_PART_COUNT; i++, unkStr++) {
             if ((unkStr->unk14) || (unkStr->unk10 > 0x180)) {
                 prim = prim->next;
                 continue;
             }
+#ifdef VERSION_PC
+            if (s_WideCapture) {
+                RECT r = BackgroundPieceRect(i);
+                Point16 p = BackgroundPieceOrigin(i);
+                if (!r.h) {
+                    prim->drawMode = DRAW_HIDE;
+                    prim = prim->next;
+                    continue;
+                }
+                sp34[0].vx = sp34[2].vx = r.x - p.x - 8;
+                sp34[1].vx = sp34[3].vx = MIN(r.x + r.w - p.x - 8, 8);
+                sp34[0].vy = sp34[1].vy = r.y - p.y - 8;
+                sp34[2].vy = sp34[3].vy = r.y + r.h - p.y - 8;
+            }
+#endif
             sp40->vx = unkStr->unk4;
             sp40->vy = unkStr->unk6;
             sp40->vz = 0;
@@ -250,7 +366,7 @@ void EntityDematerializeStageBg(Entity* self) {
         unkStr = D_801C06B0;
         prim = self->ext.prim;
         var_s8 = 0;
-        for (i = 0; i < 15 * 15; i++, unkStr++) {
+        for (i = 0; i < BG_PART_COUNT; i++, unkStr++) {
             if (unkStr->unk14) {
                 unkStr->unk14--;
                 prim = prim->next;
@@ -260,7 +376,10 @@ void EntityDematerializeStageBg(Entity* self) {
             unkStr->unk6 += unkStr->unk0.y;
             unkStr->unk10 += 3;
             if (unkStr->unk10 > 0x180) {
-                var_s8 += 1;
+#ifdef VERSION_PC
+                if (i < 15 * 15)
+#endif
+                    var_s8 += 1;
                 prim->drawMode = DRAW_HIDE;
             }
             prim = prim->next;

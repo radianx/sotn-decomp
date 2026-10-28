@@ -9,5 +9,6 @@ int SpawnPoint_StageForName(const char* name);
 void SpawnPoint_Init(const struct InitGameParams* params);
 void SpawnPoint_OnFrame(void);
 void SpawnPoint_HookOverlay(Overlay* o);
+void SpawnPoint_Request(int stage, int room, int x, int y);
 
 #endif

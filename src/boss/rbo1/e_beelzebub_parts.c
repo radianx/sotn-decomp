@@ -162,10 +162,22 @@ void func_us_80193C2C(Entity* self) {
         // fallthrough
     case 1:
         parent = self->ext.beelzebub.parent;
+#ifdef VERSION_PC
+        if (!parent) {
+            self->step = 3;
+            break;
+        }
+#endif
         if (parent->flags & FLAG_DEAD) {
             self->ext.beelzebub.parent = parent->ext.beelzebub.parent;
             parent = self->ext.beelzebub.parent;
         }
+#ifdef VERSION_PC
+        if (!parent) {
+            self->step = 3;
+            break;
+        }
+#endif
         targetX = parent->posX.i.hi;
         targetY = parent->posY.i.hi;
         self->rotate =

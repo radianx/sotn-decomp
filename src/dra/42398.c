@@ -900,6 +900,9 @@ loop_5:
 #if defined(VERSION_HD)
         PrintGpuInfo();
 #endif
+#ifdef VERSION_PC
+        PcQolHud();
+#endif
         func_800E385C(g_CurrentOT);
         DrawSync(0);
         D_801362D4 = GsGetVcount();

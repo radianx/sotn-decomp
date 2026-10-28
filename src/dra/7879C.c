@@ -5,6 +5,9 @@
 // header file to fix it.
 #define CREATE_FACTORY_FAKE_ARGS
 #include "dra.h"
+#ifdef VERSION_PC
+#include "../pc/upgrades.h"
+#endif
 #include "dra_bss.h"
 #include "servant.h"
 
@@ -181,6 +184,10 @@ unionD_800ACFB4 D_800ACFB4[] = {
     {0x12, 0x7F, 0x7F, 0x7F}, {0x08, 0x7F, 0x7F, 0x7F}};
 
 void func_80118C28(s32 arg0) {
+#ifdef VERSION_PC
+    if (g_PcSettings.reduceFlashes)
+        return;
+#endif
     // Break up the 4-byte struct D_800ACFB4[arg0] into individual bytes.
     D_8013803C = D_800ACFB4[arg0].rawBytes[0];
     D_80138040 = D_800ACFB4[arg0].rawBytes[1];
@@ -1678,7 +1685,8 @@ void UpdatePlayerEntities(void) {
             entity = g_CurrentEntity;
             if (entity->entityId != 0) {
                 if (!(entity->flags & FLAG_KEEP_ALIVE_OFFCAMERA) &&
-                    (entity->posX.i.hi > 288 || entity->posX.i.hi < -32 ||
+                    (entity->posX.i.hi > PC_RIGHT(288) ||
+                     entity->posX.i.hi < PC_LEFT(-32) ||
                      entity->posY.i.hi > 256 || entity->posY.i.hi < -16)) {
                     DestroyEntity(g_CurrentEntity);
                 } else {

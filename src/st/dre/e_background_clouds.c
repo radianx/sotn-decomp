@@ -8,11 +8,18 @@ void EntityBackgroundClouds(Entity* self) {
     Primitive* prim;
     s32 primIndex;
     s32 camX, camY;
+#ifdef VERSION_PC
+    s32 column = -1;
+#endif
 
     switch (self->step) {
     case 0:
         InitializeEntity(g_EInitInteractable);
+#ifdef VERSION_PC
+        primIndex = g_api.AllocPrimitives(PRIM_GT4, 8);
+#else
         primIndex = g_api.AllocPrimitives(PRIM_GT4, 5);
+#endif
         if (primIndex == -1) {
             DestroyEntity(self);
             return;
@@ -34,6 +41,10 @@ void EntityBackgroundClouds(Entity* self) {
         prim->drawMode = DRAW_DEFAULT;
         prim = prim->next;
         camX = -g_Tilemap.scrollX.i.hi;
+#ifdef VERSION_PC
+        // Retain the original four clouds and cover either initial camera end.
+        camX -= 95;
+#endif
         camY = 32 - g_Tilemap.scrollY.i.hi;
         while (prim != NULL) {
             prim->tpage = 0xF;
@@ -49,6 +60,18 @@ void EntityBackgroundClouds(Entity* self) {
             prim->y2 = prim->y3 = camY + 0x4E;
             prim->priority = 0x20;
             prim->drawMode = DRAW_DEFAULT;
+#ifdef VERSION_PC
+            // Additional right repeats must not alter the original viewport.
+            if (column >= 4) {
+                if (prim->x1 <= 256) {
+                    prim->drawMode = DRAW_HIDE;
+                } else if (prim->x0 < 256) {
+                    prim->u0 = prim->u2 = prim->u0 + 256 - prim->x0;
+                    prim->x0 = prim->x2 = 256;
+                }
+            }
+            column++;
+#endif
             prim = prim->next;
         }
         break;
@@ -56,6 +79,11 @@ void EntityBackgroundClouds(Entity* self) {
     case 255:
 #include "../pad2_anim_debug.h"
     }
+#ifdef VERSION_PC
+    prim = self->ext.prim;
+    prim->x0 = prim->x2 = PC_LEFT(0);
+    prim->x1 = prim->x3 = PC_RIGHT(0x100);
+#endif
     g_GpuBuffers[0].draw.r0 = 40;
     g_GpuBuffers[0].draw.g0 = 24;
     g_GpuBuffers[0].draw.b0 = 24;

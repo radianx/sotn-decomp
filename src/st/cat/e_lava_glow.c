@@ -54,7 +54,15 @@ void EntityLavaGlow(Entity* self) {
         }
         self->step++;
         // Fallthrough
+#ifdef VERSION_PC
+    case 2:
+#endif
     case 3:
+#ifdef VERSION_PC
+        prim = self->ext.prim;
+        prim->x0 = prim->x2 = PcViewLeft();
+        prim->x1 = prim->x3 = PcViewRight();
+#endif
         break;
     }
 }

@@ -178,7 +178,17 @@ void EntityStageTitleFadeout(Entity* self) {
         prim->x0 = prim->x2 = var_s2 - 0x40;
         prim = prim->next;
 
-        if ((var_s1 < -0x40) && (var_s2 > 0x140)) {
+#ifdef VERSION_PC
+        // Keep the outer masks opaque without reversing them past the edges.
+        prim = self->ext.stageTitleCard.prim;
+        prim->x0 = prim->x2 = PcViewLeft();
+        prim->x1 = prim->x3 = MAX(var_s1, PcViewLeft());
+        prim = prim->next->next;
+        prim->x0 = prim->x2 = MIN(var_s2, PcViewRight());
+        prim->x1 = prim->x3 = PcViewRight();
+#endif
+
+        if ((var_s1 < PC_LEFT(-0x40)) && (var_s2 > PC_RIGHT(0x140))) {
 
             for (prim = self->ext.stageTitleCard.prim; prim != NULL;
                  prim = prim->next) {
