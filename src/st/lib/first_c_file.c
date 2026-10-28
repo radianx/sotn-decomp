@@ -252,9 +252,9 @@ void func_us_801AE8E8(Entity* self) {
     temp_a0_3 = D_us_80180D28;
     prim2 = self->ext.et_801AE8E8.unk98;
     for (i = 0; i < 8; i++) {
-        RotTransPers(*temp_a0_2, &((long*)SPAD(0))[i], &p, &flag);
+        RotTransPers(*temp_a0_2, (long*)&SPAD(0)[i], &p, &flag);
         VectorNormalS(*temp_a0_3, &sp70);
-        NormalColorDpq(&sp70, &sp68, p, &((long*)SPAD(8))[i]);
+        NormalColorDpq(&sp70, &sp68, p, (long*)&SPAD(8)[i]);
         temp_a0_2++;
         temp_a0_3++;
     }
@@ -294,6 +294,9 @@ void func_us_801AE8E8(Entity* self) {
     }
     if (!self->params) {
         prim = self->ext.et_801AE8E8.unk94;
+#ifdef VERSION_PC
+        prim->x1 = prim->x3 = PcViewRight();
+#endif
         prim->r0 = abs(rcos(self->ext.et_801AE8E8.unk80)) * 0x28 / 0x1000;
         prim->g0 = prim->b0 = prim->r0;
         LOW(prim->r1) = LOW(prim->r0);

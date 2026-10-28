@@ -72,7 +72,12 @@ void EntityLava(Entity* self) {
         }
         // fallthrough
     case 1:
+#ifdef VERSION_PC
+        primIndex =
+            g_api.func_800EDB58(PRIM_GT4, 0x1A + ((self->params & 2) ? 4 : 0));
+#else
         primIndex = g_api.func_800EDB58(PRIM_GT4, 0x1A);
+#endif
         if (primIndex != -1) {
             self->flags |= FLAG_HAS_PRIMS;
             self->primIndex = primIndex;
@@ -277,6 +282,14 @@ void EntityLava(Entity* self) {
             RotTransPers(&lava_vec, (long*)&prim->x3, &p, &flag);
         }
 
+#ifdef VERSION_PC
+        if (self->params & 2) {
+            prim = self->ext.lava.prim;
+            for (i = 0; i < 26; i++)
+                prim = prim->next;
+            PcExtendBridgeLiquid(prim, primArr[1], primArr[12]);
+        }
+#endif
         break;
     }
 }

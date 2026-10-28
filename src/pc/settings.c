@@ -17,10 +17,15 @@ static const struct {
     int minimum, maximum;
 } fields[] = {
 #define FIELD(name, low, high) {#name, offsetof(PcSettings, name), low, high}
-    FIELD(widescreen, 0, 1),     FIELD(reduceFlashes, 0, 1),
-    FIELD(palette, 0, 3),        FIELD(bugFixes, 0, 1),
-    FIELD(masterVolume, 0, 100), FIELD(effectsVolume, 0, 100),
-    FIELD(musicVolume, 0, 100),  FIELD(controller, 0, 15),
+    FIELD(widescreen, 0, 1),       FIELD(reduceFlashes, 0, 1),
+    FIELD(palette, 0, 3),          FIELD(bugFixes, 0, 1),
+    FIELD(masterVolume, 0, 100),   FIELD(effectsVolume, 0, 100),
+    FIELD(musicVolume, 0, 100),    FIELD(controller, 0, 15),
+    FIELD(quickItems, 0, 1),       FIELD(spellShortcuts, 0, 1),
+    FIELD(protectSubweapon, 0, 1), FIELD(warpChooser, 0, 1),
+    FIELD(skipSeenDialogue, 0, 1), FIELD(hudScale, 100, 150),
+    FIELD(statusHud, 0, 1),        FIELD(subtitleScale, 0, 3),
+    FIELD(videoFilter, 0, 3),      FIELD(filterStrength, 0, 100),
 #undef FIELD
 };
 
@@ -51,6 +56,8 @@ void PcSettingsDefaults(PcSettings* s) {
         SDL_GAMEPAD_BUTTON_DPAD_LEFT};
     memset(s, 0, sizeof(*s));
     s->masterVolume = s->effectsVolume = s->musicVolume = 100;
+    s->hudScale = 100;
+    s->filterStrength = 75;
     memcpy(s->keys, keys, sizeof(keys));
     memcpy(s->buttons, buttons, sizeof(buttons));
 }

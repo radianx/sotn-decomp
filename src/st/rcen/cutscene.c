@@ -303,9 +303,16 @@ void EntityCutscene(Entity* self) {
 #endif
                 switch (nextChar) {
                 case CSOP_END_CUTSCENE:
+#ifdef VERSION_PC
+                    PcQolSceneEnd(
+                        g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
                     self->step = DIALOGUE_END;
                     return;
                 case CSOP_LINE_BREAK:
+#ifdef VERSION_PC
+                    PcQolDialogueChar('\n');
+#endif
                     if (g_SkipCutscene) {
                         continue;
                     }
@@ -672,6 +679,10 @@ void EntityCutscene(Entity* self) {
             } // This closes the CSOP switch for psx
             break; // This breaks the big while loop for psx
         } // This closes the big while loop for psx
+
+#ifdef VERSION_PC
+        PcQolDialogueChar(nextChar);
+#endif
         if (nextChar == 32) {
             g_Dialogue.nextCharX += 2;
             return;

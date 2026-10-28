@@ -194,7 +194,11 @@ void EntityCutscene(Entity* self) {
     if ((self->step && dialogue_started && !skip_cutscene) &&
         ((g_Settings.D_8003CB04 & 1 << (self->params + 5)) ||
          g_GameClearFlag) &&
-        g_pads[0].tapped & PAD_START) {
+        (
+#ifdef VERSION_PC
+            PcQolSkipWatched() ||
+#endif
+            g_pads[0].tapped & PAD_START)) {
 
         skip_cutscene = true;
         g_api.FreePrimitives(self->primIndex);
@@ -270,9 +274,16 @@ void EntityCutscene(Entity* self) {
                 // This switch is closed on line 560 for us and 534 for pspeu
                 switch (nextByte) {
                 case CSOP_END_CUTSCENE:
+#ifdef VERSION_PC
+                    PcQolSceneEnd(
+                        g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
                     self->step = DIALOGUE_END;
                     return;
                 case CSOP_LINE_BREAK:
+#ifdef VERSION_PC
+                    PcQolDialogueChar('\n');
+#endif
                     if (skip_cutscene) {
                         continue;
                     }
@@ -577,6 +588,10 @@ void EntityCutscene(Entity* self) {
             } // This closes the CSOP switch for psx
             break; // This breaks the big while loop for psx
         } // This closes the big while loop for psx
+
+#ifdef VERSION_PC
+        PcQolDialogueChar(nextByte);
+#endif
         if (nextByte == ASCII_SPACE) {
             g_Dialogue.nextCharX += 2;
             return;

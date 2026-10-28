@@ -4,6 +4,15 @@
 
 extern EInit g_EInitInteractable;
 
+// Repeat one extra panel at each side; their vertices stay outside 4:3.
+#ifdef VERSION_PC
+#define CAVERN_COLUMNS 9
+#define CAVERN_X_OFFSET 0xC0
+#else
+#define CAVERN_COLUMNS 7
+#define CAVERN_X_OFFSET 0x80
+#endif
+
 static SVECTOR D_us_801821E4 = {0};
 static SVECTOR D_us_801821EC = {.vx = 0, .vy = -96, .vz = 0, .pad = 0};
 static SVECTOR D_us_801821F4 = {.vx = 0, .vy = 96, .vz = 0, .pad = 0};
@@ -39,7 +48,7 @@ void EntityCavernBackgroundIce(Entity* self) {
     case 1:
         // nb. this is unnecessary, needed for PSP match though
         i = 0;
-        primIndex = g_api.func_800EDB58(PRIM_GT4, 0x15);
+        primIndex = g_api.func_800EDB58(PRIM_GT4, CAVERN_COLUMNS * 3);
         if (primIndex != -1) {
             self->flags |= FLAG_HAS_PRIMS;
             self->primIndex = primIndex;
@@ -59,7 +68,8 @@ void EntityCavernBackgroundIce(Entity* self) {
                 prim = prim->next;
             }
 
-            for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+            for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+                 prim = prim->next, i++) {
                 prim->v0 = 0xC0;
                 prim->v1 = prim->v0;
                 prim->v2 = 0xFE;
@@ -103,49 +113,50 @@ void EntityCavernBackgroundIce(Entity* self) {
         }
         posX -= 0x80;
 
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < CAVERN_COLUMNS + 1; i++) {
             r = -0x2AA;
             RotMatrix(&D_us_80182204, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = 0x68;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
             SetRotMatrix(&matrix);
             SetTransMatrix(&matrix);
-            RotTransPers(&D_us_801821E4, &((long*)SPAD(0))[i * 4], &p, &flag);
-            RotTransPers(&D_us_801821EC, &((long*)SPAD(1))[i * 4], &p, &flag);
+            RotTransPers(&D_us_801821E4, (long*)&SPAD(0)[i * 4], &p, &flag);
+            RotTransPers(&D_us_801821EC, (long*)&SPAD(1)[i * 4], &p, &flag);
 
             r = 0x2AA;
             RotMatrix(&D_us_80182204, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = -0x40;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
             SetRotMatrix(&matrix);
             SetTransMatrix(&matrix);
-            RotTransPers(&D_us_801821F4, &((long*)SPAD(2))[i * 4], &p, &flag);
-            RotTransPers(&D_us_801821FC, &((long*)SPAD(3))[i * 4], &p, &flag);
+            RotTransPers(&D_us_801821F4, (long*)&SPAD(2)[i * 4], &p, &flag);
+            RotTransPers(&D_us_801821FC, (long*)&SPAD(3)[i * 4], &p, &flag);
         }
 
-        for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
-            LOW(prim->x0) = ((long*)SPAD(0))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(4))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(1))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(5))[i * 4];
+        for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+             prim = prim->next, i++) {
+            LOW(prim->x0) = SPAD(0)[i * 4];
+            LOW(prim->x1) = SPAD(4)[i * 4];
+            LOW(prim->x2) = SPAD(1)[i * 4];
+            LOW(prim->x3) = SPAD(5)[i * 4];
             prim = prim->next;
 
-            LOW(prim->x0) = ((long*)SPAD(1))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(5))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(2))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(6))[i * 4];
+            LOW(prim->x0) = SPAD(1)[i * 4];
+            LOW(prim->x1) = SPAD(5)[i * 4];
+            LOW(prim->x2) = SPAD(2)[i * 4];
+            LOW(prim->x3) = SPAD(6)[i * 4];
             prim = prim->next;
 
-            LOW(prim->x0) = ((long*)SPAD(2))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(6))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(3))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(7))[i * 4];
+            LOW(prim->x0) = SPAD(2)[i * 4];
+            LOW(prim->x1) = SPAD(6)[i * 4];
+            LOW(prim->x2) = SPAD(3)[i * 4];
+            LOW(prim->x3) = SPAD(7)[i * 4];
         }
         break;
     }
@@ -176,7 +187,7 @@ void EntityCavernBackgroundIceBridge(Entity* self) {
     case 1:
         // nb. this is unnecessary, needed for PSP match though
         i = 0;
-        primIndex = g_api.func_800EDB58(PRIM_GT4, 0x15);
+        primIndex = g_api.func_800EDB58(PRIM_GT4, CAVERN_COLUMNS * 3);
         if (primIndex != -1) {
             self->flags |= FLAG_HAS_PRIMS;
             self->primIndex = primIndex;
@@ -196,7 +207,8 @@ void EntityCavernBackgroundIceBridge(Entity* self) {
                 prim = prim->next;
             }
 
-            for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+            for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+                 prim = prim->next, i++) {
                 prim->v0 = 0xC0;
                 prim->v1 = prim->v0;
                 prim->v2 = 0xFE;
@@ -240,49 +252,50 @@ void EntityCavernBackgroundIceBridge(Entity* self) {
         }
         posX -= 0x80;
 
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < CAVERN_COLUMNS + 1; i++) {
             r = -0x2AA;
             RotMatrix(&D_us_8018222C, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = 0x80;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
             SetRotMatrix(&matrix);
             SetTransMatrix(&matrix);
-            RotTransPers(&D_us_8018220C, &((long*)SPAD(0))[i * 4], &p, &flag);
-            RotTransPers(&D_us_80182214, &((long*)SPAD(1))[i * 4], &p, &flag);
+            RotTransPers(&D_us_8018220C, (long*)&SPAD(0)[i * 4], &p, &flag);
+            RotTransPers(&D_us_80182214, (long*)&SPAD(1)[i * 4], &p, &flag);
 
             r = 0x40;
             RotMatrix(&D_us_8018222C, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = -0x38;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
             SetRotMatrix(&matrix);
             SetTransMatrix(&matrix);
-            RotTransPers(&D_us_8018221C, &((long*)SPAD(2))[i * 4], &p, &flag);
-            RotTransPers(&D_us_80182224, &((long*)SPAD(3))[i * 4], &p, &flag);
+            RotTransPers(&D_us_8018221C, (long*)&SPAD(2)[i * 4], &p, &flag);
+            RotTransPers(&D_us_80182224, (long*)&SPAD(3)[i * 4], &p, &flag);
         }
 
-        for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
-            LOW(prim->x0) = ((long*)SPAD(0))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(4))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(1))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(5))[i * 4];
+        for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+             prim = prim->next, i++) {
+            LOW(prim->x0) = SPAD(0)[i * 4];
+            LOW(prim->x1) = SPAD(4)[i * 4];
+            LOW(prim->x2) = SPAD(1)[i * 4];
+            LOW(prim->x3) = SPAD(5)[i * 4];
             prim = prim->next;
 
-            LOW(prim->x0) = ((long*)SPAD(1))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(5))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(2))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(6))[i * 4];
+            LOW(prim->x0) = SPAD(1)[i * 4];
+            LOW(prim->x1) = SPAD(5)[i * 4];
+            LOW(prim->x2) = SPAD(2)[i * 4];
+            LOW(prim->x3) = SPAD(6)[i * 4];
             prim = prim->next;
 
-            LOW(prim->x0) = ((long*)SPAD(2))[i * 4];
-            LOW(prim->x1) = ((long*)SPAD(6))[i * 4];
-            LOW(prim->x2) = ((long*)SPAD(3))[i * 4];
-            LOW(prim->x3) = ((long*)SPAD(7))[i * 4];
+            LOW(prim->x0) = SPAD(2)[i * 4];
+            LOW(prim->x1) = SPAD(6)[i * 4];
+            LOW(prim->x2) = SPAD(3)[i * 4];
+            LOW(prim->x3) = SPAD(7)[i * 4];
         }
         break;
     }

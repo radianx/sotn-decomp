@@ -1,10 +1,40 @@
 # Widescreen visual checklist
 
-US native port, `recomp-upgrades`, 2026-10-26. This is an inspection inventory,
+US native port, `recomp-upgrades`, 2026-10-27. This is an inspection inventory,
 not a list of confirmed defects or a claim of full-game visual coverage.
 Check both castles: similar rooms can use different rendering implementations.
 
+## Artwork delivery status
+
+The exported artwork set is generated and integrated: 1,340 output templates
+retain their original dimensions and protected RGBA, including intentional layer
+openings. The installed pack has 1,790 RGB edges and matching indexed metadata
+for 984 layers across 52 overlays. Every installed edge section has native GPU
+reference coverage. Runtime checks and the backdrop repairs below supplement
+that pipeline validation. The open route checkboxes track broader manual
+gameplay QA; they do not mean those rooms lack generated artwork. Minor accepted
+AI details remain, and this is not evidence of a complete native playthrough.
+
+## Shared interface checks
+
+- [x] Pickup, gold and enemy-name banners keep their border, corners, background
+  and text aligned. HUD anchoring requires `DRAW_ABSPOS`; banner polygons share
+  HUD priorities but are not HUD elements. The regression fails before the fix
+  and covers both alignments, both aspects and 100/125/150% HUD scales. Live
+  Badelaire captures confirm the repair. Evidence:
+  `build/local-pc/pickup-banner-repair-evidence.json`.
+
 ## Reported prologue issues
+
+- [x] Richter HP fill stays inside its frame at every health level. The shared
+  HUD adjustment now identifies Richter's screen-positioned HUD textures without
+  a top-row cutoff; boss fills and falling frame pieces use the same anchor.
+  The regression fails before the fix, then covers full-to-empty HP, boss frame
+  animation and repeated aspect switches. Five paired live captures confirm
+  half/1-HP alignment, unchanged full HP and exact original-aspect rendering.
+  All 13 native tests and US checksums pass. HP is assigned diagnostically;
+  a live boss fight and OpenGL are not rechecked. Evidence:
+  `build/local-pc/richter-hud-repair-evidence.json`.
 
 - [x] Opening reveal: extend its opaque masks to the viewport edges, clamp their
   widths to prevent reversed polygons, preserve the 64-pixel gradients, and
@@ -93,8 +123,9 @@ Further frame-300 captures cover `TOP` room/layer `05`, `WRP` room/layer `00`,
 and inverted Colosseum `RARE` room/layer `09`:
 `build/local-pc/{top-room05,wrp-room00,rare-room09}-artwork-integrated.png`.
 The Keep retains its intentional sky opening; the Colosseum retains the fountain
-behind the foreground opening. Warp-room art was checked with the portal visible,
-but teleport travel and destination transitions remain unchecked. The tall
+behind the foreground opening. Warp-room art was checked with the portal visible.
+Later checks below verify one departure/arrival route in each castle; other
+routes remain open. The tall
 `TOP` layer `02` has artifact reviews at section joins 640, 1280 and 1920;
 its full travel route still needs a gameplay pass.
 
@@ -514,6 +545,163 @@ destination transitions remain unchecked.
   full routes and room transitions remain open. Evidence:
   `build/local-pc/house-cull-repair-evidence.json`.
 
+- [x] Catacombs projected cave panels in `CAT` and `RCAT`: add one repeated
+  column per side on PC (27 primitives instead of 21), using existing textures.
+  All four variants cover both margins across all 64 horizontal phases; extra
+  columns stay outside the original picture. The reverse caves also had native
+  coordinate corruption from indexing the 32-bit scratchpad through 64-bit
+  `long*`; use the existing `SPAD` indexing consistently. The corrected original
+  seven columns retain identical complete primitive payloads after expansion.
+  The regression covers aspect reversal, panel joins, texture/color stability
+  and allocation bounds. All 13 native tests and US checksums pass. Eight
+  disc-backed runs provide 12 paired 1920×1080 captures in rooms `0A` and `0B`:
+  three normal lava-cave pairs restore edge pixels with an identical center;
+  three normal bridge pairs are occluded controls; six inverted pairs correct
+  the malformed central ice panels as well as their margins. Recorded player,
+  camera and health values match. Initial spawns and health are assisted;
+  full traversal, room transitions and audio remain unchecked. No bitmap edits.
+  Evidence: `build/local-pc/catacomb-panels-repair-evidence.json`.
+
+- [x] CAT lava glow follows aspect changes after initialization. Its original
+  state reaches step `2`, while the existing PC resize code handled only the
+  allocation fallthrough and step `3`. Add the PC-only step `2` label. The new
+  regression fails before the repair, then passes through original/wide/
+  original/wide with one primitive and unchanged Y, colors and blending. Two
+  disc-backed room `0A` runs provide four paired captures: each wide view restores
+  106,600 margin pixels; both original views are identical. The original central
+  image and recorded player/camera/health remain exact in every pair. All 13
+  native tests and US checksums pass; no bitmap edits. Initial spawn/health are
+  assisted and aspect settings use normal game updates.
+  Evidence: `build/local-pc/catacomb-liquid-glow-evidence.json`.
+
+- [x] Investigate CAT/RCAT liquid geometry separately from the glow. Across
+  24,576 synthetic moving-camera/wave updates, opaque and main transparent
+  surfaces cover both margins wherever a visible row has full original-width
+  coverage. Each actor retains 26 nodes. The far bridge layer (`params=2`) is
+  narrower at some phases; this is a geometry finding, not yet a confirmed
+  visible gap behind foreground arches. Eight early room `0B` captures verify
+  both actual actors are present, but fade-in and falling camera positions leave
+  exposure unresolved. Do not count these probes as bridge traversal or exact
+  GPU rasterization. No liquid geometry changes; bridge exposure, particles,
+  transitions and audio remain open. Evidence: the same JSON above.
+
+- [x] CAT/RCAT thin bridge liquid exposure is confirmed and repaired. Four
+  PC-only quads repeat the existing edge texture outward; the original 26-node
+  simulation, wave state, palettes and blending remain unchanged. Repeats use
+  the nominal depth ratio, since animated adjacent-edge widths can compress.
+  They hide in original-aspect mode; other liquid variants still use 26 nodes.
+  A regression fails before the change, then verifies both castles over 1,024
+  synthetic moving-camera/wave steps and four aspect modes per step. All 13
+  native tests and US checksum checks pass.
+  Eight disc-backed runs yield 31 paired wide captures and six original-aspect
+  pairs. Twenty-two wide pairs restore 65–2,243 display pixels; nine are unchanged
+  controls. RCAT flies from camera X=20 to 236 and back with normal inputs after
+  assisted spawn/health/MP/relic setup, completing at frame 678. CAT has static
+  bridge views with Discus Lord active. Original quad payloads and recorded
+  player/camera/health match. Thirty wide centers are exact; one view fills a
+  60-pixel old mesh hole just inside the central area, verified outside existing
+  liquid geometry. All six complete original-aspect frames are pixel-identical.
+  Combining both liquid layers with foreground alpha removes all 940 sampled
+  exposed margin positions along this route. This is a geometry exposure audit,
+  not exhaustive GPU rasterization. Isolated far-layer near-wave rows are not
+  evidence of visible gaps without the paired front surface and foreground.
+  CAT travel, further wave phases, transitions and OpenGL remain open.
+  No bitmap edits. Evidence: `build/local-pc/bridge-liquid-repair-evidence.json`.
+
+- [x] Restore the projected swivel bookcases in `LIB` and `RLIB`. Four source
+  lines used host-sized `long*` indexing for packed scratchpad coordinates and
+  lighting colors, overlapping the buffers on 64-bit Linux. Use 32-bit `SPAD`
+  indexing, preserving the console layout. Corrupted packed colors also changed
+  primitive types, allowing master nodes to be reused between models. The new
+  regression fails before the repair; separate GTE projection arrays then agree
+  through 2,048 sampled updates: four model variants, 64 rotation phases and
+  original/wide/original/wide settings in both overlays. Vertex-light multipliers
+  remain grayscale, master types stay GT4 and allocations remain 37 nodes.
+  All 13 native tests and US checksums pass.
+  Eight disc-backed room `01` runs give 12 paired captures, covering both castles
+  and both aspects. All restore visible bookcase artwork; four models now own
+  148 independent primitives instead of sharing 12 duplicate node visits.
+  Recorded player/camera/HP/secret state matches in each pair. Only initial
+  spawns are assisted. A separate RLIB test starts beside the chair, uses normal
+  leftward input, unlocks the secret at frame 173 and rotates the bookcase from
+  −192 to −525 by frame 238. No forced angle, flag, camera, health or position
+  after spawn. Earlier probes of the neighboring shelf entity and a chair-blocked
+  approach are excluded. Normal-castle pushing, full passage traversal, shadow
+  endpoints and further room approaches remain open. Existing textures suffice;
+  no bitmap edits. Evidence: `build/local-pc/projected-bookcase-repair-evidence.json`.
+
+- [x] Movable Library bookcase shadows follow the wide right edge on every
+  update. Two PC-only assignments use `PcViewRight()` with the existing quad,
+  allocation, Y anchors and angle-dependent colors. The aspect-switch regression
+  fails before the fix; all 13 native tests and US checksums pass afterward.
+  Four disc-backed runs provide eight original/wide/original/wide capture pairs:
+  each wide view restores 49,815 LIB or 40,430 RLIB display pixels, while all four
+  complete original-aspect images remain exact. Player/camera/HP/secret state and
+  shadow colors/blending match. The sloped LIB shadow edge adapts with its new
+  endpoint; wide central pixels are not claimed identical. Separate normal-castle
+  tests use ordinary rightward input from beside the chair, unlock at frame 163
+  and rotate from -192 to -525 by frame 228. Every recorded interaction field
+  agrees before/after the cosmetic repair. Initial spawns/settings are assisted;
+  no forced flag, angle, health, camera or position after spawn. Full passage
+  traversal and room approaches remain open. No bitmap edits. Evidence:
+  `build/local-pc/bookcase-shadow-repair-evidence.json`.
+
+- [x] Entrance bushes and trees retain the preceding repeat cycle in the wide
+  left margin. Two PC-only conditions start one cycle earlier when necessary,
+  preserving original phase and the existing 72/32-node allocations. The new
+  regression fails before the repair, then checks 15,480 updates across three
+  overlays, ten variants, sampled X positions and four aspect settings. A wider
+  245,790-update geometry sweep finds no missing preceding bush pieces or tree
+  bounds. All emitted counts agree with the complete repeat model; an existing
+  theoretical 73rd bush piece remains wholly beyond the viewport. All 13 native
+  tests and US checksums pass. Nine paired live views preserve original centers,
+  central primitives and gameplay fields: three NP3 views restore 2,040 display
+  pixels each; six NO3/RNO3 views are unchanged controls. Initial spawns/health
+  are assisted; RNO3 also uses MP/relic assistance and normal upward bat input.
+  No bitmap edits. Evidence: `build/local-pc/shared-scenery-integration-evidence.json`.
+
+- [x] Audit Clock Tower model generation in TOP/RTOP: 25 active pieces of 40
+  allocated remain identical through four logical aspect bounds at 82,818
+  sampled entity positions (331,272 updates). Texture metadata is retained and
+  no width-based cull or allocation loss is found. This is geometry evidence,
+  not a full raster or traversal check. Subsequent normal bat approaches from
+  actual layout markers complete in both castles. Twenty-one paired captures
+  compare normal drawing with a diagnostic hidden-model control: ten TOP views
+  expose 54,743–94,153 display pixels in the wide margin; nine RTOP views expose
+  13,962–125,851, with two earlier unchanged controls. Geometry, camera, player,
+  health and update counts agree. All 25 textured pieces remain present. Initial
+  spawns/health/MP/relic are assisted; movement uses normal inputs. A missed
+  advanced-spawn marker and a lower RTOP wall-corner stall are excluded. No
+  model/source changes or additional bitmap artwork needed. Evidence:
+  `build/local-pc/clock-model-margin-evidence.json`.
+
+- [x] Reverse courtyard local framebuffer effect: four disc-backed RNO2 room
+  `08` runs compare its normal drawing against a diagnostic hidden-shader
+  control in both aspects. Ten paired views show the feedback texture while
+  ordinary right/left input moves the camera from X=117 to 297 and back. Every
+  changed pixel stays inside the authored `57..129`, `135..207` composite;
+  margins and the rest of each frame remain exact. All eight primitives,
+  player/camera/health and update counts agree. The `80×192` scratch target and
+  local `72×72` composite need no wider artwork. Only initial spawn/health are
+  assisted. Other markers, full room approaches, OpenGL and audio remain open.
+  No source or bitmap edits. Evidence:
+  `build/local-pc/house-shader-integration-evidence.json`.
+
+- [x] Warp-room fades retain the full wide viewport during departure and
+  arrival. Four disc-backed runs complete Keep-to-Olrox warps in both castles,
+  using emulated global UP input after assisted spawn/unlock setup. Twenty-four
+  paired captures compare the normal full-screen fade with a diagnostic hidden
+  fade: 16 visibly cover both margins and eight are unchanged controls. At peak
+  white, every sampled visible margin color channel is at least 240. Destination
+  views return exactly to the hidden-fade control. All 24 primitive payloads and
+  recorded gameplay fields agree apart from the intended hide bit. The reverse
+  platform raises/lowers normally, reaching ready at count 454; normal warp is
+  ready at 358. A player-only input probe and a reverse spawn below the platform
+  failed to activate and are excluded. No forced script steps or positions after
+  spawn. No source or bitmap edits needed; other destinations, mid-warp aspect
+  switches, OpenGL and audio remain open. Evidence:
+  `build/local-pc/warp-backdrop-integration-evidence.json`.
+
 Quick routes (enable widescreen in F1; F4 enters fullscreen):
 
 ```sh
@@ -552,7 +740,7 @@ omit water or parallax that a normal approach would have initialized.
 | [ ] | Prologue `ST0` | Exterior stairs, clouds, moon, rotating 3D Clock Tower; reveal extra geometry without gaps | `st/st0/3AB08.c` |
 | [ ] | Prologue `ST0` | First-form defeat, dissolving room background, vortex and second-form arena | `st/st0/3D8F0.c`, `st/st0/e_bg_vortex.c` |
 | [ ] | Prologue `ST0` | Photograph shrink/rotation and fire transition after the battle | `st/st0/3AB08.c`, `EntityCutscenePhotograph` |
-| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Outdoor parallax, trees/bushes, lightning and far ends of backgrounds; indexed-edge remaps verified during NO3 room `0D` lightning, other routes remain open | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
+| [ ] | Entrance `NO3` / `NP3` / `RNO3` | Foliage left repeats repaired and indexed-edge lightning remaps verified; broader outdoor routes and background endpoints remain open | `st/e_background_bushes_trees.h`, `st/e_background_lightning.h` |
 | [ ] | Entrance `NO3` / `NP3` / `RNO3` | Full/partial transparent pools checked in all three overlays; NO3 `07` camera sweep/return checked. Other routes, vertical views and entrances/exits remain open | `st/e_transparent_water.h` |
 | [ ] | Entrance / reverse entrance | Story camera pans, entrance gates and transition into interior rooms | `st/no3/cutscene.c`, `st/rno3/` |
 | [ ] | Caverns `NO4` / `RNO4` | Water/shimmer edge clipping repaired; normal waterfall and both pool views checked. Reverse ceiling-water, ferryman/crate scripts, bubbles and routes remain open | `st/cavern_bg_effects.h`, `st/rno4/e_cavern_bg.c`, `st/water_effects.h` |
@@ -560,18 +748,19 @@ omit water or parallax that a normal approach would have initialized.
 | [ ] | Clock Tower `NZ1` / `RNZ1` | Outdoor clouds, gears, foreground water and narrow vertical shafts | `st/nz1/e_bg_gears.c`, `st/nz1/e_water_fg.c` |
 | [ ] | Clock Tower `NZ1` | Four-gear secret door: enter/leave through each exit | `st/nz1/e_gear_puzzle.c` |
 | [ ] | Keep `TOP` / `RTOP` | Cloud geometry/counter cycle and narrow-room artwork overlap verified in both castles; outside stairs, room approaches and warp travel remain open | `st/e_clouds_keep.h`, `st/top/e_warp_trigger.c` |
+| [ ] | Keep `TOP` / `RTOP` | Clock Tower geometry and normal bat approaches to margin-crossing views verified in both castles; full room routes remain open | `st/e_clock_tower.h` |
 | [ ] | Keep `TOP` / `RTOP` | Elevator-room doors and approaches; TOP room `06` ride, all four lamp pairs and `06`↔`0A` doorway verified, remaining routes open | `st/top/e_lion_lamp.c`, `st/top/e_elevator.c` |
 | [ ] | Chapel `DAI` / `RDAI` | Clouds through windows, stained glass, broken glass and foreground pillars | `st/e_clouds.h`, `st/e_stained_glass.h` |
 | [ ] | Richter arena `BO5` | Stained glass, camera framing, dialogue and battle effects | `boss/bo5/e_stained_glass.c`, `boss/bo5/e_clouds.c` |
-| [ ] | Catacombs `CAT` / `RCAT` | Lava glow, lava geometry, particles and cavern background edges | `st/cat/e_lava_glow.c`, `st/cat/e_lava.c`, `st/rcat/e_cavern_background.c` |
+| [ ] | Catacombs `CAT` / `RCAT` | Cave panels, glow and far bridge margins repaired; RCAT bridge flight/return verified; CAT bridge travel, particles and room transitions remain open | `st/cat/e_lava_glow.c`, `st/cat/e_lava.c`, `st/rcat/e_cavern_background.c` |
 | [ ] | Marble Gallery `NO0` / `RNO0` | Clock room doors/statues, room limits and camera locks in long rooms | `st/no0/clock_room.c`, `st/rno0/e_clock_room.c` |
-| [ ] | Library `LIB` / `RLIB` | Foreground furniture, bookshelf depth layers, shadows and background endpoints | `st/lib/e_library_bg.c` |
+| [ ] | Library `LIB` / `RLIB` | Projected bookcases/shadow widths repaired and both unlock/swivel interactions verified; full passage traversal and remaining room endpoints open | `st/lib/e_library_bg.c` |
 | [ ] | Library `LIB` | Librarian interaction and Lesser Demon approach/arena | `st/lib/e_lesser_demon.c`, `st/lib/` |
-| [ ] | `NO1` / `RNO1`, `NO2` / `RNO2` | House right cutoff repaired and NO2 courtyard boundary checked; reverse feedback shader, ledges and remaining endpoints remain open | `st/e_background_house.h`, `st/e_background_sky_land.h` |
+| [ ] | `NO1` / `RNO1`, `NO2` / `RNO2` | House right cutoff repaired; NO2 boundary and RNO2 lower-courtyard feedback verified; other markers, ledges and endpoints remain open | `st/e_background_house.h`, `st/e_background_sky_land.h` |
 | [ ] | Colosseum `ARE` / `RARE` | Fountain, foreground/background separation and arena entrances | `st/are/e_fountain_water.h`, `st/rare/e_background_door_rubble.c` |
 | [ ] | Mine `CHI` / `RCHI` | Narrow shafts, walls ending at room boundaries and foreground layers | `st/chi/background_block_init.c`, `st/rchi/` |
 | [ ] | Dream `DRE` | House/cloud backdrop, Lisa/Succubus dialogue pans, clones and boss defeat | `st/dre/e_background_clouds.c`, `st/dre/e_cutscene_actors.c` |
-| [ ] | Warp rooms `WRP` / `RWRP` | Background dimming, teleport distortion, arrival and departure | `st/wrp/warp.c`, `st/rwrp/warp.c` |
+| [ ] | Warp rooms `WRP` / `RWRP` | Keep-to-Olrox departure/arrival fades and reverse platform verified in both castles; other destinations and aspect switches remain open | `st/wrp/warp.c`, `st/rwrp/warp.c` |
 | [ ] | Center/final rooms `CEN` / `RCEN` | Clock-room framing, dialogue, transitions and final sequence | `st/cen/cutscene.c`, `st/rcen/` |
 | [ ] | Olrox `BO0` | Transformation, explosions and arena edges | `boss/bo0/313A8.c` |
 | [ ] | Beelzebub `RBO1` | Large body/chain framing, flies beyond original edges and defeat | `boss/rbo1/e_beelzebub_parts.c`, `boss/rbo1/e_beelzebub_chains.c` |

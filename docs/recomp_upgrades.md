@@ -8,12 +8,19 @@ code and the pinned PSY-Z renderer. SDK modifications remain in licensed patches
 
 ## Settings and controls
 
+The [Adventure tools](pc_qol.md) add optional exploration, inventory, loadout,
+spell, save, dialogue and readability features. Press **F5** to open them.
+
 Run `./run-linux.sh`. **F1** opens a keyboard-operated settings window and pauses
 the game, its audio streams, and its playback clock. Arrow keys select/change
 values; Enter changes a value or starts button capture. F1 resumes the game.
 Changes save immediately to `build/local-pc/settings.ini`; use
 `--config /path/to/settings.ini` for another profile. Start with
 [the sample file](pc_settings.ini). Original gameplay settings are the default.
+
+F1 also selects a final-window [video filter](video_filters.md): Original,
+Bilinear, soft CRT or xBR level 2, with adjustable strength. Original remains
+the default. Filtering does not alter game textures or framebuffer effects.
 
 - **F4:** desktop fullscreen.
 - **F2:** pause and inspect all 24 SPU voices, envelopes, registers, and CD mix.
@@ -104,6 +111,14 @@ The local pack contains 1,790 edges for all 984 exported tile layers across
 edge section has an exact native GPU comparison against indexed-sprite
 references. These checks cover the prepared artwork pipeline; scripted scenery
 and moving room contexts still follow the visual checklist above.
+
+The generated artwork set is complete. Integration checks also repaired native
+Catacomb panels/liquid, Library model scratchpad indexing and shadows, and
+Entrance foliage repeats. Live controls verify Clock Tower margin textures,
+the reverse courtyard feedback compositor and warp departure/arrival fades in
+both castles. These checks use existing textures for dynamic scenery. The
+visual checklist records exact coverage and remaining manual gameplay routes;
+it does not imply every room or combat sequence has been played through.
 
 ## Disc input and movies
 

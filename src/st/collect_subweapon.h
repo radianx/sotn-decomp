@@ -3,6 +3,11 @@ static void CollectSubweapon(u16 subWeaponIdx) {
     Entity* player = &PLAYER;
     u16 subWeapon;
 
+#ifdef VERSION_PC
+    if (!PcQolAllowSubweapon(aluric_subweapons_idx[subWeaponIdx - 14])) {
+        return;
+    }
+#endif
     g_api.PlaySfx(SFX_ITEM_PICKUP);
     subWeapon = g_Status.subWeapon;
     g_Status.subWeapon = aluric_subweapons_idx[subWeaponIdx - 14];

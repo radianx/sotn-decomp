@@ -2,6 +2,7 @@
 #include <game.h>
 #include "pc.h"
 #include "upgrades.h"
+#include "qol.h"
 #include <SDL3/SDL.h>
 #include <psyz.h>
 #include <psyz/overlay_sdl3.h>
@@ -12,12 +13,15 @@ static SDL_Renderer* s_Renderer;
 static SDL_Gamepad* s_Gamepad;
 static int s_Row, s_Capture = -1;
 static bool s_PadCapture, s_ShowAudio;
+static bool s_Qol;
 static const char* s_Message = "Settings are saved when changed.";
 static const char* buttons[] = {
     "L2",     "R2", "L1", "R1",    "Triangle", "Circle", "Cross", "Square",
     "Select", "L3", "R3", "Start", "Up",       "Right",  "Down",  "Left"};
 static const char* palettes[] = {
     "Original", "High contrast", "Blue/Gold", "Monochrome"};
+static const char* videoFilters[] = {
+    "Original (nearest)", "Bilinear", "CRT (soft)", "xBR level 2"};
 
 static void Save(void) {
     s_Message = PcSettingsSave(&g_PcSettings, g_PcSettingsPath)
@@ -40,6 +44,7 @@ static void OpenSettings(void) {
         CloseSettings();
         return;
     }
+    s_Qol = false;
     s_Window = SDL_CreateWindow("SotN - PC Settings", 880, 900, 0);
     if (s_Window)
         s_Renderer = SDL_CreateRenderer(s_Window, NULL);
@@ -47,6 +52,22 @@ static void OpenSettings(void) {
         ERRORF("Settings window: %s", SDL_GetError());
         CloseSettings();
     }
+}
+
+static void OpenAdventure(void) {
+    if (s_Window)
+        CloseSettings();
+    s_Qol = true;
+    PcQolUiOpen();
+    s_Window =
+        SDL_CreateWindow("SotN - Adventure", 1200, 920, SDL_WINDOW_RESIZABLE);
+    if (s_Window)
+        s_Renderer = SDL_CreateRenderer(s_Window, NULL);
+    if (s_Renderer)
+        SDL_SetRenderLogicalPresentation(
+            s_Renderer, 1200, 920, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    else
+        CloseSettings();
 }
 
 static void Change(int delta) {
@@ -94,6 +115,15 @@ static void Change(int delta) {
     case 9:
         s_ShowAudio = !s_ShowAudio;
         break;
+    case 26:
+        value = &g_PcSettings.videoFilter;
+        maximum = 3;
+        break;
+    case 27:
+        value = &g_PcSettings.filterStrength;
+        maximum = 100;
+        step = 5;
+        break;
     default:
         s_Capture = s_Row - 10;
         break;
@@ -110,8 +140,42 @@ static void Change(int delta) {
 static void OnEvent(const SDL_Event* e) {
     if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat &&
         e->key.scancode == SDL_SCANCODE_F1) {
+        s_Qol = false;
         OpenSettings();
         return;
+    }
+    if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat &&
+        e->key.scancode == SDL_SCANCODE_F5) {
+        if (s_Window && s_Qol)
+            CloseSettings();
+        else
+            OpenAdventure();
+        return;
+    }
+    if (s_Window && s_Qol && e->type != SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+        if ((e->type == SDL_EVENT_KEY_DOWN || e->type == SDL_EVENT_KEY_UP) &&
+            e->key.windowID != SDL_GetWindowID(s_Window))
+            return;
+        if (e->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN && s_Gamepad &&
+            e->gbutton.which != SDL_GetGamepadID(s_Gamepad))
+            return;
+        if (e->type == SDL_EVENT_GAMEPAD_AXIS_MOTION && s_Gamepad &&
+            e->gaxis.which != SDL_GetGamepadID(s_Gamepad))
+            return;
+        PcQolUiEvent(e, s_Window);
+        if (PcQolUiWantsClose())
+            CloseSettings();
+        return;
+    }
+    if (!s_Window && e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat) {
+        if (e->key.scancode == SDL_SCANCODE_F6)
+            PcQolUseItem(g_PcQol.quickItem);
+        if (e->key.scancode == SDL_SCANCODE_F7)
+            PcQolCast(g_PcQol.quickSpell);
+        if (e->key.scancode == SDL_SCANCODE_F10 && g_PcQol.loadout >= 0 &&
+            g_PcQol.loadout < PC_LOADOUTS &&
+            g_PcQol.loadoutValid[g_PcQol.loadout] && PcQolReady())
+            PcQolApplyGear(g_PcQol.loadouts[g_PcQol.loadout]);
     }
     if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat) {
         if (e->key.scancode == SDL_SCANCODE_F8) {
@@ -172,9 +236,9 @@ static void OnEvent(const SDL_Event* e) {
         return;
     }
     if (code == SDL_SCANCODE_UP)
-        s_Row = (s_Row + 25) % 26;
+        s_Row = (s_Row + 27) % 28;
     if (code == SDL_SCANCODE_DOWN)
-        s_Row = (s_Row + 1) % 26;
+        s_Row = (s_Row + 1) % 28;
     if (code == SDL_SCANCODE_LEFT)
         Change(-1);
     if (code == SDL_SCANCODE_RIGHT || code == SDL_SCANCODE_RETURN)
@@ -214,7 +278,7 @@ static void DrawSettings(void) {
         SDL_RenderPresent(s_Renderer);
         return;
     }
-    for (int row = 0; row < 26; row++) {
+    for (int row = 0; row < 28; row++) {
         const char* mark = row == s_Row ? ">" : " ";
         switch (row) {
         case 0:
@@ -260,6 +324,14 @@ static void DrawSettings(void) {
             snprintf(text, sizeof(text), "%s Audio diagnostics: %s", mark,
                      s_ShowAudio ? "On" : "Off");
             break;
+        case 26:
+            snprintf(text, sizeof(text), "%s Video filter: %s", mark,
+                     videoFilters[g_PcSettings.videoFilter]);
+            break;
+        case 27:
+            snprintf(text, sizeof(text), "%s Filter strength: %d%%", mark,
+                     g_PcSettings.filterStrength);
+            break;
         default: {
             int i = row - 10;
             int b = g_PcSettings.buttons[i];
@@ -280,9 +352,9 @@ static void DrawSettings(void) {
         SDL_RenderDebugText(s_Renderer, 12, 45 + row * 13, text);
     }
     SDL_SetRenderDrawColor(s_Renderer, 180, 205, 230, 255);
-    SDL_RenderDebugText(s_Renderer, 12, 393, s_Message);
-    SDL_RenderDebugText(s_Renderer, 12, 409,
-                        "F4 fullscreen | F8 flashes | F9 color assistance");
+    SDL_RenderDebugText(s_Renderer, 12, 419, s_Message);
+    SDL_RenderDebugText(s_Renderer, 12, 435,
+                        "F5 adventure | F4 fullscreen | F8/F9 accessibility");
     SDL_RenderPresent(s_Renderer);
 }
 
@@ -306,6 +378,8 @@ void PcUpgradesFrame(void) {
     if (g_PcSettings.reduceFlashes)
         D_8013803C = 0;
     PcUpdateViewport();
+    Psyz_VideoSetFilter(g_PcSettings.videoFilter, g_PcSettings.filterStrength);
+    PcQolFrame();
     UpdateController();
     if (s_Window) {
         bool wasPaused = Psyz_AudioIsPaused();
@@ -324,8 +398,12 @@ void PcUpgradesFrame(void) {
                     OnEvent(&e);
             }
             UpdateController();
-            if (s_Window)
-                DrawSettings();
+            if (s_Window) {
+                if (s_Qol)
+                    PcQolUiDraw(s_Renderer);
+                else
+                    DrawSettings();
+            }
             SDL_Delay(16);
         }
         Psyz_VideoPauseClock(0);
@@ -342,6 +420,13 @@ void PcUpgradesFrame(void) {
     PcVoiceUpdate();
     PcMovieUpdate();
     const bool* keys = SDL_GetKeyboardState(NULL);
+    static bool hubHeld;
+    bool hub =
+        s_Gamepad && SDL_GetGamepadButton(s_Gamepad, SDL_GAMEPAD_BUTTON_BACK) &&
+        SDL_GetGamepadButton(s_Gamepad, SDL_GAMEPAD_BUTTON_RIGHT_STICK);
+    if (hub && !hubHeld)
+        OpenAdventure();
+    hubHeld = hub;
     unsigned pressed = 0;
     for (int i = 0; i < 16; i++) {
         bool down = keys[g_PcSettings.keys[i]];
@@ -371,6 +456,8 @@ void PcUpgradesFrame(void) {
         if (down)
             pressed |= 1u << i;
     }
+    if (hub)
+        pressed = 0;
     char pad[PSYZ_PAD_BUF_LEN] = {0, PSYZ_CTRL_DIGITAL_PAD};
     pad[2] = (char)~(pressed >> 8);
     pad[3] = (char)~pressed;

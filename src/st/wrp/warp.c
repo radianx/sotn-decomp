@@ -66,6 +66,9 @@ void EntityWarpRoom(Entity* self) {
     Point16* warpCoords;
     s32 primIndex;
 
+#ifdef VERSION_PC
+    PcQolWarpOffer(self->params);
+#endif
     FntPrint("step %x\n", self->step);
     switch (self->step) {
     case 0:
@@ -218,6 +221,11 @@ void EntityWarpRoom(Entity* self) {
                 break;
             }
         }
+#ifdef VERSION_PC
+        s32 selected = PcQolWarpDestination(self->params);
+        if (selected >= 0)
+            move_room = selected;
+#endif
         DestinationWarpRoom = move_room;
         warpCoords = &WarpRoomCoords[move_room];
         moveX = warpCoords->x - g_Tilemap.left;

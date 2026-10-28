@@ -2,6 +2,15 @@
 #include "cat.h"
 #include <scratchpad.h>
 
+// Repeat one extra panel at each side; their vertices stay outside 4:3.
+#ifdef VERSION_PC
+#define CAVERN_COLUMNS 9
+#define CAVERN_X_OFFSET 0xC0
+#else
+#define CAVERN_COLUMNS 7
+#define CAVERN_X_OFFSET 0x80
+#endif
+
 static SVECTOR D_us_801821E4 = {0};
 static SVECTOR D_us_801821EC = {.vx = 0, .vy = 96, .vz = 0, .pad = 0};
 static SVECTOR D_us_801821F4 = {.vx = 0, .vy = -96, .vz = 0, .pad = 0};
@@ -37,7 +46,7 @@ void EntityCavernBackgroundLossoth(Entity* self) {
     case 1:
         // nb. this is unnecessary, needed for PSP match though
         i = 0;
-        primIndex = g_api.func_800EDB58(PRIM_GT4, 0x15);
+        primIndex = g_api.func_800EDB58(PRIM_GT4, CAVERN_COLUMNS * 3);
         if (primIndex != -1) {
             self->flags |= FLAG_HAS_PRIMS;
             self->primIndex = primIndex;
@@ -57,7 +66,8 @@ void EntityCavernBackgroundLossoth(Entity* self) {
                 prim = prim->next;
             }
 
-            for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+            for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+                 prim = prim->next, i++) {
                 prim->v0 = 0xC0;
                 prim->v1 = prim->v0;
                 prim->v2 = 0xFF;
@@ -101,11 +111,11 @@ void EntityCavernBackgroundLossoth(Entity* self) {
         }
         posX -= 0x80;
 
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < CAVERN_COLUMNS + 1; i++) {
             r = 0x2AA;
             RotMatrix(&D_us_80182204, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = -0x78;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
@@ -117,7 +127,7 @@ void EntityCavernBackgroundLossoth(Entity* self) {
             r = -0x2AA;
             RotMatrix(&D_us_80182204, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = 0x30;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
@@ -127,7 +137,8 @@ void EntityCavernBackgroundLossoth(Entity* self) {
             RotTransPers(&D_us_801821FC, (long*)&SPAD(3)[i * 4], &p, &flag);
         }
 
-        for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+        for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+             prim = prim->next, i++) {
             LOW(prim->x0) = SPAD(0)[i * 4];
             LOW(prim->x1) = SPAD(4)[i * 4];
             LOW(prim->x2) = SPAD(1)[i * 4];
@@ -194,7 +205,7 @@ void EntityCavernBackgroundDiscusLord(Entity* self) {
     case 1:
         // nb. this is unnecessary, needed for PSP match though
         i = 0;
-        primIndex = g_api.func_800EDB58(PRIM_GT4, 0x15);
+        primIndex = g_api.func_800EDB58(PRIM_GT4, CAVERN_COLUMNS * 3);
         if (primIndex != -1) {
             self->flags |= FLAG_HAS_PRIMS;
             self->primIndex = primIndex;
@@ -214,7 +225,8 @@ void EntityCavernBackgroundDiscusLord(Entity* self) {
                 prim = prim->next;
             }
 
-            for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+            for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+                 prim = prim->next, i++) {
                 prim->v0 = 0xC0;
                 prim->v1 = prim->v0;
                 prim->v2 = 0xFF;
@@ -258,11 +270,11 @@ void EntityCavernBackgroundDiscusLord(Entity* self) {
         }
         posX -= 0x80;
 
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < CAVERN_COLUMNS + 1; i++) {
             r = 0x2AA;
             RotMatrix(&D_us_8018222C, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = -0x80;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
@@ -274,7 +286,7 @@ void EntityCavernBackgroundDiscusLord(Entity* self) {
             r = -0x40;
             RotMatrix(&D_us_8018222C, &matrix);
             RotMatrixX(r, &matrix);
-            sp48.vx = (i * 64) + posX - 0x80;
+            sp48.vx = (i * 64) + posX - CAVERN_X_OFFSET;
             sp48.vy = 0x38;
             sp48.vz = 0xC8;
             TransMatrix(&matrix, &sp48);
@@ -284,7 +296,8 @@ void EntityCavernBackgroundDiscusLord(Entity* self) {
             RotTransPers(&D_us_80182224, (long*)&SPAD(3)[i * 4], &p, &flag);
         }
 
-        for (prim = self->ext.prim, i = 0; i < 7; prim = prim->next, i++) {
+        for (prim = self->ext.prim, i = 0; i < CAVERN_COLUMNS;
+             prim = prim->next, i++) {
             LOW(prim->x0) = SPAD(0)[i * 4];
             LOW(prim->x1) = SPAD(4)[i * 4];
             LOW(prim->x2) = SPAD(1)[i * 4];

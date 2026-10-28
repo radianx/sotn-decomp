@@ -9,6 +9,7 @@ on:
       - 'src/**'
       - 'config/assets.*.yaml'
       - 'tools/sotn-assets/**'
+      - 'tools/patches/**'
       - 'cmake/**'
       - 'CMakeLists*'
       - 'Makefile*'
@@ -18,6 +19,7 @@ on:
       - 'src/**'
       - 'config/assets.*.yaml'
       - 'tools/sotn-assets/**'
+      - 'tools/patches/**'
       - 'cmake/**'
       - 'CMakeLists*'
       - 'Makefile*'
@@ -57,6 +59,7 @@ jobs:
           git submodule update --init --recursive external/SDL
           git apply ../patches/psyz-audio-stream-voices.patch
           git apply ../patches/psyz-pc-upgrades.patch
+          git apply ../patches/psyz-video-filters.patch
       - name: Get dependencies
         uses: ./.github/actions/get-dependencies
         with:
@@ -106,6 +109,7 @@ jobs:
           git submodule update --init --recursive external/SDL
           git apply ../patches/psyz-audio-stream-voices.patch
           git apply ../patches/psyz-pc-upgrades.patch
+          git apply ../patches/psyz-video-filters.patch
       - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.work'
@@ -156,6 +160,7 @@ jobs:
         git submodule update --init --recursive external/SDL
         git apply ../patches/psyz-audio-stream-voices.patch
         git apply ../patches/psyz-pc-upgrades.patch
+        git apply ../patches/psyz-video-filters.patch
     - name: Get dependencies
       uses: ./.github/actions/get-dependencies
       with:

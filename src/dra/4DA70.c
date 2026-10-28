@@ -251,7 +251,7 @@ void RenderPrimitives(void) {
         Primitive widePrim;
         for (i = 0; i < MAX_PRIM_COUNT; i++) {
             prim = &g_PrimBuf[i];
-            if (PcViewMargin()) {
+            if (PcViewMargin() || g_PcSettings.hudScale > 100) {
                 widePrim = *prim;
                 PcAdjustPrimitive(&widePrim);
                 prim = &widePrim;

@@ -135,9 +135,15 @@ void func_us_801A7DC0(Entity* self) {
             nextChar = *g_Dialogue.scriptCur++;
             switch (nextChar) {
             case CSOP_END_CUTSCENE:
+#ifdef VERSION_PC
+                PcQolSceneEnd(g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
                 self->step = 7;
                 return;
             case CSOP_LINE_BREAK:
+#ifdef VERSION_PC
+                PcQolDialogueChar('\n');
+#endif
                 if (g_SkipCutscene) {
                     continue;
                 }
@@ -392,6 +398,10 @@ void func_us_801A7DC0(Entity* self) {
             }
             break;
         }
+
+#ifdef VERSION_PC
+        PcQolDialogueChar(nextChar);
+#endif
         if (nextChar == 0x20) {
             g_Dialogue.nextCharX += 2;
             return;

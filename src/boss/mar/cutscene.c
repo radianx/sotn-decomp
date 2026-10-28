@@ -66,7 +66,11 @@ void EntityCutscene(Entity* self) {
     if (self->step) {
         if ((D_us_8019AF2C != 0) && !g_SkipCutscene &&
             ((g_Settings.D_8003CB04 & 0x80) || g_GameClearFlag) &&
-            (g_pads[0].tapped & PAD_START)) {
+            (
+#ifdef VERSION_PC
+                PcQolSkipWatched() ||
+#endif
+                g_pads[0].tapped & PAD_START)) {
             g_SkipCutscene = 1;
             g_api.FreePrimitives(self->primIndex);
             self->flags ^= FLAG_HAS_PRIMS;
@@ -112,10 +116,16 @@ void EntityCutscene(Entity* self) {
             nextChar = *g_Dialogue.scriptCur++;
             switch (nextChar) {
             case 0:
+#ifdef VERSION_PC
+                PcQolSceneEnd(g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
                 self->step = 7;
                 return;
 
             case 1:
+#ifdef VERSION_PC
+                PcQolDialogueChar('\n');
+#endif
                 if (g_SkipCutscene) {
                     continue;
                 }
@@ -403,6 +413,9 @@ void EntityCutscene(Entity* self) {
             break;
         }
 
+#ifdef VERSION_PC
+        PcQolDialogueChar(nextChar);
+#endif
         if (nextChar == ' ') {
             g_Dialogue.nextCharX += 2;
             return;

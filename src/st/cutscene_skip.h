@@ -3,7 +3,11 @@ extern Dialogue g_Dialogue;
 extern s32 g_SkipCutscene;
 
 void CutsceneSkip(Entity* self) {
-    if (g_pads[0].tapped == PAD_START) {
+    if (
+#ifdef VERSION_PC
+        PcQolSkipWatched() ||
+#endif
+        g_pads[0].tapped == PAD_START) {
         g_SkipCutscene = true;
         g_api.FreePrimitives(self->primIndex);
         self->flags ^= FLAG_HAS_PRIMS;

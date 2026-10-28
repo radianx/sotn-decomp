@@ -30,11 +30,12 @@ default; original sprites retain their resolution.
 Follow the repository's US asset setup and the dependency setup in
 `.github/workflows/picci.yaml`, including the pinned PSY-Z/SDL submodules.
 The local PSY-Z checkout also includes fixes for Unix file opening and audio emulation.
-On a fresh checkout of the pinned submodule, apply both supplied patches once:
+On a fresh checkout of the pinned submodule, apply the three patches in order:
 
 ```sh
 git -C tools/psyz apply "$PWD/tools/patches/psyz-audio-stream-voices.patch"
 git -C tools/psyz apply "$PWD/tools/patches/psyz-pc-upgrades.patch"
+git -C tools/psyz apply "$PWD/tools/patches/psyz-video-filters.patch"
 ```
 
 Generate both the original assets and the additional native assets:

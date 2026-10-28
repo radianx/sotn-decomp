@@ -91,6 +91,9 @@ void EntityRWarpRoom(Entity* self) {
     s32 collision;
     Entity* player;
 
+#ifdef VERSION_PC
+    PcQolWarpOffer(self->params);
+#endif
     FntPrint("step %x\n", self->step);
     collision = GetPlayerCollisionWith(self, 16, 8, 4);
 
@@ -250,6 +253,11 @@ void EntityRWarpRoom(Entity* self) {
                 break;
             }
         }
+#ifdef VERSION_PC
+        s32 selected = PcQolWarpDestination(self->params);
+        if (selected >= 0)
+            temp = selected;
+#endif
         DestinationWarpRoom = temp;
         warpCoords = &WarpRoomCoords[temp];
         moveX = warpCoords->x - g_Tilemap.left;

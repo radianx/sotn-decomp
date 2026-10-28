@@ -156,6 +156,11 @@ set(SOURCE_FILES_PC
     src/pc/disc.c
     src/pc/settings.c
     src/pc/upgrades.c
+    src/pc/qol.c
+    src/pc/qol_ui.c
+    src/pc/qol_save.c
+    src/pc/qol_hud.c
+    src/pc/qol_test.c
     src/pc/upgrades_test.c
     src/pc/movie.c
     src/pc/save_test.c

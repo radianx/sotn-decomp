@@ -7,6 +7,7 @@
 #include "../dra/dra.h"
 #include "pc.h"
 #include "upgrades.h"
+#include "qol.h"
 #include "spawn_point.h"
 #include <SDL3/SDL.h>
 #include <psyz.h>
@@ -821,6 +822,372 @@ static void CheckBackgroundSkyLand(void) {
     g_PcSettings.widescreen = 0;
     PcUpdateViewport();
     puts("Chapel and Richter arena sky-land tiles cover both aspects: PASS");
+}
+
+static void CheckEntranceFoliage(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"no3", "np3", "rno3"};
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        for (int trees = 0; trees < 2; trees++) {
+            void (*update)(Entity*) = (void*)SDL_LoadFunction(
+                module,
+                trees ? "EntityBackgroundTrees" : "EntityBackgroundBushes");
+            assert(update);
+            for (int variant = 0; variant < (trees ? 8 : 2); variant++) {
+                DestroyAllPrimitives();
+                Entity* self = g_CurrentEntity = &g_Entities[64];
+                memset(self, 0, sizeof(*self));
+                self->params =
+                    trees ? (variant & 3) | (variant / 4) * 256 : variant;
+                self->posY.i.hi = stage == 2 ? 104 : 152;
+                update(self);
+                assert(self->step && self->ext.prim);
+                for (int x = -1024; x <= 1024; x += 16) {
+                    self->posX.i.hi = x;
+                    Primitive reference[72];
+                    int referenceCount = 0;
+                    for (int mode = 0; mode < 4; mode++) {
+                        g_PcSettings.widescreen = mode & 1;
+                        PcUpdateViewport();
+                        assert(!!PcViewMargin() == (mode & 1));
+                        update(self);
+                        int nodes = 0, center = 0, left = 10000, right = -10000;
+                        Primitive* p = self->ext.prim;
+                        for (; p; p = p->next) {
+                            assert(++nodes <= (trees ? 32 : 72));
+                            if (p->drawMode & DRAW_HIDE)
+                                continue;
+                            left = MIN(left, p->x0);
+                            right = MAX(right, p->x1);
+                            if (p->x1 <= 0 || p->x0 >= 256)
+                                continue;
+                            Primitive copy = *p;
+                            Primitive* normalized = &copy;
+                            PCOL(normalized) = 0;
+                            copy.p1 = copy.p2 = copy.p3 = 0;
+                            if (mode == 0)
+                                reference[center] = copy;
+                            else {
+                                assert(center < referenceCount);
+                                assert(!memcmp(&reference[center].r0, &copy.r0,
+                                               offsetof(Primitive, drawMode) +
+                                                   sizeof(copy.drawMode) -
+                                                   offsetof(Primitive, r0)));
+                            }
+                            center++;
+                        }
+                        assert(nodes == (trees ? 32 : 72));
+                        if (mode == 0)
+                            referenceCount = center;
+                        else
+                            assert(center == referenceCount);
+                        if (trees)
+                            assert(
+                                left <= PcViewLeft() && right >= PcViewRight());
+                        else if (mode & 1) {
+                            SVECTOR zero = {0};
+                            VECTOR t = {variant ? x - 512 : x + 512, 0, 1216};
+                            MATRIX m;
+                            int packed, fog, flags;
+                            RotMatrix(&zero, &m);
+                            TransMatrix(&m, &t);
+                            SetRotMatrix(&m);
+                            SetTransMatrix(&m);
+                            SetGeomScreen(1024);
+                            SetGeomOffset(128, 152);
+                            RotTransPers(&zero, &packed, &fog, &flags);
+                            int phase = (s16)packed % 128 - 128;
+                            if (phase > PcViewLeft()) {
+                                bool found = false;
+                                for (p = self->ext.prim; p; p = p->next)
+                                    if (!(p->drawMode & DRAW_HIDE) &&
+                                        p->priority == 0x5E && p->u0 == 0x30 &&
+                                        p->x0 == phase - 32 && p->x1 == phase)
+                                        found = true;
+                                assert(found);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        DestroyAllPrimitives();
+        SDL_UnloadObject(module);
+    }
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("All three Entrance foliage variants retain preceding wide-edge "
+         "repeats without shifting the original central image: PASS");
+}
+
+static void CheckProjectedBookcases(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"lib", "rlib"};
+    const char* functions[] = {"func_us_801AE8E8", "EntityThickBookcase"};
+    SVECTOR vertices[] = {
+        {-12, -96, -32}, {12, -96, -32}, {-12, 0, -32}, {12, 0, -32},
+        {12, -96, 32},   {-12, -96, 32}, {12, 0, 32},   {-12, 0, 32}};
+    const int faces[4][4] = {
+        {0, 1, 2, 3}, {4, 5, 6, 7}, {1, 4, 3, 6}, {5, 0, 7, 2}};
+    const int depth[] = {0, 60, 64, 88};
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        void (*update)(Entity*) =
+            (void*)SDL_LoadFunction(module, functions[stage]);
+        assert(update);
+        for (int params = 0; params < 4; params++) {
+            DestroyAllPrimitives();
+            Entity* self = g_CurrentEntity = &g_Entities[64];
+            memset(self, 0, sizeof(*self));
+            self->params = params;
+            self->posX.i.hi = self->posY.i.hi = 128;
+            update(self);
+            assert(self->flags & FLAG_HAS_PRIMS);
+            self->step = 4; // Isolate projection from the push interaction.
+            for (int mode = 0; mode < 4; mode++) {
+                g_PcSettings.widescreen = mode & 1;
+                PcUpdateViewport();
+                for (int angle = 0; angle < 4096; angle += 64) {
+                    self->ext.et_801AE8E8.unk80 = angle;
+                    update(self);
+                    if (!params) {
+                        Primitive* shadow = self->ext.et_801AE8E8.unk94;
+                        assert(shadow && shadow->type == PRIM_G4);
+                        assert(shadow->x0 == 128 && shadow->x2 == 128);
+                        assert(shadow->x1 == PcViewRight() &&
+                               shadow->x3 == PcViewRight());
+                        assert(shadow->y0 == 40 && shadow->y1 == 64 &&
+                               shadow->y2 == 128 && shadow->y3 == 128);
+                    }
+                    SVECTOR rotation = {stage ? 2048 : 0, angle, 0};
+                    VECTOR translation = {0, 0, 552 + depth[params]};
+                    MATRIX matrix;
+                    RotMatrix(&rotation, &matrix);
+                    TransMatrix(&matrix, &translation);
+                    SetRotMatrix(&matrix);
+                    SetTransMatrix(&matrix);
+                    SetGeomScreen(512);
+                    SetGeomOffset(128, 128);
+                    int projected[8], fog, flags;
+                    for (int i = 0; i < LEN(vertices); i++)
+                        RotTransPers(&vertices[i], &projected[i], &fog, &flags);
+                    Primitive* p = self->ext.et_801AE8E8.unk7C;
+                    int nodes = 0;
+                    for (; p; p = p->next, nodes++) {
+                        assert(nodes < 37);
+                        if (nodes >= 4)
+                            continue;
+                        assert(p->type == PRIM_GT4);
+                        int points[] = {LOW(p->x0), LOW(p->x1), LOW(p->x2),
+                                        LOW(p->x3)};
+                        const u8* colors[] = {&p->r0, &p->r1, &p->r2, &p->r3};
+                        for (int corner = 0; corner < 4; corner++) {
+                            assert(points[corner] ==
+                                   projected[faces[nodes][corner]]);
+                            assert(colors[corner][0] == colors[corner][1] &&
+                                   colors[corner][1] == colors[corner][2]);
+                        }
+                    }
+                    assert(nodes == 37);
+                }
+            }
+        }
+        DestroyAllPrimitives();
+        SDL_UnloadObject(module);
+    }
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Both Library bookcases preserve all eight projected vertices and "
+         "grayscale lighting through rotation and aspect reversal: PASS");
+}
+
+static void CheckBridgeLiquidMargins(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"cat", "rcat"};
+    Tilemap previousTilemap = g_Tilemap;
+    int previousTimer = g_Timer;
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        void (*update)(Entity*) = (void*)SDL_LoadFunction(module, "EntityLava");
+        assert(update);
+        DestroyAllPrimitives();
+        Entity* self = g_CurrentEntity = &g_Entities[64];
+        memset(self, 0, sizeof(*self));
+        self->params = 2;
+        self->posY.i.hi = stage ? 64 : 192;
+        g_Tilemap.scrollY.val = 0;
+        g_Timer = 1;
+        update(self);
+        assert(self->step == 3 && self->ext.lava.prim);
+        Primitive* nodes[30];
+        int count = 0;
+        for (Primitive* p = self->ext.lava.prim; p; p = p->next) {
+            assert(count < LEN(nodes));
+            nodes[count++] = p;
+        }
+        assert(count == LEN(nodes));
+        for (int tick = 0; tick < 1024; tick++) {
+            for (int i = 1; i < 26; i += 2)
+                nodes[i]->x1 += tick < 512 ? -2 : 2;
+            g_Timer = tick;
+            update(self);
+            Entity before = *self;
+            Primitive saved[30], reference[26];
+            for (int i = 0; i < count; i++)
+                saved[i] = *nodes[i];
+            for (int mode = 0; mode < 4; mode++) {
+                g_PcSettings.widescreen = mode & 1;
+                PcUpdateViewport();
+                assert(!!PcViewMargin() == (mode & 1));
+                *self = before;
+                for (int i = 0; i < count; i++)
+                    *nodes[i] = saved[i];
+                update(self);
+                for (int i = 0; i < 26; i++) {
+                    if (mode == 0)
+                        reference[i] = *nodes[i];
+                    else
+                        assert(!memcmp(&reference[i].r0, &nodes[i]->r0,
+                                       offsetof(Primitive, drawMode) +
+                                           sizeof(nodes[i]->drawMode) -
+                                           offsetof(Primitive, r0)));
+                }
+                for (int i = 26; i < count; i++)
+                    assert(!!(nodes[i]->drawMode & DRAW_HIDE) == !(mode & 1));
+                if (mode & 1) {
+                    Primitive* left = nodes[27];
+                    Primitive* right = nodes[29];
+                    assert(MAX(left->x0, left->x2) <= PcViewLeft());
+                    assert(MIN(right->x1, right->x3) >= PcViewRight());
+                }
+            }
+        }
+        DestroyAllPrimitives();
+        SDL_UnloadObject(module);
+    }
+    g_Timer = previousTimer;
+    g_Tilemap = previousTilemap;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Both bridge liquid far layers cover wide margins without changing "
+         "the original mesh, waves or aspect reversals: PASS");
+}
+
+static void CheckLavaGlow(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    SDL_SharedObject* module = OpenOverlay("cat");
+    void (*update)(Entity*) = (void*)SDL_LoadFunction(module, "EntityLavaGlow");
+    assert(update);
+    DestroyAllPrimitives();
+    Entity* self = g_CurrentEntity = &g_Entities[64];
+    memset(self, 0, sizeof(*self));
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    update(self);
+    update(self);
+    assert(self->step == 2 && self->ext.prim && !self->ext.prim->next);
+    Primitive reference = *self->ext.prim;
+    for (int mode = 0; mode < 4; mode++) {
+        g_PcSettings.widescreen = mode & 1;
+        PcUpdateViewport();
+        assert(!!PcViewMargin() == (mode & 1));
+        update(self);
+        Primitive* p = self->ext.prim;
+        assert(p->x0 == PcViewLeft() && p->x2 == PcViewLeft());
+        assert(p->x1 == PcViewRight() && p->x3 == PcViewRight());
+        Primitive normalized = *p;
+        normalized.x0 = normalized.x2 = 0;
+        normalized.x1 = normalized.x3 = 256;
+        assert(!memcmp(&reference.r0, &normalized.r0,
+                       offsetof(Primitive, drawMode) + sizeof(p->drawMode) -
+                           offsetof(Primitive, r0)));
+    }
+    DestroyAllPrimitives();
+    SDL_UnloadObject(module);
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Lava glow follows aspect reversal without changing its vertical "
+         "gradient or blend: PASS");
+}
+
+static void CheckCatacombPanels(void) {
+    extern GameApi g_ApiInit;
+    g_api = g_ApiInit;
+    const char* stages[] = {"cat", "rcat"};
+    const char* functions[2][2] = {
+        {"EntityCavernBackgroundLossoth", "EntityCavernBackgroundDiscusLord"},
+        {"EntityCavernBackgroundIce", "EntityCavernBackgroundIceBridge"}};
+    Tilemap previousTilemap = g_Tilemap;
+    int previousTimer = g_Timer;
+    for (int stage = 0; stage < LEN(stages); stage++) {
+        SDL_SharedObject* module = OpenOverlay(stages[stage]);
+        for (int variant = 0; variant < 2; variant++) {
+            void (*update)(Entity*) =
+                (void*)SDL_LoadFunction(module, functions[stage][variant]);
+            assert(update);
+            DestroyAllPrimitives();
+            Entity* self = g_CurrentEntity = &g_Entities[64];
+            memset(self, 0, sizeof(*self));
+            g_Tilemap.scrollY.val = 0;
+            g_Timer = 1;
+            update(self);
+            assert(self->step == 2 && self->ext.prim);
+            Primitive* nodes[27];
+            Primitive reference[64][27];
+            int count = 0;
+            for (Primitive* p = self->ext.prim; p; p = p->next) {
+                assert(count < LEN(nodes));
+                nodes[count++] = p;
+            }
+            assert(count == LEN(nodes));
+            for (int mode = 0; mode < 4; mode++) {
+                g_PcSettings.widescreen = mode & 1;
+                PcUpdateViewport();
+                for (int phase = 0; phase < 64; phase++) {
+                    self->posX.i.hi = phase;
+                    update(self);
+                    for (int row = 0; row < 3; row++) {
+                        assert(MAX(nodes[row]->x0, nodes[row]->x2) <= -20);
+                        assert(MAX(nodes[row]->x1, nodes[row]->x3) <= 0);
+                        assert(MIN(nodes[24 + row]->x0, nodes[24 + row]->x2) >=
+                               256);
+                        assert(MIN(nodes[24 + row]->x1, nodes[24 + row]->x3) >=
+                               276);
+                    }
+                    for (int i = 0; i < count; i++) {
+                        Primitive* p = nodes[i];
+                        assert(!(p->drawMode & DRAW_HIDE));
+                        assert(p->x0 < p->x1 && p->x2 < p->x3);
+                        if (i < count - 3) {
+                            Primitive* next = nodes[i + 3];
+                            assert(p->x1 == next->x0 && p->y1 == next->y0);
+                            assert(p->x3 == next->x2 && p->y3 == next->y2);
+                        }
+                        if (mode == 0)
+                            reference[phase][i] = *p;
+                        else
+                            assert(!memcmp(&reference[phase][i].r0, &p->r0,
+                                           offsetof(Primitive, drawMode) +
+                                               sizeof(p->drawMode) -
+                                               offsetof(Primitive, r0)));
+                    }
+                }
+            }
+        }
+        DestroyAllPrimitives();
+        SDL_UnloadObject(module);
+    }
+    g_Timer = previousTimer;
+    g_Tilemap = previousTilemap;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("All four Catacombs cave panels cover the wide view through every "
+         "horizontal phase and aspect reversal: PASS");
 }
 
 static void CheckHouseCulling(void) {
@@ -1773,7 +2140,7 @@ static void CheckSpawnRoomInit(s32 layoutId) {
 }
 
 static void CheckSpawnLoadMode(void) {
-    RoomHeader rooms[1] = {0};
+    RoomHeader rooms[2] = {{0}, {.left = 64}};
     RoomHeader* oldRooms = g_api.o.rooms;
     Tilemap oldTilemap = g_Tilemap;
     Entity oldPlayer = PLAYER;
@@ -1815,6 +2182,105 @@ static void CheckSpawnLoadMode(void) {
     g_GameStep = oldStep;
     puts("Diagnostic spawn restores its temporary load mode before normal "
          "room/entity initialization: PASS");
+}
+
+static void CheckRichterHud(void) {
+    extern void DrawHud(void);
+    extern void DrawRichterHudSubweapon(void);
+    DestroyAllPrimitives();
+    g_StageId = STAGE_ST0;
+    g_Status.hp = g_Status.hpMax = 100;
+    g_Status.subWeapon = 0;
+    g_Status.hearts = 10;
+    DrawHud();
+    g_Entities[80].hitPoints = 100;
+    g_Entities[85].hitPoints = 0;
+    for (s32 tick = 0; tick < 260; tick++) {
+        if (tick <= 100) {
+            g_Status.hp = g_Entities[80].hitPoints = 100 - tick;
+            D_8003C744 = 1;
+        } else {
+            D_8003C744 = 3;
+        }
+        DrawRichterHudSubweapon();
+        for (s32 mode = 0; mode < 4; mode++) {
+            g_PcSettings.widescreen = mode & 1;
+            PcUpdateViewport();
+            assert(!!PcViewMargin() == (mode & 1));
+            for (s32 i = 0; i < MAX_PRIM_COUNT; i++) {
+                Primitive original = g_PrimBuf[i];
+                if (!original.type || !(original.drawMode & DRAW_ABSPOS)) {
+                    continue;
+                }
+                Primitive adjusted = original;
+                PcAdjustPrimitive(&adjusted);
+                s32 delta =
+                    original.x0 < 128 ? PcViewLeft() : PcViewRight() - 256;
+                assert(adjusted.x0 == original.x0 + delta);
+                assert(adjusted.x1 == original.x1 + delta);
+                assert(adjusted.x2 == original.x2 + delta);
+                assert(adjusted.x3 == original.x3 + delta);
+                adjusted.x0 -= delta;
+                adjusted.x1 -= delta;
+                adjusted.x2 -= delta;
+                adjusted.x3 -= delta;
+                assert(!memcmp(&adjusted, &original, sizeof(original)));
+            }
+        }
+    }
+    DestroyAllPrimitives();
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    puts("Richter HP/boss fills and falling frame retain HUD anchors: PASS");
+}
+
+static void CheckCornerPopups(void) {
+    extern GameApi g_ApiInit;
+    GameApi previousApi = g_api;
+    int previousStage = g_StageId;
+    g_api = g_ApiInit;
+    g_StageId = STAGE_LIB;
+    SDL_SharedObject* module = OpenOverlay("lib");
+    void (*popup)(u8*, u8) =
+        (void*)SDL_LoadFunction(module, "BottomCornerText");
+    const char** gold = (void*)SDL_LoadFunction(module, "g_goldCollectTexts");
+    assert(popup && gold);
+    const char* names[] = {g_EquipDefs[ITEM_BADELAIRE].name,
+                           g_EquipDefs[ITEM_POTION].name, gold[0]};
+    for (int name = 0; name < LEN(names); name++) {
+        for (int align = 0; align < 2; align++) {
+            DestroyAllPrimitives();
+            popup((u8*)names[name], align);
+            assert(g_unkGraphicsStruct.BottomCornerTextTimer);
+            for (int wide = 0; wide < 2; wide++) {
+                g_PcSettings.widescreen = wide;
+                PcUpdateViewport();
+                for (int scale = 100; scale <= 150; scale += 25) {
+                    g_PcSettings.hudScale = scale;
+                    Primitive* prim =
+                        &g_PrimBuf[g_unkGraphicsStruct.BottomCornerTextPrims];
+                    int count = 0;
+                    for (; prim; prim = prim->next) {
+                        Primitive adjusted = *prim;
+                        PcAdjustPrimitive(&adjusted);
+                        assert(!memcmp(&adjusted, prim, sizeof(adjusted)));
+                        count++;
+                    }
+                    assert(count > 4);
+                }
+            }
+        }
+    }
+    DestroyAllPrimitives();
+    g_unkGraphicsStruct.BottomCornerTextTimer = 0;
+    g_PcSettings.hudScale = 100;
+    g_PcSettings.widescreen = 0;
+    PcUpdateViewport();
+    SDL_UnloadObject(module);
+    g_api = previousApi;
+    g_StageId = previousStage;
+    puts("Pickup/gold and enemy-name banners retain their frame, background "
+         "and text alignment at every HUD scale and aspect: PASS");
 }
 
 static void CheckTitleReveal(void) {
@@ -1889,6 +2355,22 @@ bool PcTestUpgrades(void) {
     unsigned renderScale = Psyz_VideoGetInternalResolution();
     assert(captured && capturedWidth > 256 * renderScale &&
            capturedHeight == 207 * renderScale);
+    for (int filter = 0; filter < 4; filter++) {
+        assert(Psyz_VideoSetFilter(filter, 75) == 0);
+        assert(Psyz_VideoGetFilter() == filter &&
+               Psyz_VideoGetFilterStrength() == 75);
+        int width, height;
+        u8* raw = Psyz_VideoAllocCapturedFrame(&width, &height);
+        assert(raw && width == capturedWidth && height == capturedHeight);
+        assert(!memcmp(raw, captured, (size_t)width * height * 3));
+        free(raw);
+    }
+    assert(Psyz_VideoSetFilter(-1, 75) == -1);
+    assert(Psyz_VideoSetFilter(4, 75) == -1);
+    assert(Psyz_VideoSetFilter(2, -1) == -1);
+    assert(Psyz_VideoSetFilter(2, 101) == -1);
+    assert(Psyz_VideoGetFilter() == 3 && Psyz_VideoGetFilterStrength() == 75);
+    assert(Psyz_VideoSetFilter(0, 75) == 0);
     free(captured);
     g_Tilemap.x = 0;
     g_Tilemap.width = 1024;
@@ -2063,6 +2545,11 @@ bool PcTestUpgrades(void) {
     CheckCavernShimmer();
     CheckBackgroundGears();
     CheckBackgroundSkyLand();
+    CheckEntranceFoliage();
+    CheckProjectedBookcases();
+    CheckBridgeLiquidMargins();
+    CheckLavaGlow();
+    CheckCatacombPanels();
     CheckHouseCulling();
     CheckDreamClouds();
     CheckStainedGlassEdges();
@@ -2076,6 +2563,9 @@ bool PcTestUpgrades(void) {
     CheckCaptureViewportLifetime();
     CheckSpawnLoadMode();
     CheckTitleReveal();
+    CheckRichterHud();
+    CheckCornerPopups();
+    PcQolTest();
 #endif
     puts("Viewport, camera, full-screen dialogue and content pack integration: "
          "PASS");

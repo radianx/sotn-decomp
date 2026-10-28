@@ -307,9 +307,16 @@ void EntityCutscene(Entity* self) {
 #endif
                 switch (nextChar) {
                 case CSOP_END_CUTSCENE:
+#ifdef VERSION_PC
+                    PcQolSceneEnd(
+                        g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
                     self->step = 7;
                     return;
                 case CSOP_LINE_BREAK:
+#ifdef VERSION_PC
+                    PcQolDialogueChar('\n');
+#endif
                     if (g_SkipCutscene) {
                         continue;
                     }
@@ -705,6 +712,10 @@ void EntityCutscene(Entity* self) {
 #ifdef VERSION_PSP
         var_s6 = (u8*)&D_pspeu_092997F8;
 #elif defined(VERSION_US)
+
+#ifdef VERSION_PC
+        PcQolDialogueChar(nextChar);
+#endif
         if (nextChar == ' ') {
             g_Dialogue.nextCharX += 2;
             return;

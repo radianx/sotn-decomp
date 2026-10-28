@@ -98,8 +98,43 @@ void PcClampCamera(void) {
     s_CameraNeedsSync = false;
 }
 
+// Keep the original liquid simulation intact; repeat its edge tiles outward.
+void PcExtendBridgeLiquid(Primitive* extra, Primitive* first, Primitive* last) {
+    for (int side = 0; side < 2; side++) {
+        Primitive* edge = side ? last : first;
+        int nearWidth = edge->x1 - edge->x0;
+        // The far edge is at depth 1536 versus 1024 at the near edge.
+        int farWidth = nearWidth * 2 / 3;
+        for (int i = 0; i < 2; i++, extra = extra->next) {
+            Primitive* next = extra->next;
+            *extra = *edge;
+            extra->next = next;
+            extra->p3 = 0;
+            if (!PcViewMargin()) {
+                extra->drawMode = DRAW_HIDE;
+                continue;
+            }
+            if (side) {
+                extra->x0 = edge->x1 + nearWidth * i;
+                extra->x1 = extra->x0 + nearWidth;
+                extra->x2 = edge->x3 + farWidth * i;
+                extra->x3 = extra->x2 + farWidth;
+                extra->y0 = extra->y1 = edge->y1;
+                extra->y2 = extra->y3 = edge->y3;
+            } else {
+                extra->x1 = edge->x0 - nearWidth * i;
+                extra->x0 = extra->x1 - nearWidth;
+                extra->x3 = edge->x2 - farWidth * i;
+                extra->x2 = extra->x3 - farWidth;
+                extra->y0 = extra->y1 = edge->y0;
+                extra->y2 = extra->y3 = edge->y2;
+            }
+        }
+    }
+}
+
 void PcAdjustPrimitive(Primitive* prim) {
-    if (!PcViewMargin())
+    if (!PcViewMargin() && g_PcSettings.hudScale <= 100)
         return;
     int kind = prim->type & 0xF;
     if (kind != PRIM_GT4 && kind != PRIM_G4)
@@ -114,12 +149,28 @@ void PcAdjustPrimitive(Primitive* prim) {
             prim->y0 = prim->y1 = s_Top;
         if (prim->y2 >= 239)
             prim->y2 = prim->y3 = s_Bottom;
-    } else if (prim->priority >= 0x1EF && prim->priority <= 0x1F5 &&
-               (prim->y0 < 48 || (prim->priority == 0x1EF && prim->x0 < 64))) {
+    } else if (
+        (prim->priority >= 0x1EF && prim->priority <= 0x1F5 &&
+         (prim->drawMode & DRAW_ABSPOS) &&
+         (prim->y0 < 48 || (prim->priority == 0x1EF && prim->x0 < 64))) ||
+        // Richter's fills and falling boss frame extend below the HUD.
+        (prim->priority >= 0x1EE && prim->priority <= 0x1F0 &&
+         prim->tpage == 0x1B && (prim->drawMode & DRAW_ABSPOS))) {
         int delta = prim->x0 < 128 ? s_Left : s_Right - 256;
         prim->x0 += delta;
         prim->x1 += delta;
         prim->x2 += delta;
         prim->x3 += delta;
+    }
+    if (g_PcSettings.hudScale > 100 && (prim->drawMode & DRAW_ABSPOS) &&
+        prim->priority >= 0x1EE && prim->priority <= 0x1F5 &&
+        (prim->tpage == 0x1B || prim->tpage == 0x1F)) {
+        int anchor = prim->x0 < 128 ? s_Left : s_Right;
+        s16* xs[] = {&prim->x0, &prim->x1, &prim->x2, &prim->x3};
+        s16* ys[] = {&prim->y0, &prim->y1, &prim->y2, &prim->y3};
+        for (int i = 0; i < 4; i++) {
+            *xs[i] = anchor + (*xs[i] - anchor) * g_PcSettings.hudScale / 100;
+            *ys[i] = 20 + (*ys[i] - 20) * g_PcSettings.hudScale / 100;
+        }
     }
 }

@@ -1250,6 +1250,9 @@ void Update(void) {
             if (g_pads[0].tapped & PAD_START) {
                 g_api.PlaySfx(SFX_UI_CONFIRM);
                 func_801AD66C();
+#ifdef VERSION_PC
+                PcQolNewGame();
+#endif
                 if (g_PlayableCharacter == PLAYER_ALUCARD) {
                     g_StageId = STAGE_ST0;
                 } else {

@@ -20,6 +20,9 @@ static u8 SetCutsceneScript(u8* script) {
 
     if (g_Dialogue.primIndex[2] != -1) {
         g_Dialogue.scriptCur = script;
+#ifdef VERSION_PC
+        PcQolSceneBegin(g_StageId * 8 + (g_CurrentEntity->params & 7));
+#endif
         g_Dialogue.hasEvents = 0;
         g_Dialogue.primIndex[1] = -1;
         g_Dialogue.primIndex[0] = -1;
