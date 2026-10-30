@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "sel.h"
+#ifdef VERSION_PC
+#include "../../pc/menu.h"
+#endif
 
 extern u8* D_8018C404; // unknown type
 extern char g_AsciiSet[];
@@ -1150,6 +1153,35 @@ static void func_801AEE74(void) {
     }
 }
 
+#ifdef VERSION_PC
+static void DrawPcTitleMenu(void) {
+    for (int i = 1; i <= NUM_MENU_OPTIONS; i++)
+        func_801ACBE4(i, DRAW_HIDE);
+    if (PcMenuIsOpen()) {
+        MenuHideAllGfx();
+        return;
+    }
+    func_801ACBE4(GFX_UNK_0, DRAW_DEFAULT);
+    func_801ACBE4(GFX_UNK_17, DRAW_DEFAULT);
+    func_801AD490();
+    int selected = PcMenuTitleRow();
+    int first = selected < 4 ? 0 : selected - 3;
+    for (int row = first; row < PcMenuTitleCount() && row < first + 4; row++) {
+        int start = g_GpuUsage.sp;
+        DrawString16x16(
+            (char*)PcMenuTitleLabel(row), 32, 56 + (row - first) * 32, 1);
+        if (row == selected)
+            for (int i = start; i < g_GpuUsage.sp; i++)
+                g_CurrentBuffer->sprite[i].clut = g_ClutIds[0x203];
+    }
+    if (first)
+        DrawString16x16("...", 176, 40, 1);
+    if (first + 4 < PcMenuTitleCount())
+        DrawString16x16("...", 176, 172, 1);
+    func_801B2608((char*)PcMenuTitleMessage(), 9);
+}
+#endif
+
 void Update(void) {
     s32 i;
     s32 port;
@@ -1192,6 +1224,47 @@ void Update(void) {
         }
         break;
     case Upd_Eng_MainMenuIdle:
+#ifdef VERSION_PC
+        int action = PcMenuTitle();
+        DrawPcTitleMenu();
+        switch (action) {
+        case 1:
+            D_801BAF10 = 0;
+            D_801D6B04 = 0;
+            g_GameEngineStep = Upd_Eng_0x10;
+            break;
+        case 2:
+            D_8003C730 = 1;
+            D_80097924 = 0;
+            D_8006C378 = -1;
+            g_api.PlaySfx(SET_UNK_80);
+            g_GameEngineStep = Upd_Eng_260;
+            break;
+        case 3:
+            SetGameState(Game_Title);
+            break;
+        case 5:
+            strcpy(g_InputSaveName, "        ");
+            func_801AEA8C(1);
+            g_GameEngineStep = 0x400;
+            break;
+        }
+        break;
+    case 0x400:
+        if (g_pads[0].tapped & PAD_SELECT) {
+            g_GameEngineStep = Upd_Eng_MainMenuIdle;
+        } else {
+            UpdateNameEntry();
+            func_801AD78C();
+            if (g_pads[0].tapped & PAD_START) {
+                if (PcMenuRename(g_InputSaveName))
+                    g_GameEngineStep = Upd_Eng_MainMenuIdle;
+                else
+                    g_api.PlaySfx(SFX_UI_ERROR);
+            }
+        }
+        break;
+#endif
         func_801AD590();
         func_801AD490();
         if (g_pads[0].tapped & PAD_CROSS) {
@@ -1243,7 +1316,11 @@ void Update(void) {
         if ((g_pads[0].tapped & PAD_SELECT) ||
             ((g_pads[0].tapped & PAD_TRIANGLE) && i == 8 &&
              g_InputCursorPos == 0)) {
+#ifdef VERSION_PC
+            g_GameEngineStep = Upd_Eng_MainMenuIdle;
+#else
             g_GameEngineStep = Upd_Eng_FileSelect;
+#endif
         } else {
             UpdateNameEntry();
             func_801AD78C();

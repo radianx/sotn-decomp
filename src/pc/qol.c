@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "qol.h"
+#include "saves.h"
 #include "pc.h"
 #include "../dra/dra.h"
 #include "../dra/dra_bss.h"
@@ -92,6 +93,7 @@ bool PcQolSave(void) {
 }
 
 void PcQolNewGame(void) {
+    PcSaveNewGame();
     if (s_Profile[0])
         PcQolSave();
     g_PcQol =

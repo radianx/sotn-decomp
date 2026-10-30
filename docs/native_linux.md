@@ -20,8 +20,9 @@ must contain the extracted `disks/us` files. `--disk` accepts a **CUE file**
 with accessible referenced tracks, or a **CHD** prepared by the launcher using
 `chdman` (MAME tools). The US executable identifier is checked before starting.
 
-Press **F4** to toggle fullscreen and **F1** for PC settings. Widescreen,
-accessibility, controls, volumes, and optional bug fixes are described in
+Press **Start** (Return) for the in-game pause menu, **F4** or **Ctrl+Enter**
+to toggle fullscreen, and **F1** for PC settings. See [Adventure tools](pc_qol.md) for native PC saves
+and controller navigation. Widescreen, accessibility, controls, volumes, and optional bug fixes are described in
 [PC upgrades](recomp_upgrades.md). The original aspect ratio remains the
 default; original sprites retain their resolution.
 
@@ -30,12 +31,13 @@ default; original sprites retain their resolution.
 Follow the repository's US asset setup and the dependency setup in
 `.github/workflows/picci.yaml`, including the pinned PSY-Z/SDL submodules.
 The local PSY-Z checkout also includes fixes for Unix file opening and audio emulation.
-On a fresh checkout of the pinned submodule, apply the three patches in order:
+On a fresh checkout of the pinned submodule, apply the four patches in order:
 
 ```sh
 git -C tools/psyz apply "$PWD/tools/patches/psyz-audio-stream-voices.patch"
 git -C tools/psyz apply "$PWD/tools/patches/psyz-pc-upgrades.patch"
 git -C tools/psyz apply "$PWD/tools/patches/psyz-video-filters.patch"
+git -C tools/psyz apply "$PWD/tools/patches/psyz-pc-menu.patch"
 ```
 
 Generate both the original assets and the additional native assets:

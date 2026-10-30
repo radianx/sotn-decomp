@@ -18,7 +18,7 @@ int main(void) {
     original.keys[6] = 44;
     original.buttons[6] = 3;
     original.effectsVolume = 37;
-    original.videoFilter = 3;
+    original.videoFilter = 4;
     original.filterStrength = 85;
     strcpy(original.contentPack, "packs/test");
     assert(PcSettingsSave(&original, "pc_settings_test.ini"));
@@ -26,7 +26,7 @@ int main(void) {
     assert(PcSettingsLoad(&loaded, "pc_settings_test.ini"));
     assert(!memcmp(&original, &loaded, sizeof(original)));
     const char* invalidFilters[] = {
-        "videoFilter=4\n", "videoFilter=-1\n", "filterStrength=101\n",
+        "videoFilter=5\n", "videoFilter=-1\n", "filterStrength=101\n",
         "filterStrength=-1\n"};
     for (unsigned i = 0; i < sizeof(invalidFilters) / sizeof(*invalidFilters);
          i++) {

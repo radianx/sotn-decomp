@@ -158,6 +158,8 @@ set(SOURCE_FILES_PC
     src/pc/upgrades.c
     src/pc/qol.c
     src/pc/qol_ui.c
+    src/pc/inventory.c
+    src/pc/weapon_fx.c
     src/pc/qol_save.c
     src/pc/qol_hud.c
     src/pc/qol_test.c
@@ -1781,11 +1783,56 @@ foreach(id
     030 031 032 033 034 035 036 037 038 039
     040 041 042 043 044 045 046 047 048 049
     050 051 052 053 054 055 056 057 058)
-    add_overlay(w0_${id} src/weapon/w_${id}.c)
+    # Keep preview access to static weapon tables confined to the PC build.
+    set(_weapon_source "${CMAKE_SOURCE_DIR}/src/weapon/w_${id}.c")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_weapon_source}")
+    file(READ "${_weapon_source}" _weapon_code)
+    set(_preview_definitions "")
+    if(id STREQUAL "017" OR id STREQUAL "044")
+        string(APPEND _preview_definitions "#define PC_PREVIEW_NO_SPRITES\n")
+    endif()
+    if(_weapon_code MATCHES "WeaponAnimation[ \t]+([A-Za-z0-9_]+)[ \t]*\\[")
+        string(APPEND _preview_definitions "#define PC_PREVIEW_ATTACKS ${CMAKE_MATCH_1}\n")
+    endif()
+    if(id STREQUAL "029")
+        string(APPEND _preview_definitions "#define PC_PREVIEW_SHIELD D_CF000_8017ACC0\n")
+    elseif(_weapon_code MATCHES "g_api\\.PlayAnimation\\([^,]+,[ \t\r\n]*&?([A-Za-z0-9_]+)\\)")
+        string(APPEND _preview_definitions "#define PC_PREVIEW_SHIELD ${CMAKE_MATCH_1}\n")
+    endif()
+    if(id STREQUAL "030" OR id STREQUAL "051")
+        string(APPEND _preview_definitions "#define PC_PREVIEW_DRA_BANK 10\n")
+    endif()
+    set(_weapon_wrapper "${CMAKE_BINARY_DIR}/weapon_preview/w_${id}.c")
+    file(CONFIGURE OUTPUT "${_weapon_wrapper}" CONTENT
+        "#include \"@_weapon_source@\"\n@_preview_definitions@#include \"weapon_preview.inc\"\n" @ONLY)
+    add_overlay(w0_${id} "${_weapon_wrapper}")
     target_compile_definitions(${w0_${id}_COMPILE_TARGET} PRIVATE WEAPON0)
-    add_overlay(w1_${id} src/weapon/w_${id}.c)
+    add_overlay(w1_${id} "${_weapon_wrapper}")
     target_compile_definitions(${w1_${id}_COMPILE_TARGET} PRIVATE WEAPON1)
+    set(_weapon_fx "${CMAKE_BINARY_DIR}/weapon_preview/fx_${id}.c")
+    file(CONFIGURE OUTPUT "${_weapon_fx}" CONTENT
+        "#include \"weapon_fx_aliases.h\"\n#include \"@_weapon_wrapper@\"\n" @ONLY)
+    add_overlay(pw0_${id} "${_weapon_fx}")
+    target_compile_definitions(${pw0_${id}_COMPILE_TARGET} PRIVATE WEAPON0)
+    add_overlay(pw1_${id} "${_weapon_fx}")
+    target_compile_definitions(${pw1_${id}_COMPILE_TARGET} PRIVATE WEAPON1)
 endforeach()
+
+set(_player_anim "${CMAKE_SOURCE_DIR}/src/dra/alu_anim.c")
+file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/weapon_preview/animation.c" CONTENT
+    "#include \"weapon_fx_aliases.h\"\n#include \"@_player_anim@\"\n" @ONLY)
+target_sources(sotn PRIVATE "${CMAKE_BINARY_DIR}/weapon_preview/animation.c")
+target_include_directories(sotn PRIVATE src/pc)
+set(_factory_source "${CMAKE_SOURCE_DIR}/src/dra/7879C.c")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_factory_source}")
+file(READ "${_factory_source}" _factory)
+string(FIND "${_factory}" "static FactoryBlueprint blueprints[]" _factory_start)
+string(FIND "${_factory}" "static u16 D_800AD4CC[]" _factory_end)
+math(EXPR _factory_length "${_factory_end} - ${_factory_start}")
+string(SUBSTRING "${_factory}" ${_factory_start} ${_factory_length} _factory_code)
+file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/weapon_preview/factory.c" CONTENT
+    "#include \"weapon_fx_aliases.h\"\n#include \"dra.h\"\n@_factory_code@\nint PcFxWeaponFunction(int id) { return id >= 0 && id < LEN(blueprints) ? blueprints[id].childId : -1; }\n" @ONLY)
+target_sources(sotn PRIVATE "${CMAKE_BINARY_DIR}/weapon_preview/factory.c")
 
 add_overlay(tt_000 ${SOURCE_FILES_TT_000})
 add_overlay(tt_001 ${SOURCE_FILES_TT_001})

@@ -114,10 +114,12 @@ static Weapon header = {
 #ifdef VERSION_PC
 #include <psyz/module.h>
 #include <string.h>
+#include "../pc/weapon_preview.h"
 
 void Psyz_ModuleStart(void* param) {
     Weapon* o = param;
     memcpy(o, &header, sizeof(Weapon));
+    o->preview = PcGetWeaponPreview();
 }
 
 void Psyz_ModuleStop(void) {}
