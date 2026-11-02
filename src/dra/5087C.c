@@ -4,6 +4,9 @@
 #include "dra_bss.h"
 #include "menu.h"
 #include "servant.h" // for InitializeMode enum
+#ifdef VERSION_PC
+#include "../pc/menu.h"
+#endif
 
 // fake struct for D_801375BC
 typedef struct {
@@ -1624,6 +1627,10 @@ void RunMainEngine(void) {
             break;
         }
         if ((g_pads[0].tapped & PAD_START) && CAN_PAUSE) {
+#ifdef VERSION_PC
+            if (PcMenuPause())
+                break;
+#endif
             HideMap();
             if ((g_StageId == STAGE_ST0) ||
                 (g_PlayableCharacter != PLAYER_ALUCARD)) {

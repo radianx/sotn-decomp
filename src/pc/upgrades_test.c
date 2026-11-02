@@ -348,6 +348,58 @@ static SDL_SharedObject* OpenOverlay(const char* name) {
     return module;
 }
 
+static void CheckSecretNames(void) {
+    extern void InitStatsAndGear(bool);
+    extern s32 D_801397FC;
+    PlayerStatus status = g_Status;
+    GameSettings settings = g_Settings;
+    Overlay overlay = g_api.o;
+    int stage = g_StageId, character = g_PlayableCharacter;
+    int clear = g_GameClearFlag, loaded = D_8003C730, rescued = D_801397FC;
+    SDL_SharedObject* module = OpenOverlay("sel");
+    void (*accept)(void) = (void*)SDL_LoadFunction(module, "func_801AD66C");
+    char* input = (void*)SDL_LoadFunction(module, "g_InputSaveName");
+    assert(accept && input);
+    const char* names[] = {
+        "        ", "richter ", "richter!", "x-x!v''q", "axearmor"};
+    for (int flags = 0; flags <= SAVE_FLAG_CLEAR; flags++) {
+        for (int i = 0; i < LEN(names); i++) {
+            memcpy(input, names[i], 9);
+            g_GameClearFlag = flags;
+            accept();
+            assert(!strcmp(g_Status.saveName, i == 0 ? "alucard " : names[i]));
+            assert(g_GameClearFlag ==
+                   (flags ? SAVE_FLAG_REPLAY : SAVE_FLAG_NORMAL));
+            assert(g_PlayableCharacter ==
+                   (i == 1 && flags ? PLAYER_RICHTER : PLAYER_ALUCARD));
+            if (i < 3)
+                continue;
+            g_StageId = STAGE_NO3;
+            D_8003C730 = D_801397FC = 0;
+            InitStatsAndGear(false);
+            if (i == 3) {
+                assert(g_Status.statsBase[STAT_LCK] == 99 &&
+                       g_Status.hpMax == 25 && g_Status.mpMax == 1);
+                assert(
+                    g_Status.equipment[ACCESSORY_2_SLOT] == ITEM_LAPIS_LAZULI);
+            } else
+                assert(g_Status.equipBodyCount[ITEM_AXE_LORD_ARMOR] ==
+                       (flags ? 1 : 0));
+        }
+    }
+    SDL_UnloadObject(module);
+    g_api.o = overlay;
+    g_Status = status;
+    g_Settings = settings;
+    g_StageId = stage;
+    g_PlayableCharacter = character;
+    g_GameClearFlag = clear;
+    D_8003C730 = loaded;
+    D_801397FC = rescued;
+    puts("Original name padding, punctuation, Richter gate, Luck and Axe "
+         "Armor: PASS");
+}
+
 static void CheckBugFixes(void) {
     extern GameApi g_ApiInit;
     extern LayoutEntity** g_pStObjLayoutHorizontal;
@@ -2355,7 +2407,7 @@ bool PcTestUpgrades(void) {
     unsigned renderScale = Psyz_VideoGetInternalResolution();
     assert(captured && capturedWidth > 256 * renderScale &&
            capturedHeight == 207 * renderScale);
-    for (int filter = 0; filter < 4; filter++) {
+    for (int filter = 0; filter < 5; filter++) {
         assert(Psyz_VideoSetFilter(filter, 75) == 0);
         assert(Psyz_VideoGetFilter() == filter &&
                Psyz_VideoGetFilterStrength() == 75);
@@ -2366,10 +2418,10 @@ bool PcTestUpgrades(void) {
         free(raw);
     }
     assert(Psyz_VideoSetFilter(-1, 75) == -1);
-    assert(Psyz_VideoSetFilter(4, 75) == -1);
+    assert(Psyz_VideoSetFilter(5, 75) == -1);
     assert(Psyz_VideoSetFilter(2, -1) == -1);
     assert(Psyz_VideoSetFilter(2, 101) == -1);
-    assert(Psyz_VideoGetFilter() == 3 && Psyz_VideoGetFilterStrength() == 75);
+    assert(Psyz_VideoGetFilter() == 4 && Psyz_VideoGetFilterStrength() == 75);
     assert(Psyz_VideoSetFilter(0, 75) == 0);
     free(captured);
     g_Tilemap.x = 0;
@@ -2566,6 +2618,7 @@ bool PcTestUpgrades(void) {
     CheckRichterHud();
     CheckCornerPopups();
     PcQolTest();
+    CheckSecretNames();
 #endif
     puts("Viewport, camera, full-screen dialogue and content pack integration: "
          "PASS");

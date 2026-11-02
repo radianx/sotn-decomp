@@ -60,6 +60,7 @@ jobs:
           git apply ../patches/psyz-audio-stream-voices.patch
           git apply ../patches/psyz-pc-upgrades.patch
           git apply ../patches/psyz-video-filters.patch
+          git apply ../patches/psyz-pc-menu.patch
       - name: Get dependencies
         uses: ./.github/actions/get-dependencies
         with:
@@ -110,6 +111,7 @@ jobs:
           git apply ../patches/psyz-audio-stream-voices.patch
           git apply ../patches/psyz-pc-upgrades.patch
           git apply ../patches/psyz-video-filters.patch
+          git apply ../patches/psyz-pc-menu.patch
       - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.work'
@@ -161,6 +163,7 @@ jobs:
         git apply ../patches/psyz-audio-stream-voices.patch
         git apply ../patches/psyz-pc-upgrades.patch
         git apply ../patches/psyz-video-filters.patch
+        git apply ../patches/psyz-pc-menu.patch
     - name: Get dependencies
       uses: ./.github/actions/get-dependencies
       with:

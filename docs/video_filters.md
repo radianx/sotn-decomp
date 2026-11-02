@@ -11,6 +11,7 @@ Original is the default; 0% strength also restores the original nearest path.
 | Bilinear | Smooth interpolation between neighboring pixels | A softer image without edge reconstruction |
 | CRT (soft) | Scanlines, a light RGB grille and horizontal softness | A flat CRT-style presentation without flicker or cropped corners |
 | xBR level 2 | Reconstructs diagonal edges and rounds pixel corners | A smoother, more illustrated appearance |
+| Synthwave | Richer original colors, violet shadows, gentle softness and neon glow | An experimental eighties look |
 
 Start around the default 75% strength. xBR changes fine sprite and font details;
 use Original if those changes are undesirable. CRT reduces scanline modulation
@@ -19,7 +20,7 @@ chromatic separation. These are visual options, independent of reduced flashes
 and palette assistance.
 
 Filtering runs on the final game image, including its HUD, menus, widescreen
-extensions and movies. The separate F1/F5 windows remain unfiltered. Resizing,
+extensions and movies. The same-window PC settings and adventure pages remain unfiltered. Resizing,
 fullscreen and both aspect ratios retain their existing viewport rules.
 The source crop is clamped before sampling, preventing neighboring VRAM textures
 from leaking into the image. Scanlines and edge detection use the game's pixel
@@ -35,9 +36,12 @@ a filter. xBR costs more GPU work than CRT or Bilinear.
 The xBR implementation adapts Hyllian's
 [MIT-licensed xBR-lv2 shader](https://github.com/libretro/glsl-shaders/blob/master/xbr/shaders/xbr-lv2.glsl),
 including its license notice. It is xBR level 2, rather than xBRZ, HQx or ScaleFX.
-The CRT pass is a small static shader written for this port.
+The CRT and Synthwave passes are static shaders written for this port.
+Synthwave uses a small neighborhood blur and glow from bright pixels; it adds
+no flashing, motion, feedback or extra frame readback. Filter strength controls
+the complete effect. Try 40–60% for a subtle grade, or 75–100% for a stronger look.
 
-Apply the three SDK patches listed in [Native Linux](native_linux.md) in order.
+Apply the SDK patches listed in [Native Linux](native_linux.md) in order.
 Presentation shader sources, generated SPIR-V/Metal/OpenGL headers and their
 rebuild script are carried by `tools/patches/psyz-video-filters.patch`.
 Normal builds use the bundled headers without installing shader tools.
@@ -46,3 +50,8 @@ To regenerate or verify them, follow [the patch guide](../tools/patches/README.m
 Linux Vulkan and OpenGL are the runtime test targets. Windows D3D12 currently
 falls back to nearest; Windows OpenGL and Metal still need platform testing.
 Shader creation failures preserve the original presentation and log a warning.
+
+For a native GPU smoke test with a local disc and debug build, run
+`python3 tools/pc_menu_smoke.py --only video`. This requires GDB and ImageMagick
+(`import` and `compare`). It checks 0/50/100% strength in both aspect ratios,
+verifies unfiltered captures, and saves comparison images under `build/`.

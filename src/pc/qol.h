@@ -56,7 +56,7 @@ bool PcQolResume(void);
 void PcQolResumeFrame(void);
 bool PcQolBackup(const char* path);
 void PcQolSavePreview(unsigned id, unsigned previousId);
-typedef struct {
+typedef struct PcSaveEntry {
     char path[1024];
     char origin[64];
     SaveInfo info;
@@ -64,6 +64,10 @@ typedef struct {
 } PcSaveEntry;
 int PcQolSaveList(PcSaveEntry* entries, int capacity);
 bool PcQolRestore(const PcSaveEntry* entry);
+bool PcSaveLoad(const PcSaveEntry* entry);
+bool PcSaveRename(const PcSaveEntry* entry, const char* name);
+bool PcSaveArchive(const PcSaveEntry* entry);
+bool PcQolUiSelectedSave(PcSaveEntry* entry);
 SDL_Surface* PcQolLoadPreview(const PcSaveEntry* entry);
 void PcQolDialogueChar(int ch);
 bool PcQolSceneBegin(unsigned id);

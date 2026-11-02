@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "qol.h"
+#include "menu.h"
+#include "inventory.h"
 #include "../dra/dra.h"
 #include <stdarg.h>
 #include <string.h>
@@ -9,8 +11,11 @@ static int s_Page, s_Row, s_Filter, s_Sort, s_Slot, s_Castle, s_X, s_Y;
 static int s_Zoom = 6, s_MapFilter, s_Kind, s_Requirement;
 static int s_Warp;
 static bool s_Favorites, s_Close, s_Editing;
+static bool s_PreviewTrigger;
+static bool s_LoadMode, s_ArchiveConfirm;
+static int s_SaveAction;
 static char s_Note[48];
-static PcSaveEntry s_Saves[128];
+static PcSaveEntry* s_Saves;
 static int s_SaveCount;
 static SDL_Surface* s_SavePreview;
 static int s_PreviewRow = -1;
@@ -67,7 +72,7 @@ static void Text(SDL_Renderer* r, int x, int y, const char* format, ...) {
     va_start(args, format);
     vsnprintf(text, sizeof(text), format, args);
     va_end(args);
-    SDL_RenderDebugText(r, x, y, text);
+    PcMenuText(r, x, y, text);
 }
 static void Wrap(SDL_Renderer* r, int x, int y, const char* text, int columns) {
     while (*text && y < 405) {
@@ -82,21 +87,30 @@ static void Wrap(SDL_Renderer* r, int x, int y, const char* text, int columns) {
         }
         memcpy(line, text, n);
         line[n] = 0;
-        SDL_RenderDebugText(r, x, y, line);
+        PcMenuText(r, x, y, line);
         y += 11;
         text += n;
         while (*text == ' ')
             text++;
     }
 }
+static void RefreshSaves(void) {
+    SDL_free(s_Saves);
+    int count = PcQolSaveList(NULL, 0);
+    s_Saves = SDL_calloc(count ? count : 1, sizeof(*s_Saves));
+    s_SaveCount = s_Saves ? PcQolSaveList(s_Saves, count) : 0;
+}
 void PcQolUiOpen(void) {
-    s_Close = s_Editing = false;
+    PcInventoryPreviewReset();
+    s_PreviewTrigger = false;
+    s_Close = s_Editing = s_LoadMode = s_ArchiveConfirm = false;
+    s_SaveAction = 0;
     s_Note[0] = 0;
     SDL_DestroySurface(s_SavePreview);
     s_SavePreview = NULL;
     s_PreviewRow = -1;
     PcQolMapPosition(&s_Castle, &s_X, &s_Y);
-    s_SaveCount = PcQolSaveList(s_Saves, 128);
+    RefreshSaves();
     if (g_StageId == STAGE_WRP || g_StageId == STAGE_RWRP) {
         int flags =
             g_CastleFlags[g_StageId == STAGE_RWRP ? RWRP_UNLOCKS : WRP_UNLOCKS];
@@ -106,6 +120,19 @@ void PcQolUiOpen(void) {
                 break;
             }
     }
+}
+void PcQolUiOpenPage(int page) {
+    PcQolUiOpen();
+    s_Page = SDL_clamp(page, 0, 6);
+    s_Row = 0;
+}
+void PcQolUiLoadMode(bool loading) { s_LoadMode = loading; }
+int PcQolUiSaveAction(void) { return s_SaveAction; }
+bool PcQolUiSelectedSave(PcSaveEntry* entry) {
+    if (s_Row < 0 || s_Row >= s_SaveCount)
+        return false;
+    *entry = s_Saves[s_Row];
+    return true;
 }
 bool PcQolUiWantsClose(void) { return s_Close; }
 
@@ -181,6 +208,22 @@ static void MapKey(SDL_Scancode key, SDL_Window* window) {
     }
 }
 
+static int InventoryChoice(int item) {
+    if ((s_Slot < 2) != (item < NUM_HAND_ITEMS))
+        return item;
+    int equipped =
+        g_Status.equipment[s_Slot] + (s_Slot < 2 ? 0 : NUM_HAND_ITEMS);
+    static const int empty[] = {
+        ITEM_EMPTY_HAND,
+        ITEM_EMPTY_HAND,
+        ITEM_EMPTY_HEAD + NUM_HAND_ITEMS,
+        ITEM_NO_ARMOR + NUM_HAND_ITEMS,
+        ITEM_NO_CAPE + NUM_HAND_ITEMS,
+        ITEM_NO_ACCESSORY + NUM_HAND_ITEMS,
+        ITEM_NO_ACCESSORY + NUM_HAND_ITEMS};
+    return item == equipped ? empty[s_Slot] : item;
+}
+
 void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
     if (s_Editing) {
         if (e->type == SDL_EVENT_TEXT_INPUT &&
@@ -232,6 +275,7 @@ void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
         case SDL_GAMEPAD_BUTTON_SOUTH:
             key = SDL_SCANCODE_RETURN;
             break;
+        case SDL_GAMEPAD_BUTTON_START:
         case SDL_GAMEPAD_BUTTON_EAST:
             key = SDL_SCANCODE_ESCAPE;
             break;
@@ -253,13 +297,27 @@ void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
         case SDL_GAMEPAD_BUTTON_LEFT_STICK:
             key = SDL_SCANCODE_V;
             break;
+        case SDL_GAMEPAD_BUTTON_BACK:
+            key = s_Page == 0   ? SDL_SCANCODE_C
+                  : s_Page == 1 ? SDL_SCANCODE_B
+                  : s_Page == 2 ? SDL_SCANCODE_L
+                  : s_Page == 4 ? SDL_SCANCODE_R
+                                : SDL_SCANCODE_UNKNOWN;
+            break;
         }
+    }
+    if (s_Page == 1 && e->type == SDL_EVENT_GAMEPAD_AXIS_MOTION &&
+        e->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+        bool down = e->gaxis.value > 16000;
+        if (down && !s_PreviewTrigger)
+            key = SDL_SCANCODE_A;
+        s_PreviewTrigger = down;
     }
     if (key == SDL_SCANCODE_ESCAPE) {
         s_Close = true;
         return;
     }
-    if (key == SDL_SCANCODE_TAB) {
+    if (key == SDL_SCANCODE_TAB && !s_LoadMode) {
         s_Page = (s_Page + 1) % 7;
         s_Row = 0;
         return;
@@ -273,6 +331,8 @@ void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
     if (key == SDL_SCANCODE_DOWN)
         s_Row++;
     if (s_Page == 1) {
+        if (key == SDL_SCANCODE_A)
+            PcInventoryPreviewCycle();
         if (key == SDL_SCANCODE_F) {
             s_Filter = (s_Filter + 1) % 8;
             s_Row = 0;
@@ -307,7 +367,7 @@ void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
         if (key == SDL_SCANCODE_U && item < NUM_HAND_ITEMS)
             s_Close = PcQolUseItem(item);
         if (key == SDL_SCANCODE_RETURN) {
-            s_Close = PcQolEquipItem(item, s_Slot);
+            s_Close = PcQolEquipItem(InventoryChoice(item), s_Slot);
             if (!s_Close)
                 g_PcQolMessage = "Cannot equip that item in this slot/state.";
         }
@@ -351,16 +411,42 @@ void PcQolUiEvent(const SDL_Event* e, SDL_Window* window) {
         PcSaveEntry* entries = s_Saves;
         int count = s_SaveCount;
         s_Row = count ? SDL_min(s_Row, count - 1) : 0;
-        if (key == SDL_SCANCODE_RETURN && count) {
+        if (count && (key == SDL_SCANCODE_F || key == SDL_SCANCODE_DELETE)) {
+            s_ArchiveConfirm = true;
             g_PcQolMessage =
-                PcQolRestore(&entries[s_Row])
-                    ? "Backup copied to an unused slot on memory card 2."
-                    : "Backup restore failed; original slots unchanged.";
-            s_SaveCount = PcQolSaveList(s_Saves, 128);
+                "Archive this save? Enter confirms; navigation cancels.";
+        } else if (key == SDL_SCANCODE_RETURN && count) {
+            if (s_ArchiveConfirm) {
+                g_PcQolMessage =
+                    PcSaveArchive(&entries[s_Row])
+                        ? "Save archived; its file and profile are recoverable."
+                        : "Archive failed. The current adventure cannot be "
+                          "archived.";
+            } else if (s_LoadMode) {
+                if (PcSaveLoad(&entries[s_Row])) {
+                    s_SaveAction = 1;
+                    s_Close = true;
+                } else
+                    g_PcQolMessage =
+                        "Could not load save; original file is unchanged.";
+                return;
+            } else
+                g_PcQolMessage =
+                    PcQolRestore(&entries[s_Row])
+                        ? "Save copied to a new PC slot, with its adventure "
+                          "profile."
+                        : "Copy failed; original files are unchanged.";
+            s_ArchiveConfirm = false;
+            RefreshSaves();
             SDL_DestroySurface(s_SavePreview);
             s_SavePreview = NULL;
             s_PreviewRow = -1;
-        }
+        } else if (count && (key == SDL_SCANCODE_N || key == SDL_SCANCODE_I) &&
+                   g_GameState == Game_MainMenu) {
+            s_SaveAction = 2;
+            s_Close = true;
+        } else if (key != SDL_SCANCODE_UNKNOWN)
+            s_ArchiveConfirm = false;
     } else if (s_Page == 6) {
         s_Row %= 9;
         int* options[] = {
@@ -481,80 +567,226 @@ static void DrawMap(SDL_Renderer* r) {
              g_PcWarpNames[s_Warp]);
 }
 
+static void InventoryPanel(SDL_Renderer* r, int x, int y, int w, int h) {
+    SDL_FRect rect = {x, y, w, h};
+    PcMenuPanel(r, x, y, w, h, 0.92f);
+    SDL_SetRenderDrawColor(r, 109, 119, 151, 255);
+    SDL_RenderRect(r, &rect);
+}
+
+static void DrawEquipment(SDL_Renderer* r) {
+    InventoryPanel(r, 12, 118, 218, 300);
+    SDL_SetRenderDrawColor(r, 54, 64, 93, 255);
+    SDL_FRect body = {107, 163, 27, 66};
+    SDL_RenderFillRect(r, &body);
+    SDL_RenderLine(r, 108, 169, 60, 202);
+    SDL_RenderLine(r, 133, 169, 180, 202);
+    SDL_RenderLine(r, 113, 226, 95, 260);
+    SDL_RenderLine(r, 128, 226, 146, 260);
+    static const int positions[7][2] = {
+        {30, 174},  {173, 174}, {102, 125}, {102, 174},
+        {173, 125}, {57, 223},  {147, 223}};
+    static const char* labels[] = {
+        "L hand", "R hand", "Head", "Armor", "Cape", "Acc. 1", "Acc. 2"};
+    for (int slot = 0; slot < 7; slot++) {
+        int x = positions[slot][0], y = positions[slot][1];
+        SDL_FRect rect = {x - 3, y - 3, 38, 38};
+        SDL_SetRenderDrawColor(r, 14, 19, 43, 255);
+        SDL_RenderFillRect(r, &rect);
+        SDL_SetRenderDrawColor(
+            r, slot == s_Slot ? 245 : 108, slot == s_Slot ? 207 : 119,
+            slot == s_Slot ? 122 : 151, 255);
+        SDL_RenderRect(r, &rect);
+        Text(r, x - (strlen(labels[slot]) * 8 - 32) / 2, y + 38, "%s",
+             labels[slot]);
+        int item = g_Status.equipment[slot];
+        PcInventoryIcon(r, item + (slot < 2 ? 0 : NUM_HAND_ITEMS), x, y, 2);
+    }
+    char name[64];
+    int item = g_Status.equipment[s_Slot] + (s_Slot < 2 ? 0 : NUM_HAND_ITEMS);
+    PcQolItemText(item, false, name, sizeof(name));
+    SDL_SetRenderDrawColor(r, 245, 207, 122, 255);
+    Text(r, 22, 276, "%.25s", name);
+    SDL_SetRenderDrawColor(r, 64, 73, 103, 255);
+    SDL_RenderLine(r, 22, 290, 220, 290);
+    SDL_RenderLine(r, 35, 393, 208, 393);
+    SDL_Rect clip = {20, 296, 203, 97};
+    SDL_SetRenderClipRect(r, &clip);
+    PcInventoryPreviewDraw(r, 95, 345);
+    SDL_SetRenderClipRect(r, NULL);
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    Text(r, 23, 402, "A/RT: %s", PcInventoryPreviewName());
+}
+
+static void InventorySummary(SDL_Renderer* r) {
+    InventoryPanel(r, 12, 72, 576, 40);
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    const char* status = "Normal";
+    if (g_Player.status & PLAYER_STATUS_CURSE)
+        status = "Curse";
+    if (g_Player.status & PLAYER_STATUS_POISON)
+        status = "Poison";
+    if (g_Player.status & PLAYER_STATUS_STONE)
+        status = "Stone";
+    if (IsAlucart())
+        status = "Alucart";
+    Text(r, 20, 77, "Lv %d   HP %d/%d   MP %d/%d   Hearts %d/%d",
+         g_Status.level, g_Status.hp, g_Status.hpMax, g_Status.mp,
+         g_Status.mpMax, g_Status.hearts, g_Status.heartsMax);
+    Text(r, 20, 89, "EXP %d   Next %d   Gold %d   %s", g_Status.exp,
+         g_Status.level < 99 ? g_ExpNext[g_Status.level + 1] - g_Status.exp : 0,
+         g_Status.gold, status);
+    Text(r, 20, 101, "Rooms %d   Kills %d   Time %02d:%02d:%02d", g_RoomCount,
+         g_Status.killCount, g_Status.timerHours, g_Status.timerMinutes,
+         g_Status.timerSeconds);
+}
+
+static void InventoryStat(SDL_Renderer* r, int x, int y, const char* label,
+                          int current, int next, bool comparing) {
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    char line[64];
+    snprintf(line, sizeof(line), "%s %d", label, current);
+    Text(r, x, y, "%s", line);
+    if (!comparing)
+        return;
+    SDL_SetRenderDrawColor(
+        r,
+        next == current  ? 230
+        : next < current ? 255
+                         : 130,
+        next == current  ? 235
+        : next < current ? 130
+                         : 245,
+        next == current ? 245 : 160, 255);
+    Text(r, x + strlen(line) * 8, y, " > %d", next);
+}
+
 static void DrawInventory(SDL_Renderer* r) {
+    PlayerStatus saved = g_Status;
+    u32 previousCombo = D_8013AEE4;
+    // Recalculate like the original menu, preserving the live cached values.
+    make_all();
+    PlayerStatus original = g_Status, after = original;
+    g_Status = saved;
+    D_8013AEE4 = previousCombo;
     int items[NUM_HAND_ITEMS + NUM_BODY_ITEMS];
     int count = PcQolInventory(s_Filter, s_Sort, s_Favorites, items);
     s_Row = count ? SDL_min(s_Row, count - 1) : 0;
-    Text(r, 12, 39, "F filter: %s | S sort: %s | B favorites: %s",
-         filters[s_Filter],
-         (const char*[]){"Name", "Quantity", "Stats"}[s_Sort],
-         s_Favorites ? "On" : "Off");
-    Text(r, 12, 52,
-         "Left/Right slot: %s | Enter equips | V favorite | I quick item",
-         slots[s_Slot]);
-    for (int row = SDL_max(0, s_Row - 8), y = 73; row < count && y < 285;
-         row++, y += 12) {
+    SDL_SetRenderDrawColor(r, 245, 207, 122, 255);
+    Text(r, 20, 43, "EQUIPMENT");
+    Text(r, 248, 43, "INVENTORY %d/%d", count ? s_Row + 1 : 0, count);
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    Text(r, 20, 58, "Left/Right: slot");
+    Text(r, 248, 58, "F:%s S:%s B:%s", filters[s_Filter],
+         (const char*[]){"Name", "Count", "Stats"}[s_Sort],
+         s_Favorites ? "Fav" : "All");
+    InventorySummary(r);
+    DrawEquipment(r);
+    InventoryPanel(r, 240, 118, 348, 300);
+    int start = SDL_max(0, s_Row - 3);
+    for (int row = start, y = 129; row < count && row < start + 6;
+         row++, y += 18) {
         char name[60];
         PcQolItemText(items[row], false, name, sizeof(name));
         int item = items[row];
-        Text(r, 12, y, "%c %c %-30.30s x%d", row == s_Row ? '>' : ' ',
-             g_PcQol.favorites[item] ? '*' : ' ', name,
+        if (row == s_Row) {
+            SDL_FRect selected = {244, y - 2, 340, 18};
+            SDL_SetRenderDrawColor(r, 57, 55, 86, 255);
+            SDL_RenderFillRect(r, &selected);
+        }
+        PcInventoryIcon(r, item, 249, y - 1, 1);
+        SDL_SetRenderDrawColor(
+            r, row == s_Row ? 245 : 216, row == s_Row ? 207 : 222,
+            row == s_Row ? 122 : 239, 255);
+        Text(r, 271, y + 2, "%c%.29s", g_PcQol.favorites[item] ? '*' : ' ',
+             name);
+        Text(r, 550, y + 2, "%3d",
              PcQolOwned(item >= NUM_HAND_ITEMS,
                         item >= NUM_HAND_ITEMS ? item - NUM_HAND_ITEMS : item));
     }
-    if (!count) {
-        Text(r, 12, 85, "No owned items match these filters.");
-        return;
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    int item = count ? items[s_Row] : -1;
+    int choice = count ? InventoryChoice(item) : -1;
+    bool removing = choice != item;
+    if (!count)
+        Text(r, 250, 129, "No items match these filters.");
+    if (count) {
+        char desc[256];
+        PcQolItemText(item, true, desc, sizeof(desc));
+        SDL_Rect clip = {248, 239, 332, 34};
+        SDL_SetRenderClipRect(r, &clip);
+        Wrap(r, 250, 240, desc, 40);
+        SDL_SetRenderClipRect(r, NULL);
     }
-    int item = items[s_Row];
-    char desc[256];
-    PcQolItemText(item, true, desc, sizeof(desc));
-    Wrap(r, 12, 294, desc, 69);
-    PlayerStatus original = g_Status;
-    u32 previousCombo = D_8013AEE4;
-    int id = item < NUM_HAND_ITEMS ? item : item - NUM_HAND_ITEMS;
-    bool compatible = (s_Slot < 2) == (item < NUM_HAND_ITEMS);
+    bool comparing = false;
     u32 equipment[7];
-    memcpy(equipment, g_Status.equipment, sizeof(equipment));
-    equipment[s_Slot] = id;
-    if (s_Slot < 2 &&
-        g_EquipDefs[original.equipment[s_Slot]].itemCategory == ITEM_TWOHAND)
-        equipment[1 - s_Slot] = ITEM_EMPTY_HAND;
-    if (s_Slot < 2 && item < NUM_HAND_ITEMS &&
-        g_EquipDefs[id].itemCategory == ITEM_TWOHAND)
-        equipment[1 - s_Slot] = id;
-    if (compatible && PcQolEquip(equipment, false)) {
-        memcpy(g_Status.equipment, equipment, sizeof(equipment));
-        make_all();
-        Text(r, 12, 350, "ATK %d/%d -> %d/%d | DEF %d -> %d",
-             original.attackHands[0], original.attackHands[1],
-             g_Status.attackHands[0], g_Status.attackHands[1],
-             original.defenseEquip, g_Status.defenseEquip);
-        Text(r, 12, 364, "STR %+d CON %+d INT %+d LCK %+d",
-             g_Status.statsTotal[0] - original.statsTotal[0],
-             g_Status.statsTotal[1] - original.statsTotal[1],
-             g_Status.statsTotal[2] - original.statsTotal[2],
-             g_Status.statsTotal[3] - original.statsTotal[3]);
-        const char* labels[] = {"Weak", "Resist", "Immune", "Absorb"};
-        unsigned masks[] = {g_Status.elementsWeakTo, g_Status.elementsResist,
-                            g_Status.elementsImmune, g_Status.elementsAbsorb};
-        for (int i = 0; i < 4; i++) {
-            char names[80];
-            ElementNames(masks[i], names, sizeof(names));
-            Text(r, 12, 378 + i * 12, "%s: %s", labels[i], names);
+    memcpy(equipment, original.equipment, sizeof(equipment));
+    if (count && (s_Slot < 2) == (choice < NUM_HAND_ITEMS)) {
+        int id = choice < NUM_HAND_ITEMS ? choice : choice - NUM_HAND_ITEMS;
+        equipment[s_Slot] = id;
+        if (s_Slot < 2) {
+            if (g_EquipDefs[original.equipment[s_Slot]].itemCategory ==
+                ITEM_TWOHAND)
+                equipment[1 - s_Slot] = ITEM_EMPTY_HAND;
+            if (g_EquipDefs[id].itemCategory == ITEM_TWOHAND)
+                equipment[1 - s_Slot] = id;
         }
-    } else
-        Text(r, 12, 350,
-             "Select a compatible slot; equipment changes need an idle "
-             "Alucard.");
-    g_Status = original;
+        if (PcQolEquip(equipment, false)) {
+            memcpy(g_Status.equipment, equipment, sizeof(equipment));
+            make_all();
+            after = g_Status;
+            comparing = true;
+        }
+    }
+    g_Status = saved;
     D_8013AEE4 = previousCombo;
+    SDL_SetRenderDrawColor(r, 245, 207, 122, 255);
+    if (comparing)
+        Text(r, 250, 279, "CURRENT > %s (%s)", removing ? "REMOVE" : "EQUIP",
+             slots[s_Slot]);
+    else
+        Text(r, 250, 279, "CURRENT STATS (%s)", slots[s_Slot]);
+    InventoryStat(r, 250, 294, "ATK L", original.attackHands[0],
+                  after.attackHands[0], comparing);
+    InventoryStat(r, 422, 294, "R", original.attackHands[1],
+                  after.attackHands[1], comparing);
+    InventoryStat(r, 250, 306, "DEF", original.defenseEquip, after.defenseEquip,
+                  comparing);
+    const char* attributes[] = {"STR", "CON", "INT", "LCK"};
+    for (int i = 0; i < 4; i++) {
+        InventoryStat(r, 250, 318 + i * 12, attributes[i],
+                      original.statsBase[i] + original.statsEquip[i],
+                      after.statsBase[i] + after.statsEquip[i], comparing);
+        SDL_SetRenderDrawColor(r, 180, 190, 215, 255);
+        Text(r, 450, 318 + i * 12, "(%d%+d)", original.statsBase[i],
+             original.statsEquip[i]);
+    }
+    const char* labels[] = {"Weak", "Resist", "Immune", "Absorb"};
+    unsigned beforeMasks[] = {original.elementsWeakTo, original.elementsResist,
+                              original.elementsImmune, original.elementsAbsorb};
+    unsigned afterMasks[] = {after.elementsWeakTo, after.elementsResist,
+                             after.elementsImmune, after.elementsAbsorb};
+    SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
+    for (int i = 0; i < 4; i++) {
+        char beforeNames[96], afterNames[96], line[224];
+        ElementNames(beforeMasks[i], beforeNames, sizeof(beforeNames));
+        ElementNames(afterMasks[i], afterNames, sizeof(afterNames));
+        snprintf(
+            line, sizeof(line), "%s: %s%s%s", labels[i], beforeNames,
+            comparing && beforeMasks[i] != afterMasks[i] ? " > " : "",
+            comparing && beforeMasks[i] != afterMasks[i] ? afterNames : "");
+        float scale = SDL_min(1.0f, 328.0f / (strlen(line) * 8));
+        SDL_SetRenderScale(r, 2 * scale, 2 * scale);
+        PcMenuText(r, 250 / scale, (369 + i * 11) / scale, line);
+        SDL_SetRenderScale(r, 2, 2);
+    }
+    Text(r, 12, 421,
+         "Enter equip/remove | V fav | I quick | U use | A/RT animate");
 }
 
 void PcQolUiDraw(SDL_Renderer* r) {
     SDL_SetRenderScale(r, 2, 2);
-    SDL_SetRenderDrawColor(r, 18, 20, 28, 255);
-    SDL_RenderClear(r);
+    PcMenuBackground(r);
     SDL_SetRenderDrawColor(r, 230, 235, 245, 255);
     Text(r, 12, 10, "ADVENTURE - F5/Escape returns | Tab/RB changes page");
     Text(r, 12, 24, "%s (%d/7)", pages[s_Page], s_Page + 1);
@@ -605,10 +837,11 @@ void PcQolUiDraw(SDL_Renderer* r) {
     }
     if (s_Page == 4) {
         Text(r, 12, 48,
-             "S suspend & quit | R resume | Enter copies save to free card-2 "
-             "slot");
+             s_LoadMode
+                 ? "Enter/A loads | Escape/B returns"
+                 : "Enter/A copies | F/Y archives | N/R3 renames (title)");
         Text(r, 12, 63,
-             "Suspend requires a quiet idle room; enemies reset on resume.");
+             "S/X suspend & quit | R resume | Normal saves use save rooms.");
         PcSaveEntry* entries = s_Saves;
         int count = s_SaveCount;
         s_Row = count ? SDL_min(s_Row, count - 1) : 0;
@@ -619,8 +852,8 @@ void PcQolUiDraw(SDL_Renderer* r) {
                  i == s_Row ? '>' : ' ', info->name,
                  info->character == PLAYER_RICHTER ? "Richter" : "Alucard",
                  AreaName(info->stage), info->level);
-            Text(r, 28, y + 11, "%02d:%02d:%02d | %.1f%% | %s", info->playHours,
-                 info->playMinutes, info->playSeconds,
+            Text(r, 28, y + 11, "%02d:%02d:%02d | %.1f%% | %.36s",
+                 info->playHours, info->playMinutes, info->playSeconds,
                  info->nRoomsExplored * 100.0 / 942.0, entries[i].origin);
         }
         if (count) {

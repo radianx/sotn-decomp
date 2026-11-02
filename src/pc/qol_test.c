@@ -3,6 +3,9 @@
 #undef NDEBUG
 #endif
 #include "qol.h"
+#include "saves.h"
+#include "menu.h"
+#include "inventory.h"
 #include "../dra/dra.h"
 #include <assert.h>
 #include <string.h>
@@ -215,6 +218,7 @@ void PcQolTest(void) {
     assert(SDL_ReadSurfacePixel(preview, 0, 0, &red, &green, &blue, &alpha));
     assert(!red && green == 255 && !blue);
     SDL_DestroySurface(preview);
+    unsigned sourceProfile = PcQolProfileId();
     assert(PcQolRestore(entries));
     assert(PcQolSaveList(entries, 8) == 2);
     preview = PcQolLoadPreview(entries);
@@ -229,6 +233,75 @@ void PcQolTest(void) {
     assert(fread(unchanged, sizeof(unchanged), 1, file) == 1);
     fclose(file);
     assert(!memcmp(unchanged, block.raw, sizeof(unchanged)));
+    // Native slots preserve the original game data and independent QoL
+    // snapshots.
+    assert(!strncmp(entries[0].path, "saves/", 6));
+    PcSaveEntry native = entries[0];
+    PcQolData expectedProfile = g_PcQol;
+    assert(!PcSaveLoad(&native));
+    g_GameState = Game_MainMenu;
+    g_Status.hp = 1;
+    memset(&g_PcQol, 0, sizeof(g_PcQol));
+    assert(PcSaveLoad(&native));
+    assert(g_Status.hp == block.save.status.hp);
+    assert(PcQolProfileId() != sourceProfile);
+    assert(SDL_CopyFile(native.path, "saves/corrupt.sav"));
+    file = fopen("saves/corrupt.sav", "r+b");
+    assert(file && fseek(file, 12, SEEK_SET) == 0);
+    int byte = fgetc(file);
+    assert(byte != EOF && fseek(file, 12, SEEK_SET) == 0);
+    assert(fputc(byte ^ 1, file) != EOF && !fclose(file));
+    PcSaveEntry corrupt = native;
+    strcpy(corrupt.path, "saves/corrupt.sav");
+    assert(!PcSaveLoad(&corrupt) && g_Status.hp == block.save.status.hp);
+    assert(!memcmp(&g_PcQol, &expectedProfile, sizeof(g_PcQol)));
+    g_GameState = Game_MainMenu;
+    assert(!PcSaveRename(&native, "        "));
+    assert(PcSaveRename(&native, "x-x!v''q"));
+    assert(PcSaveLoad(&native));
+    assert(!memcmp(g_Status.saveName, "x-x!v''q", 8));
+    assert(g_PlayableCharacter == PLAYER_ALUCARD);
+    assert(
+        g_Status.statsBase[STAT_LCK] == block.save.status.statsBase[STAT_LCK]);
+    g_GameClearFlag = SAVE_FLAG_CLEAR;
+    g_StageId = STAGE_LIB;
+    g_Status.gold = 321;
+    assert(PcSaveCommit());
+    g_Status.gold = 0;
+    assert(PcSaveContinue() && g_Status.gold == 321);
+    assert(PcSaveClearFlags() & SAVE_FLAG_CLEAR);
+    unsigned nativeProfile = PcQolProfileId();
+    // Refuse an overwrite if backing up the previous slot is impossible.
+    assert(SDL_RenamePath("settings.ini.backups", "backup-hold"));
+    file = fopen("settings.ini.backups", "wb");
+    assert(file && !fclose(file));
+    g_Status.gold = 999;
+    assert(!PcSaveCommit());
+    assert(SDL_RemovePath("settings.ini.backups"));
+    assert(SDL_RenamePath("backup-hold", "settings.ini.backups"));
+    assert(PcSaveLoad(&native) && g_Status.gold == 321);
+    assert(PcQolProfileId() == nativeProfile);
+    // Archiving hides only the native copy; legacy sources remain
+    // byte-identical.
+    g_GameState = Game_Play;
+    assert(!PcSaveArchive(&native));
+    g_GameState = Game_MainMenu;
+    int listed = PcQolSaveList(NULL, 0);
+    assert(PcSaveArchive(&native));
+    assert(PcQolSaveList(NULL, 0) == listed - 1);
+    assert(!PcSaveArchive(&native));
+    file = fopen("bu00/test", "rb");
+    assert(file && fread(unchanged, sizeof(unchanged), 1, file) == 1);
+    fclose(file);
+    assert(!memcmp(unchanged, block.raw, sizeof(unchanged)));
+    // The browser is no longer constrained by either card's fifteen blocks.
+    for (int i = 0; i < 31; i++)
+        assert(PcQolRestore(&entries[1]));
+    assert(PcQolSaveList(NULL, 0) >= 32);
+    g_GameState = Game_Play;
+    g_GameStep = Play_Default;
+    g_StageId = STAGE_WRP;
+
     g_PcSettings.hudScale = 150;
     Primitive hud = {
         .type = PRIM_GT4,
@@ -287,6 +360,74 @@ void PcQolTest(void) {
     assert(window);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, "software");
     assert(renderer);
+    PcMenuBackground(renderer);
+    SDL_Surface* gradient = SDL_RenderReadPixels(renderer, NULL);
+    u8 topBlue, bottomBlue;
+    assert(gradient && SDL_ReadSurfacePixel(
+                           gradient, 100, 100, NULL, NULL, &topBlue, NULL));
+    assert(SDL_ReadSurfacePixel(
+        gradient, 100, 800, NULL, NULL, &bottomBlue, NULL));
+    assert(topBlue > bottomBlue + 20);
+    SDL_DestroySurface(gradient);
+    PlayerStatus previewSetup = g_Status;
+    g_Status.equipment[0] = ITEM_ALUCARD_SWORD;
+    g_Status.equipment[1] = ITEM_ALUCARD_SHIELD;
+    PlayerStatus beforePreview = g_Status;
+    Entity beforePlayer = PLAYER;
+    Entity* beforeCurrent = g_CurrentEntity;
+    int beforeTimer = g_Timer;
+    int beforeCharacter = g_PlayableCharacter;
+    g_PlayableCharacter = PLAYER_ALUCARD;
+    PcInventoryPreviewReset();
+    assert(!strcmp(PcInventoryPreviewName(), "Idle"));
+    const char* animations[] = {
+        "Idle", "Walk", "Attack L", "Attack R", "Special L", "Special R"};
+    for (int i = 0; i < 6; i++) {
+        assert(!strcmp(PcInventoryPreviewName(), animations[i]));
+        PcInventoryPreviewDraw(renderer, 100, 100);
+        PcInventoryPreviewCycle();
+    }
+    assert(!strcmp(PcInventoryPreviewName(), "Idle"));
+    PcQolUiOpenPage(1);
+    SDL_Event animate = {.type = SDL_EVENT_KEY_DOWN};
+    animate.key.scancode = SDL_SCANCODE_A;
+    PcQolUiEvent(&animate, window);
+    assert(!strcmp(PcInventoryPreviewName(), "Walk"));
+    animate.type = SDL_EVENT_GAMEPAD_AXIS_MOTION;
+    animate.gaxis.axis = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+    animate.gaxis.value = 30000;
+    PcQolUiEvent(&animate, window);
+    assert(!strcmp(PcInventoryPreviewName(), "Attack L"));
+    PcQolUiEvent(&animate, window);
+    assert(!strcmp(PcInventoryPreviewName(), "Attack L"));
+    animate.gaxis.value = 0;
+    PcQolUiEvent(&animate, window);
+    animate.gaxis.value = 30000;
+    PcQolUiEvent(&animate, window);
+    assert(!strcmp(PcInventoryPreviewName(), "Attack R"));
+    animate.gaxis.value = 0;
+    PcQolUiEvent(&animate, window);
+    animate.gaxis.value = 30000;
+    PcQolUiEvent(&animate, window);
+    assert(!strcmp(PcInventoryPreviewName(), "Special L"));
+    PcInventoryPreviewCycle();
+    PcInventoryPreviewCycle();
+    assert(!strcmp(PcInventoryPreviewName(), "Idle"));
+    PcQolUiOpenPage(0);
+    g_Status.equipment[0] = ITEM_EMPTY_HAND;
+    for (int i = 0; i < 4; i++)
+        PcInventoryPreviewCycle();
+    assert(!strcmp(PcInventoryPreviewName(), "No special L"));
+    g_Status.equipment[0] = ITEM_ALUCARD_SWORD;
+    PcQolUiOpenPage(0);
+    g_PlayableCharacter = PLAYER_RICHTER;
+    PcInventoryPreviewCycle();
+    assert(!strcmp(PcInventoryPreviewName(), "Richter"));
+    g_PlayableCharacter = beforeCharacter;
+    assert(!memcmp(&g_Status, &beforePreview, sizeof(g_Status)));
+    assert(!memcmp(&PLAYER, &beforePlayer, sizeof(PLAYER)));
+    assert(g_CurrentEntity == beforeCurrent && g_Timer == beforeTimer);
+    g_Status = previewSetup;
     g_PlayerX = g_PlayerY = 0;
     g_Tilemap.left = g_Tilemap.top = 0;
     PcQolUiOpen();
@@ -303,6 +444,27 @@ void PcQolTest(void) {
         tab.key.scancode = SDL_SCANCODE_TAB;
         PcQolUiEvent(&tab, window);
     }
+    // Current stats must remain visible even when the item list is empty.
+    PcQolUiOpenPage(1);
+    memset(g_PcQol.favorites, 0, sizeof(g_PcQol.favorites));
+    SDL_Event favoriteFilter = {.type = SDL_EVENT_KEY_DOWN};
+    favoriteFilter.key.scancode = SDL_SCANCODE_B;
+    PcQolUiEvent(&favoriteFilter, window);
+    PcQolUiDraw(renderer);
+    SDL_Rect statsRect = {500, 588, 680, 128};
+    SDL_Surface* statsBefore = SDL_RenderReadPixels(renderer, &statsRect);
+    PlayerStatus statsStatus = g_Status;
+    g_Status.statsBase[0]++;
+    PcQolUiDraw(renderer);
+    assert(g_Status.statsBase[0] == statsStatus.statsBase[0] + 1);
+    SDL_Surface* statsAfter = SDL_RenderReadPixels(renderer, &statsRect);
+    assert(
+        statsBefore && statsAfter && statsBefore->pitch == statsAfter->pitch);
+    assert(memcmp(statsBefore->pixels, statsAfter->pixels,
+                  statsBefore->pitch * statsBefore->h));
+    g_Status = statsStatus;
+    SDL_DestroySurface(statsBefore);
+    SDL_DestroySurface(statsAfter);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     assert(!PcQolSuspend()); // Warp rooms are scripted interactions.
@@ -311,6 +473,8 @@ void PcQolTest(void) {
     SDL_RemovePath("settings.ini.backups");
     SDL_EnumerateDirectory("bu00", RemoveEntry, NULL);
     SDL_RemovePath("bu00");
+    SDL_EnumerateDirectory("saves", RemoveEntry, NULL);
+    SDL_RemovePath("saves");
     SDL_EnumerateDirectory("bu10", RemoveEntry, NULL);
     SDL_RemovePath("bu10");
     SDL_EnumerateDirectory(".", RemoveEntry, NULL);

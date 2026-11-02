@@ -2,6 +2,9 @@
 //! PSPO=4,p
 #include "dra.h"
 #include "dra_bss.h"
+#ifdef VERSION_PC
+#include "../pc/saves.h"
+#endif
 
 // BSS
 static s32 D_801379B8;
@@ -268,8 +271,13 @@ static s32 HandleSaveMenu(s32 arg0) {
             }
             if (D_80137E4C == 7) {
 #if defined(VERSION_US)
+#ifdef VERSION_PC
+                func_800F9D88("Save failed．", 0, 1);
+                func_800F9D88("Check disk space．", 1, 0);
+#else
                 func_800F9D88("Memory Card", 0, 1);
                 func_800F9D88("  not found．", 1, 0);
+#endif
 #elif defined(VERSION_HD)
                 func_800F9D40("メモリーカードが　　", 0, 1);
                 func_800F9D40("ささっていません　　", 1, 0);
@@ -513,7 +521,11 @@ static s32 HandleSaveMenu(s32 arg0) {
         }
         if (arg0 == 3) {
 #if defined(VERSION_US)
+#ifdef VERSION_PC
+            func_800F9D88(" Save adventure？", 0, 1);
+#else
             func_800F9D88(" Overwrite data？", 0, 1);
+#endif
 #elif defined(VERSION_HD)
             func_800F9D40("　　上書きしますか　　　", 0, 1);
 #else
@@ -613,10 +625,17 @@ static s32 HandleSaveMenu(s32 arg0) {
 
 static void func_80103EAC(void) {
     D_80137E4C = 0;
+#ifndef VERSION_PC
     MemcardInfoInit();
+#endif
 }
 
 static void func_80103ED4(void) {
+#ifdef VERSION_PC
+    if (D_80137E4C == 0)
+        D_80137E4C = PcSaveCommit() ? 6 : 7;
+    return;
+#endif
     char saveFile[32];
     s32 memCardClose;
     s32 i;
@@ -1427,6 +1446,12 @@ void func_80105428(void) {
             if (D_80137EE0 != 0) {
                 D_801379BC++;
             } else {
+#ifdef VERSION_PC
+                func_80102EB8();
+                D_80137E54 = 0;
+                D_80137E4C = 0;
+                D_801379BC = 0x80;
+#else
                 if (D_80097924 >= 0) {
                     func_80102EB8();
                     D_801379BC = 0x80;
@@ -1439,6 +1464,7 @@ void func_80105428(void) {
                     func_80102EB8();
                     D_801379BC = 0x100;
                 }
+#endif
             }
         } else {
             func_80105408();
@@ -1456,8 +1482,13 @@ void func_80105428(void) {
                 D_80137E4C = 0;
 #endif
             } else {
+#ifdef VERSION_PC
+                D_80137E54 = 0;
+                D_801379BC = 0x101;
+#else
                 func_80102EB8();
                 D_801379BC++;
+#endif
             }
         }
         break;

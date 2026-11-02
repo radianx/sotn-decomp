@@ -1,0 +1,228 @@
+--- a/psyz/include/psyz/overlay_sdl3.h
++++ b/psyz/include/psyz/overlay_sdl3.h
+@@ -14,6 +14,17 @@
+ // Returns the previous callback, or NULL if none was set.
+ PsyzOverlayEventCB_SDL3 Psyz_OverlayEvent_SDL3(PsyzOverlayEventCB_SDL3 cb);
+
++// Present a paused menu in the game window without touching PS1 VRAM/clocks.
++// The surface must be RGBA32. Call on the video thread, outside render passes.
++SDL_Window* Psyz_OverlayWindow_SDL3(void);
++bool Psyz_OverlayPresent_SDL3(SDL_Surface* surface);
++// Replace presentation while the game/menu loop keeps running. The caller owns
++// the surface and must clear it before destruction; NULL restores game output.
++void Psyz_OverlaySetSurface_SDL3(SDL_Surface* surface);
++// Consume the current event before the backend's Escape/F-key shortcuts.
++void Psyz_OverlayConsumeEvent_SDL3(void);
++void Psyz_OverlayToggleFullscreen_SDL3(void);
++
+ #ifdef __cplusplus
+ }
+ #endif
+--- a/psyz/src/platform/sdl3_common.h
++++ b/psyz/src/platform/sdl3_common.h
+@@ -50,6 +50,11 @@
+
+ // shared window/platform state
+ static SDL_Window* sdl3_window = NULL;
++static SDL_Surface* overlay_surface;
++void Psyz_OverlaySetSurface_SDL3(SDL_Surface* surface) {
++    overlay_surface = surface;
++}
++SDL_Window* Psyz_OverlayWindow_SDL3(void) { return sdl3_window; }
+ static bool is_window_visible = false;
+ static bool is_platform_initialized = false;
+ static bool is_platform_init_successful = false;
+@@ -218,6 +223,8 @@
+
+ // overlay callbacks shared across backends
+ static PsyzOverlayEventCB_SDL3 overlay_event_cb;
++static bool overlay_event_consumed;
++void Psyz_OverlayConsumeEvent_SDL3(void) { overlay_event_consumed = true; }
+ PsyzOverlayEventCB_SDL3 Psyz_OverlayEvent_SDL3(PsyzOverlayEventCB_SDL3 cb) {
+     const PsyzOverlayEventCB_SDL3 prev = overlay_event_cb;
+     overlay_event_cb = cb;
+@@ -1149,12 +1156,21 @@
+ }
+ #endif
+
++void Psyz_OverlayToggleFullscreen_SDL3(void) {
++#ifndef PLATFORM_IOS
++    SetFullScreen(!is_fullscreen);
++#endif
++}
++
+ static void PollEvents(void) {
+     SDL_Event event;
+     while (SDL_PollEvent(&event)) {
++        overlay_event_consumed = false;
+         if (overlay_event_cb) {
+             overlay_event_cb(&event);
+         }
++        if (overlay_event_consumed)
++            continue;
+         switch (event.type) {
+         case SDL_EVENT_GAMEPAD_ADDED:
+             AddGamepad(event.gdevice.which);
+--- a/psyz/src/platform/sdl3_gpu.c
++++ b/psyz/src/platform/sdl3_gpu.c
+@@ -1068,6 +1068,10 @@
+         finish_time = SDL_GetPerformanceCounter();
+         return;
+     }
++    if (overlay_surface && Psyz_OverlayPresent_SDL3(overlay_surface)) {
++        finish_time = SDL_GetPerformanceCounter();
++        return;
++    }
+
+     ApplyPendingInternalRes();
+
+@@ -1185,6 +1189,87 @@
+     }
+     finish_time = SDL_GetPerformanceCounter();
+     SubmitFrame();
++}
++
++bool Psyz_OverlayPresent_SDL3(SDL_Surface* surface) {
++    if (!device || !swapchain_ok || !surface ||
++        surface->format != SDL_PIXELFORMAT_RGBA32)
++        return false;
++    Draw_FlushBuffer();
++    SubmitCmd();
++    SDL_GPUTextureCreateInfo info = {
++        .type = SDL_GPU_TEXTURETYPE_2D,
++        .format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
++        .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
++        .width = surface->w,
++        .height = surface->h,
++        .layer_count_or_depth = 1,
++        .num_levels = 1,
++    };
++    SDL_GPUTexture* texture = SDL_CreateGPUTexture(device, &info);
++    SDL_GPUTransferBufferCreateInfo uploadInfo = {
++        .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
++        .size = surface->pitch * surface->h,
++    };
++    SDL_GPUTransferBuffer* upload =
++        SDL_CreateGPUTransferBuffer(device, &uploadInfo);
++    bool ok = false;
++    if (!texture || !upload)
++        goto done;
++    void* pixels = SDL_MapGPUTransferBuffer(device, upload, false);
++    if (!pixels)
++        goto done;
++    memcpy(pixels, surface->pixels, uploadInfo.size);
++    SDL_UnmapGPUTransferBuffer(device, upload);
++    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(device);
++    if (!cmd)
++        goto done;
++    SDL_GPUTexture* target = NULL;
++    Uint32 w, h;
++    if (!SDL_WaitAndAcquireGPUSwapchainTexture(
++            cmd, sdl3_window, &target, &w, &h)) {
++        SDL_CancelGPUCommandBuffer(cmd);
++        goto done;
++    }
++    if (target) {
++        wnd_size_in_pixels = (WndSize){w, h};
++        SDL_GPUCopyPass* copy = SDL_BeginGPUCopyPass(cmd);
++        SDL_GPUTextureTransferInfo source = {
++            .transfer_buffer = upload,
++            .pixels_per_row = surface->pitch / 4,
++            .rows_per_layer = surface->h,
++        };
++        SDL_GPUTextureRegion region = {
++            .texture = texture,
++            .w = surface->w,
++            .h = surface->h,
++            .d = 1,
++        };
++        SDL_UploadToGPUTexture(copy, &source, &region, false);
++        SDL_EndGPUCopyPass(copy);
++        PsyzRect fit = VideoLayout_Present(
++            (PsyzSize){w, h}, (PsyzSize){surface->w, surface->h},
++            (PsyzSize){surface->w, surface->h});
++        SDL_GPUBlitInfo blit = {
++            .source = {.texture = texture, .w = surface->w, .h = surface->h},
++            .destination = {.texture = target,
++                            .x = fit.sx,
++                            .y = fit.sy,
++                            .w = (fit.ex - fit.sx),
++                            .h = (fit.ey - fit.sy)},
++            .load_op = SDL_GPU_LOADOP_CLEAR,
++            .clear_color = {0, 0, 0, 1},
++            .filter = SDL_GPU_FILTER_NEAREST,
++        };
++        SDL_BlitGPUTexture(cmd, &blit);
++    }
++    ok = SDL_SubmitGPUCommandBuffer(cmd);
++done:
++    if (upload)
++        SDL_ReleaseGPUTransferBuffer(device, upload);
++    if (texture)
++        SDL_ReleaseGPUTexture(device, texture);
++    return ok;
+ }
+
+ static void QuitPlatform(void) {
+--- a/psyz/src/platform/sdl3_gl.c
++++ b/psyz/src/platform/sdl3_gl.c
+@@ -926,6 +926,10 @@
+     if (!sdl3_window && !InitPlatform()) {
+         return;
+     }
++    if (overlay_surface && Psyz_OverlayPresent_SDL3(overlay_surface)) {
++        finish_time = SDL_GetPerformanceCounter();
++        return;
++    }
+     ApplyPendingInternalRes();
+
+     VideoLayout layout = ResolveVideoLayout();
+@@ -1005,6 +1009,48 @@
+     glBindTexture(GL_TEXTURE_2D, vram_texture);
+     glViewport(0, 0, VRAM_W, VRAM_H);
+     glEnable(GL_SCISSOR_TEST);
++}
++
++bool Psyz_OverlayPresent_SDL3(SDL_Surface* surface) {
++    if (!sdl3_window || !surface || surface->format != SDL_PIXELFORMAT_RGBA32)
++        return false;
++    Draw_FlushBuffer();
++    GLuint texture, fbo;
++    glGenTextures(1, &texture);
++    glBindTexture(GL_TEXTURE_2D, texture);
++    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
++    glPixelStorei(GL_UNPACK_ROW_LENGTH, surface->pitch / 4);
++    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surface->w, surface->h, 0, GL_RGBA,
++                 GL_UNSIGNED_BYTE, surface->pixels);
++    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
++    glGenFramebuffers(1, &fbo);
++    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
++    glFramebufferTexture2D(
++        GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
++    bool ok = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER) ==
++              GL_FRAMEBUFFER_COMPLETE;
++    if (ok) {
++        int w, h;
++        SDL_GetWindowSizeInPixels(sdl3_window, &w, &h);
++        wnd_size_in_pixels = (WndSize){w, h};
++        PsyzRect fit = VideoLayout_Present(
++            (PsyzSize){w, h}, (PsyzSize){surface->w, surface->h},
++            (PsyzSize){surface->w, surface->h});
++        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
++        glDisable(GL_SCISSOR_TEST);
++        glClearColor(0, 0, 0, 1);
++        glClear(GL_COLOR_BUFFER_BIT);
++        glBlitFramebuffer(
++            0, surface->h, surface->w, 0, fit.sx, h - fit.sy - (fit.ey - fit.sy),
++            fit.sx + (fit.ex - fit.sx), h - fit.sy, GL_COLOR_BUFFER_BIT, GL_NEAREST);
++        SDL_GL_SwapWindow(sdl3_window);
++    }
++    glDeleteFramebuffers(1, &fbo);
++    glDeleteTextures(1, &texture);
++    BindDrawFbo();
++    glBindTexture(GL_TEXTURE_2D, vram_texture);
++    glEnable(GL_SCISSOR_TEST);
++    return ok;
+ }
+
+ static void QuitPlatform(void) {

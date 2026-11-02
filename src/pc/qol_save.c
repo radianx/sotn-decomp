@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "qol.h"
+#include "saves.h"
 #include "pc.h"
 #include "spawn_point.h"
 #include "../dra/dra.h"
@@ -25,12 +26,23 @@ typedef struct {
 typedef struct {
     SaveBlock block;
     char origin[64];
+} LegacyBackup;
+typedef struct {
+    SaveBlock block;
+    char origin[64];
+    PcQolData profile;
+    unsigned profileId;
 } Backup;
+static char s_CurrentSave[64];
+static bool ReadEntry(const char* path, Backup* backup);
+static void FindCurrentSave(unsigned id);
 static Suspend s_Resume;
 static bool s_Resuming;
 
 static bool Valid(const SaveData* save) {
-    if (save->info.saveSize != sizeof(SaveData) || save->info.stage < 0 ||
+    if (!memchr(save->info.name, 0, sizeof(save->info.name)) ||
+        !memchr(save->status.saveName, 0, sizeof(save->status.saveName)) ||
+        save->info.saveSize != sizeof(SaveData) || save->info.stage < 0 ||
         save->info.stage >= 80 || save->info.roomX > 63 ||
         save->info.roomY > 63 ||
         (save->info.character != PLAYER_ALUCARD &&
@@ -109,8 +121,10 @@ static bool BeginResume(const Suspend* state) {
         state->x < 0 || state->x > 16383 || state->y < 0 || state->y > 16383)
         return false;
     s_Resume = *state;
+    s_CurrentSave[0] = 0;
     if (!PcQolUseProfile(state->profileId))
         return false;
+    FindCurrentSave(state->profileId);
     if (ApplySaveData(&s_Resume.block.save))
         return false;
     g_PcQol = state->profile;
@@ -231,7 +245,10 @@ SDL_Surface* PcQolLoadPreview(const PcSaveEntry* entry) {
         char* slash = strchr(identity, '/');
         if (slash)
             *slash = ':';
-        PreviewPath(path, sizeof(path), PathHash(identity));
+        Backup backup;
+        unsigned id = ReadEntry(entry->path, &backup) ? backup.profileId
+                                                      : PathHash(identity);
+        PreviewPath(path, sizeof(path), id);
     }
     return SDL_LoadPNG(path);
 }
@@ -244,16 +261,14 @@ bool PcQolBackup(const char* psxPath) {
     char* colon = strchr(source, ':');
     if (colon)
         *colon = '/';
-    FILE* file = fopen(source, "rb");
-    if (!file)
+    FILE* probe = fopen(source, "rb");
+    if (!probe)
         return errno == ENOENT;
-    Backup backup = {0};
-    bool ok = fread(backup.block.raw, sizeof(backup.block.raw), 1, file) == 1 &&
-              fgetc(file) == EOF && !ferror(file);
-    fclose(file);
-    if (!ok || !Valid(&backup.block.save))
+    fclose(probe);
+    Backup backup;
+    if (!ReadEntry(source, &backup))
         return false;
-    strcpy(backup.origin, source);
+    SDL_strlcpy(backup.origin, source, sizeof(backup.origin));
     snprintf(directory, sizeof(directory), "%s.backups", g_PcSettingsPath);
     if (!SDL_CreateDirectory(directory))
         return false;
@@ -279,7 +294,7 @@ bool PcQolBackup(const char* psxPath) {
     if (!PcQolWrite(path, &backup, sizeof(backup)))
         return false;
     char preview[1120], copy[1220];
-    PreviewPath(preview, sizeof(preview), PathHash(psxPath));
+    PreviewPath(preview, sizeof(preview), backup.profileId);
     snprintf(copy, sizeof(copy), "%s.png", path);
     CopyPreview(preview, copy);
     return true;
@@ -291,29 +306,83 @@ typedef struct {
 } SaveList;
 static bool ReadEntry(const char* path, Backup* backup) {
     memset(backup, 0, sizeof(*backup));
-    if (PcQolRead(path, backup, sizeof(*backup)))
-        return Valid(&backup->block.save) &&
-               memchr(backup->origin, 0, sizeof(backup->origin));
-    if (!strstr(path, "/BASLUS"))
-        return false;
-    FILE* file = fopen(path, "rb");
-    if (!file)
-        return false;
-    bool ok =
-        fread(backup->block.raw, sizeof(backup->block.raw), 1, file) == 1 &&
-        fgetc(file) == EOF && !ferror(file);
-    fclose(file);
-    if (ok && Valid(&backup->block.save)) {
-        snprintf(backup->origin, sizeof(backup->origin), "%s", path);
+    if (PcQolRead(path, backup, sizeof(*backup))) {
+        if (!Valid(&backup->block.save) ||
+            !memchr(backup->origin, 0, sizeof(backup->origin)))
+            return false;
+        if (!strstr(path, ".qsave")) {
+            char profile[1100];
+            snprintf(profile, sizeof(profile), "%s.%08x.qol", g_PcSettingsPath,
+                     backup->profileId);
+            PcQolRead(profile, &backup->profile, sizeof(backup->profile));
+        }
+        PcQolValidate(&backup->profile);
         return true;
     }
-    return false;
+    LegacyBackup legacy;
+    if (PcQolRead(path, &legacy, sizeof(legacy))) {
+        backup->block = legacy.block;
+        memcpy(backup->origin, legacy.origin, sizeof(legacy.origin));
+        if (!Valid(&backup->block.save) ||
+            !memchr(backup->origin, 0, sizeof(backup->origin)))
+            return false;
+    } else {
+        if (strncmp(path, "bu00/", 5) && strncmp(path, "bu10/", 5))
+            return false;
+        FILE* file = fopen(path, "rb");
+        if (!file)
+            return false;
+        bool ok =
+            fread(backup->block.raw, sizeof(backup->block.raw), 1, file) == 1 &&
+            fgetc(file) == EOF && !ferror(file);
+        fclose(file);
+        if (!ok || !Valid(&backup->block.save))
+            return false;
+        SDL_strlcpy(backup->origin, path, sizeof(backup->origin));
+    }
+    char identity[64], profile[1100];
+    SDL_strlcpy(identity, backup->origin, sizeof(identity));
+    char* slash = strchr(identity, '/');
+    if (slash)
+        *slash = ':';
+    backup->profileId = PathHash(identity);
+    backup->profile =
+        (PcQolData){.quickItem = ITEM_POTION, .quickSpell = -1, .loadout = -1};
+    snprintf(profile, sizeof(profile), "%s.%08x.qol", g_PcSettingsPath,
+             backup->profileId);
+    PcQolRead(profile, &backup->profile, sizeof(backup->profile));
+    PcQolValidate(&backup->profile);
+    return true;
 }
+static SDL_EnumerationResult FindSlot(
+    void* userdata, const char* dirname, const char* name) {
+    size_t length = strlen(name);
+    if (length <= 4 || strcmp(name + length - 4, ".sav"))
+        return SDL_ENUM_CONTINUE;
+    char path[64];
+    if (snprintf(path, sizeof(path), "%s%s", dirname, name) >= sizeof(path))
+        return SDL_ENUM_CONTINUE;
+    Backup save;
+    if (ReadEntry(path, &save) && save.profileId == *(unsigned*)userdata) {
+        SDL_strlcpy(s_CurrentSave, path, sizeof(s_CurrentSave));
+        return SDL_ENUM_SUCCESS;
+    }
+    return SDL_ENUM_CONTINUE;
+}
+
+static void FindCurrentSave(unsigned id) {
+    s_CurrentSave[0] = 0;
+    SDL_EnumerateDirectory("saves", FindSlot, &id);
+}
+
 static SDL_EnumerationResult ListEntry(
     void* userdata, const char* dirname, const char* name) {
     SaveList* list = userdata;
-    if (list->count == list->capacity ||
-        (!SDL_strstr(name, ".qsave") && strncmp(name, "BASLUS", 6)))
+    size_t length = strlen(name);
+    bool native = length > 4 && !strcmp(name + length - 4, ".sav");
+    bool backupFile = length > 6 && !strcmp(name + length - 6, ".qsave");
+    if ((list->entries && list->count == list->capacity) ||
+        (!backupFile && !native && strncmp(name, "BASLUS", 6)))
         return SDL_ENUM_CONTINUE;
     PcSaveEntry entry = {0};
     Backup backup;
@@ -323,8 +392,10 @@ static SDL_EnumerationResult ListEntry(
         memcpy(entry.palette, backup.block.save.header.Clut,
                sizeof(entry.palette));
         memcpy(entry.icon, backup.block.save.header.Icon, sizeof(entry.icon));
-        strcpy(entry.origin, backup.origin);
-        list->entries[list->count++] = entry;
+        SDL_strlcpy(entry.origin, backup.origin, sizeof(entry.origin));
+        if (list->entries)
+            list->entries[list->count] = entry;
+        list->count++;
     }
     return SDL_ENUM_CONTINUE;
 }
@@ -332,46 +403,199 @@ int PcQolSaveList(PcSaveEntry* entries, int capacity) {
     SaveList list = {entries, 0, capacity};
     char directory[1100];
     snprintf(directory, sizeof(directory), "%s.backups", g_PcSettingsPath);
+    SDL_EnumerateDirectory("saves", ListEntry, &list);
     SDL_EnumerateDirectory("bu00", ListEntry, &list);
     SDL_EnumerateDirectory("bu10", ListEntry, &list);
     SDL_EnumerateDirectory(directory, ListEntry, &list);
     return list.count;
 }
-bool PcQolRestore(const PcSaveEntry* entry) {
-    Backup backup;
-    if (!ReadEntry(entry->path, &backup))
+static bool NewPath(char* path, size_t size) {
+    static unsigned sequence;
+    SDL_Time now;
+    if (!SDL_CreateDirectory("saves") || !SDL_GetCurrentTime(&now))
         return false;
-    extern void MakeMemcardPath(char* name, s32 block);
-    if (!SDL_CreateDirectory("bu10"))
+    snprintf(path, size, "saves/%016llx-%04x.sav", (unsigned long long)now,
+             sequence++);
+    return true;
+}
+
+void PcSaveNewGame(void) { s_CurrentSave[0] = 0; }
+
+bool PcSaveCommit(void) {
+    Backup save = {0};
+    StoreSaveData(&save.block.save, 0, rand() & 15);
+    if (!Valid(&save.block.save))
         return false;
-    for (int slot = 0; slot < 15; slot++) {
-        char name[32], path[64];
-        MakeMemcardPath(name, slot);
-        snprintf(path, sizeof(path), "bu10/%s", name);
-        FILE* file = fopen(path, "wbx");
-        if (!file) {
-            if (errno == EEXIST)
-                continue;
+    char path[64];
+    bool fresh = !s_CurrentSave[0];
+    if (fresh) {
+        if (!NewPath(path, sizeof(path)))
+            return false;
+        FILE* reservation = fopen(path, "wbx");
+        if (!reservation)
+            return false;
+        if (fclose(reservation)) {
+            SDL_RemovePath(path);
             return false;
         }
-        bool ok =
-            fwrite(backup.block.raw, sizeof(backup.block.raw), 1, file) == 1;
-        if (fclose(file))
-            ok = false;
-        if (!ok)
-            remove(path);
-        else {
-            SDL_Surface* image = PcQolLoadPreview(entry);
-            char identity[64], preview[1120];
-            snprintf(identity, sizeof(identity), "bu10:%s", name);
-            PreviewPath(preview, sizeof(preview), PathHash(identity));
-            if (image) {
-                WritePreview(preview, image);
-                SDL_DestroySurface(image);
-            } else
-                SDL_RemovePath(preview);
-        }
-        return ok;
+    } else {
+        SDL_strlcpy(path, s_CurrentSave, sizeof(path));
+        if (!PcQolBackup(path))
+            return false;
     }
-    return false;
+    save.profile = g_PcQol;
+    save.profileId = fresh ? PathHash(path) : PcQolProfileId();
+    SDL_strlcpy(save.origin, path, sizeof(save.origin));
+    if (!PcQolWrite(path, &save, sizeof(save))) {
+        if (fresh)
+            SDL_RemovePath(path);
+        return false;
+    }
+    SDL_strlcpy(s_CurrentSave, path, sizeof(s_CurrentSave));
+    if (fresh)
+        PcQolUseProfile(save.profileId);
+    PcQolSave();
+    PcQolSavePreview(save.profileId, save.profileId);
+    return true;
+}
+
+static bool CopySave(const PcSaveEntry* entry, char path[64]) {
+    Backup save;
+    if (!ReadEntry(entry->path, &save) || !NewPath(path, 64))
+        return false;
+    FILE* reservation = fopen(path, "wbx");
+    if (!reservation)
+        return false;
+    if (fclose(reservation)) {
+        SDL_RemovePath(path);
+        return false;
+    }
+    SDL_Surface* image = PcQolLoadPreview(entry);
+    // The copy gets its own profile; the embedded snapshot survives missing
+    // sidecars.
+    save.profileId = PathHash(path);
+    SDL_strlcpy(save.origin, path, sizeof(save.origin));
+    bool ok = PcQolWrite(path, &save, sizeof(save));
+    if (!ok)
+        SDL_RemovePath(path);
+    if (ok && image) {
+        char preview[1120];
+        PreviewPath(preview, sizeof(preview), save.profileId);
+        WritePreview(preview, image);
+    }
+    SDL_DestroySurface(image);
+    return ok;
+}
+
+bool PcQolRestore(const PcSaveEntry* entry) {
+    char path[64];
+    return CopySave(entry, path);
+}
+
+bool PcSaveLoad(const PcSaveEntry* entry) {
+    if (g_GameState != Game_MainMenu)
+        return false;
+    Backup save;
+    char path[64];
+    if (!ReadEntry(entry->path, &save))
+        return false;
+    if (strncmp(entry->path, "saves/", 6) || strstr(entry->path, ".qsave")) {
+        if (!CopySave(entry, path) || !ReadEntry(path, &save))
+            return false;
+    } else if (SDL_strlcpy(path, entry->path, sizeof(path)) >= sizeof(path))
+        return false;
+    char profilePath[1024];
+    if (snprintf(profilePath, sizeof(profilePath), "%s.%08x.qol",
+                 g_PcSettingsPath, save.profileId) >= sizeof(profilePath))
+        return false;
+    PcQolSave();
+    if (!PcQolUseProfile(save.profileId) || ApplySaveData(&save.block.save))
+        return false;
+    g_PcQol = save.profile;
+    char profile[1100];
+    snprintf(profile, sizeof(profile), "%s.%08x.qol", g_PcSettingsPath,
+             save.profileId);
+    PcQolRead(profile, &g_PcQol, sizeof(g_PcQol));
+    PcQolValidate(&g_PcQol);
+    SDL_strlcpy(s_CurrentSave, path, sizeof(s_CurrentSave));
+    return true;
+}
+
+static PcSaveEntry* AllSaves(int* count) {
+    int capacity = PcQolSaveList(NULL, 0);
+    PcSaveEntry* entries =
+        SDL_calloc(capacity ? capacity : 1, sizeof(*entries));
+    *count = entries ? PcQolSaveList(entries, capacity) : 0;
+    return entries;
+}
+
+unsigned PcSaveClearFlags(void) {
+    int count;
+    PcSaveEntry* entries = AllSaves(&count);
+    unsigned flags = 0;
+    for (int i = 0; i < count; i++)
+        if (!strstr(entries[i].path, ".qsave"))
+            flags |= entries[i].info.endGameFlags;
+    SDL_free(entries);
+    return flags;
+}
+
+bool PcSaveContinue(void) {
+    int count, selected = -1;
+    SDL_Time newest = 0;
+    PcSaveEntry* entries = AllSaves(&count);
+    for (int i = 0; i < count; i++) {
+        SDL_PathInfo info;
+        if (!strstr(entries[i].path, ".qsave") &&
+            SDL_GetPathInfo(entries[i].path, &info) &&
+            (selected < 0 || info.modify_time > newest)) {
+            newest = info.modify_time;
+            selected = i;
+        }
+    }
+    bool ok = selected >= 0 && PcSaveLoad(&entries[selected]);
+    SDL_free(entries);
+    return ok;
+}
+
+bool PcSaveRename(const PcSaveEntry* entry, const char* name) {
+    if (g_GameState != Game_MainMenu || !name || strlen(name) != 8)
+        return false;
+    bool empty = true;
+    for (int i = 0; i < 8; i++) {
+        if (!strchr("abcdefghijklmnopqrstuvwxyz&!-.' ", name[i]))
+            return false;
+        empty &= name[i] == ' ';
+    }
+    if (empty)
+        return false;
+    Backup save;
+    if (!ReadEntry(entry->path, &save))
+        return false;
+    char path[64];
+    if (strncmp(entry->path, "saves/", 6)) {
+        if (!CopySave(entry, path) || !ReadEntry(path, &save))
+            return false;
+    } else if (SDL_strlcpy(path, entry->path, sizeof(path)) >= sizeof(path))
+        return false;
+    if (!PcQolBackup(path))
+        return false;
+    memset(save.block.save.info.name, 0, sizeof(save.block.save.info.name));
+    memset(save.block.save.status.saveName, 0,
+           sizeof(save.block.save.status.saveName));
+    memcpy(save.block.save.info.name, name, 8);
+    memcpy(save.block.save.status.saveName, name, 8);
+    return PcQolWrite(path, &save, sizeof(save));
+}
+
+bool PcSaveArchive(const PcSaveEntry* entry) {
+    if (strncmp(entry->path, "saves/", 6) ||
+        (g_GameState == Game_Play && !strcmp(entry->path, s_CurrentSave)))
+        return false;
+    char archive[1100];
+    snprintf(archive, sizeof(archive), "%s.archived", entry->path);
+    SDL_PathInfo info;
+    if (SDL_GetPathInfo(archive, &info))
+        return false;
+    return SDL_RenamePath(entry->path, archive);
 }

@@ -25,7 +25,7 @@ static const struct {
     FIELD(protectSubweapon, 0, 1), FIELD(warpChooser, 0, 1),
     FIELD(skipSeenDialogue, 0, 1), FIELD(hudScale, 100, 150),
     FIELD(statusHud, 0, 1),        FIELD(subtitleScale, 0, 3),
-    FIELD(videoFilter, 0, 3),      FIELD(filterStrength, 0, 100),
+    FIELD(videoFilter, 0, 4),      FIELD(filterStrength, 0, 100),
 #undef FIELD
 };
 

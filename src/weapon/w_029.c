@@ -13,8 +13,13 @@ extern s32 g_HandId;
 #include "items.h"
 #include "sfx.h"
 
+#ifdef VERSION_PC
+extern s8 D_CF000_8017AC78[];
+extern AnimationFrame* D_CF000_8017ACC0[];
+#else
 extern s32 D_CF000_8017AC78;
 extern s32 D_CF000_8017ACC0;
+#endif
 extern u16 D_CF000_8017ACF8[];
 extern u16 D_CF000_8017AD04[];
 extern u16 D_CF000_8017AD10[];
@@ -140,7 +145,8 @@ static void EntityWeaponAttack(Entity* self) {
         break;
     }
     if (self->step != 4) {
-        g_api.PlayAnimation(&D_CF000_8017AC78, &D_CF000_8017ACC0);
+        g_api.PlayAnimation(
+            (s8*)&D_CF000_8017AC78, (AnimationFrame**)&D_CF000_8017ACC0);
         if (g_GameTimer % 5 == 0) {
             g_api.CreateEntFactoryFromEntity(self, WFACTORY(0x38, 0), 0);
         }

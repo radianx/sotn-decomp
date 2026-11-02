@@ -11,9 +11,11 @@ code and the pinned PSY-Z renderer. SDK modifications remain in licensed patches
 The [Adventure tools](pc_qol.md) add optional exploration, inventory, loadout,
 spell, save, dialogue and readability features. Press **F5** to open them.
 
-Run `./run-linux.sh`. **F1** opens a keyboard-operated settings window and pauses
-the game, its audio streams, and its playback clock. Arrow keys select/change
-values; Enter changes a value or starts button capture. F1 resumes the game.
+Run `./run-linux.sh`. **Start** opens the in-game pause menu. **F1** opens PC
+settings in the same window and pauses gameplay, its audio streams and playback
+clock. At the title, the original background and music keep running, including
+inside PC settings. Arrows or the controller D-pad select/change values;
+Enter/A changes a value or starts button capture. F1 resumes the game.
 Changes save immediately to `build/local-pc/settings.ini`; use
 `--config /path/to/settings.ini` for another profile. Start with
 [the sample file](pc_settings.ini). Original gameplay settings are the default.
@@ -22,7 +24,7 @@ F1 also selects a final-window [video filter](video_filters.md): Original,
 Bilinear, soft CRT or xBR level 2, with adjustable strength. Original remains
 the default. Filtering does not alter game textures or framebuffer effects.
 
-- **F4:** desktop fullscreen.
+- **F4 / Ctrl+Enter:** desktop fullscreen (including numpad Enter).
 - **F2:** pause and inspect all 24 SPU voices, envelopes, registers, and CD mix.
 - **F8:** toggle reduced flashes. This suppresses the shared full-screen strobe
   routine; stage-specific effects still require visual review.

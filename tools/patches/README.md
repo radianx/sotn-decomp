@@ -37,7 +37,7 @@ The modified SDK/platform implementation files remain MPL-2.0. Public header
 additions declare those interfaces; upstream file licensing is preserved.
 
 `psyz-video-filters.patch` applies after both patches above. It adds final-window
-bilinear, soft CRT and xBR-lv2 filtering to SDL GPU (Vulkan/Metal) and OpenGL.
+bilinear, soft CRT, xBR-lv2 and Synthwave filtering to SDL GPU (Vulkan/Metal) and OpenGL.
 The original nearest path and raw captures stay unfiltered. Windows D3D12 falls
 back to nearest; OpenGL provides the filter path there. Linux Vulkan/OpenGL are
 the runtime validation targets; Metal and Windows require platform testing.
@@ -53,3 +53,11 @@ are included, so normal builds need no shader compiler. Rebuilding them requires
 python3 tools/psyz/psyz/src/platform/shaders/build_present_shaders.py
 # Add --check to verify the checked-in headers against their sources.
 ```
+
+`psyz-pc-menu.patch` applies last. It presents software-rendered RGBA pause and
+save menus in the existing SDL GPU/OpenGL game window, without writing PS1
+VRAM, advancing the game clock, or changing raw captures. It also shares the
+backend fullscreen handler and lets consumed menu/shortcut input bypass backend
+Escape/debug handling. An optional presentation surface lets title submenus
+keep the original game/music loop running. Linux Vulkan/OpenGL
+are the runtime validation targets; other platforms still need testing.

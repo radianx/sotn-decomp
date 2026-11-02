@@ -22,6 +22,9 @@ typedef struct {
     /* 0x34 */ void (*WeaponUnused34)(void);
     /* 0x38 */ void (*WeaponUnused38)(void);
     /* 0x3C */ void (*WeaponUnused3C)(void);
+#ifdef VERSION_PC
+    const struct PcWeaponPreview* preview;
+#endif
 } Weapon /* 0x40 */;
 
 #define N_WEAPON_PAL 24
