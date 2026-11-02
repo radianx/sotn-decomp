@@ -211,12 +211,16 @@ static void MapKey(SDL_Scancode key, SDL_Window* window) {
 static int InventoryChoice(int item) {
     if ((s_Slot < 2) != (item < NUM_HAND_ITEMS))
         return item;
-    int equipped = g_Status.equipment[s_Slot] +
-                   (s_Slot < 2 ? 0 : NUM_HAND_ITEMS);
+    int equipped =
+        g_Status.equipment[s_Slot] + (s_Slot < 2 ? 0 : NUM_HAND_ITEMS);
     static const int empty[] = {
-        ITEM_EMPTY_HAND, ITEM_EMPTY_HAND, ITEM_EMPTY_HEAD + NUM_HAND_ITEMS,
-        ITEM_NO_ARMOR + NUM_HAND_ITEMS, ITEM_NO_CAPE + NUM_HAND_ITEMS,
-        ITEM_NO_ACCESSORY + NUM_HAND_ITEMS, ITEM_NO_ACCESSORY + NUM_HAND_ITEMS};
+        ITEM_EMPTY_HAND,
+        ITEM_EMPTY_HAND,
+        ITEM_EMPTY_HEAD + NUM_HAND_ITEMS,
+        ITEM_NO_ARMOR + NUM_HAND_ITEMS,
+        ITEM_NO_CAPE + NUM_HAND_ITEMS,
+        ITEM_NO_ACCESSORY + NUM_HAND_ITEMS,
+        ITEM_NO_ACCESSORY + NUM_HAND_ITEMS};
     return item == equipped ? empty[s_Slot] : item;
 }
 
@@ -580,7 +584,7 @@ static void DrawEquipment(SDL_Renderer* r) {
     SDL_RenderLine(r, 113, 226, 95, 260);
     SDL_RenderLine(r, 128, 226, 146, 260);
     static const int positions[7][2] = {
-        {30, 174}, {173, 174}, {102, 125}, {102, 174},
+        {30, 174},  {173, 174}, {102, 125}, {102, 174},
         {173, 125}, {57, 223},  {147, 223}};
     static const char* labels[] = {
         "L hand", "R hand", "Head", "Armor", "Cape", "Acc. 1", "Acc. 2"};
@@ -645,9 +649,15 @@ static void InventoryStat(SDL_Renderer* r, int x, int y, const char* label,
     Text(r, x, y, "%s", line);
     if (!comparing)
         return;
-    SDL_SetRenderDrawColor(r, next == current ? 230 : next < current ? 255 : 130,
-                          next == current ? 235 : next < current ? 130 : 245,
-                          next == current ? 245 : 160, 255);
+    SDL_SetRenderDrawColor(
+        r,
+        next == current  ? 230
+        : next < current ? 255
+                         : 130,
+        next == current  ? 235
+        : next < current ? 130
+                         : 245,
+        next == current ? 245 : 160, 255);
     Text(r, x + strlen(line) * 8, y, " > %d", next);
 }
 
@@ -740,8 +750,8 @@ static void DrawInventory(SDL_Renderer* r) {
                   after.attackHands[0], comparing);
     InventoryStat(r, 422, 294, "R", original.attackHands[1],
                   after.attackHands[1], comparing);
-    InventoryStat(r, 250, 306, "DEF", original.defenseEquip,
-                  after.defenseEquip, comparing);
+    InventoryStat(r, 250, 306, "DEF", original.defenseEquip, after.defenseEquip,
+                  comparing);
     const char* attributes[] = {"STR", "CON", "INT", "LCK"};
     for (int i = 0; i < 4; i++) {
         InventoryStat(r, 250, 318 + i * 12, attributes[i],
@@ -761,9 +771,10 @@ static void DrawInventory(SDL_Renderer* r) {
         char beforeNames[96], afterNames[96], line[224];
         ElementNames(beforeMasks[i], beforeNames, sizeof(beforeNames));
         ElementNames(afterMasks[i], afterNames, sizeof(afterNames));
-        snprintf(line, sizeof(line), "%s: %s%s%s", labels[i], beforeNames,
-                 comparing && beforeMasks[i] != afterMasks[i] ? " > " : "",
-                 comparing && beforeMasks[i] != afterMasks[i] ? afterNames : "");
+        snprintf(
+            line, sizeof(line), "%s: %s%s%s", labels[i], beforeNames,
+            comparing && beforeMasks[i] != afterMasks[i] ? " > " : "",
+            comparing && beforeMasks[i] != afterMasks[i] ? afterNames : "");
         float scale = SDL_min(1.0f, 328.0f / (strlen(line) * 8));
         SDL_SetRenderScale(r, 2 * scale, 2 * scale);
         PcMenuText(r, 250 / scale, (369 + i * 11) / scale, line);

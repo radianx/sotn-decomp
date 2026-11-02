@@ -109,8 +109,8 @@ static void CaptureMenuArtwork(void) {
         SDL_SetTextureScaleMode(s_Font, SDL_SCALEMODE_NEAREST);
 }
 
-void PcMenuPanel(SDL_Renderer* renderer, float x, float y, float w,
-                 float h, float alpha) {
+void PcMenuPanel(
+    SDL_Renderer* renderer, float x, float y, float w, float h, float alpha) {
     SDL_Vertex vertices[] = {
         {{x, y}, {0.075f, 0.10f, 0.38f, alpha}, {0, 0}},
         {{x + w, y}, {0.025f, 0.045f, 0.24f, alpha}, {0, 0}},
@@ -132,8 +132,8 @@ void PcMenuBackground(SDL_Renderer* renderer) {
     SDL_GetRenderOutputSize(renderer, &width, &height);
     SDL_GetRenderScale(renderer, &sx, &sy);
     SDL_FRect panel = {4, 4, width / sx - 8, height / sy - 8};
-    PcMenuPanel(renderer, panel.x, panel.y, panel.w, panel.h,
-                backdrop ? 0.85f : 1.0f);
+    PcMenuPanel(
+        renderer, panel.x, panel.y, panel.w, panel.h, backdrop ? 0.85f : 1.0f);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
     SDL_SetRenderDrawColor(renderer, 185, 180, 140, 255);
     SDL_RenderRect(renderer, &panel);

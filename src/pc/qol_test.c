@@ -363,10 +363,10 @@ void PcQolTest(void) {
     PcMenuBackground(renderer);
     SDL_Surface* gradient = SDL_RenderReadPixels(renderer, NULL);
     u8 topBlue, bottomBlue;
-    assert(gradient && SDL_ReadSurfacePixel(gradient, 100, 100, NULL, NULL,
-                                          &topBlue, NULL));
-    assert(SDL_ReadSurfacePixel(gradient, 100, 800, NULL, NULL,
-                               &bottomBlue, NULL));
+    assert(gradient && SDL_ReadSurfacePixel(
+                           gradient, 100, 100, NULL, NULL, &topBlue, NULL));
+    assert(SDL_ReadSurfacePixel(
+        gradient, 100, 800, NULL, NULL, &bottomBlue, NULL));
     assert(topBlue > bottomBlue + 20);
     SDL_DestroySurface(gradient);
     PlayerStatus previewSetup = g_Status;
@@ -458,7 +458,8 @@ void PcQolTest(void) {
     PcQolUiDraw(renderer);
     assert(g_Status.statsBase[0] == statsStatus.statsBase[0] + 1);
     SDL_Surface* statsAfter = SDL_RenderReadPixels(renderer, &statsRect);
-    assert(statsBefore && statsAfter && statsBefore->pitch == statsAfter->pitch);
+    assert(
+        statsBefore && statsAfter && statsBefore->pitch == statsAfter->pitch);
     assert(memcmp(statsBefore->pixels, statsAfter->pixels,
                   statsBefore->pitch * statsBefore->h));
     g_Status = statsStatus;

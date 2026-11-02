@@ -285,8 +285,8 @@ static void EquippedHand(
         if (poses[pose].duration == 0 || poses[pose].duration >= 0xFFFD)
             pose = 0;
         weapon.animCurFrame = poses[pose].pose & 0x1FF;
-    } else if (s_Animation == 2 + hand && data->attacks &&
-               s_Player.poseTimer >= 0) {
+    } else if (
+        s_Animation == 2 + hand && data->attacks && s_Player.poseTimer >= 0) {
         int variant = equip->unk14 & 0x7F;
         if (variant >= data->attackCount)
             return;
@@ -490,8 +490,8 @@ static void DrawWeaponFx(SDL_Renderer* r, int x, int y) {
     right = SDL_min(right, 288);
     top = SDL_max(top, -32);
     bottom = SDL_min(bottom, 224);
-    float scale = SDL_min(2.0f, SDL_min(195.0f / (right - left + 8),
-                                        90.0f / (bottom - top + 8)));
+    float scale = SDL_min(
+        2.0f, SDL_min(195.0f / (right - left + 8), 90.0f / (bottom - top + 8)));
     float ox = x + 26 - (left + right) * 0.5f * scale;
     float oy = y + 47 - bottom * scale;
     int activeHand = s_Animation == 3 || s_Animation == 5;
